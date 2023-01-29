@@ -26,7 +26,7 @@ function fetchUnprocessedBlocks() {
  * We ask for blocks using "getheaders" message
  * And then we parse result in onHeaders
  */
-function fetchBlockchain() {
+function getHeadersToFetchBlockchain() {
   const fewLastKnownBlocks = blockchain
     .getLastKnownBlocks()
     .map((block) => block.hash);
@@ -81,11 +81,13 @@ function onHeadersMessage(payload: MessagePayload) {
 
       count--;
     }
+    getHeadersToFetchBlockchain();
   } else {
-    console.info(
-      `Got no block headers, breaking the blockheaders fetching loop`
-    );
     // Just break the loop
+    console.info(
+      `Got no block headers, breaking the blockheaders fetching loop. Starting to fetch blocks`
+    );
+    // TODO: Fetch blocks
   }
 }
 peer.onMessage = (command, payload) => {
@@ -96,4 +98,4 @@ peer.onMessage = (command, payload) => {
   }
 };
 
-fetchBlockchain();
+getHeadersToFetchBlockchain();
