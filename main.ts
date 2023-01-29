@@ -1,26 +1,23 @@
 import { genesisBlockHash } from "./bitcoin/consts";
 import { sha256 } from "./bitcoin/hashes";
-import { createGetheadersMessage } from "./bitcoin/messages.create";
+import {
+  createGetdataMessage,
+  createGetheadersMessage,
+} from "./bitcoin/messages.create";
 import { readBlockHeader, readVarInt } from "./bitcoin/messages.parse";
-import { BlockHash, MessagePayload } from "./bitcoin/messages.types";
+import {
+  BlockHash,
+  BlockPayload,
+  HashType,
+  MessagePayload,
+} from "./bitcoin/messages.types";
 import { createPeer } from "./bitcoin/peer";
-import { BlockDB, createBlockchainStorage } from "./db/blockchain";
+import { BlockDB, BlockId, createBlockchainStorage } from "./db/blockchain";
 
 const blockchain = createBlockchainStorage();
 
 const lastKnownBlockAtStartup = blockchain.getLastKnownBlocks(1)[0].id - 1;
 const peer = createPeer("95.216.21.47", 8333, lastKnownBlockAtStartup);
-
-/*
-const blocksWeAreWaiting: BlockDB[] = [];
-function fetchUnprocessedBlocks() {
-  if (blocksWeAreWaiting.length > 0){
-    return;
-  }
-  const nextBlocksToFetch = 
-  //const lastKnownBlocks;
-}
-*/
 
 /**
  * We ask for blocks using "getheaders" message
@@ -91,12 +88,86 @@ function onHeadersMessage(payload: MessagePayload) {
     console.info(
       `Got no block headers, breaking the blockheaders fetching loop. Starting to fetch blocks`
     );
-    // TODO: Fetch blocks
+
+    fetchPackOfUnprocessedBlocks();
   }
 }
+
+const blocksWeAreWaiting: BlockDB[] = [];
+
+const USE_DEMO_BLOCKS = true;
+function fetchPackOfUnprocessedBlocks() {
+  if (blocksWeAreWaiting.length > 0) {
+    console.warn(`LOL Who called this func?`);
+    return;
+  }
+
+  const demoBlocks: BlockDB[] = [
+    {
+      hash: Buffer.from(
+        "0000000000000000000052275994b49b434f3fc698008ee4a2920e9aebbcba25",
+        "hex"
+      ).reverse() as BlockHash,
+      id: 0 as BlockId,
+    },
+    {
+      hash: Buffer.from(
+        "0000000000000000000456bb21edbb8427586335158c08498daa3236b040c8d8",
+        "hex"
+      ).reverse() as BlockHash,
+      id: 0 as BlockId,
+    },
+  ];
+
+  const nextBlocksToFetch = USE_DEMO_BLOCKS
+    ? demoBlocks
+    : blockchain.getNextUprocessedBlocks();
+  if (nextBlocksToFetch.length === 0) {
+    console.info("No more blocks to process!");
+  }
+  blocksWeAreWaiting.push(...nextBlocksToFetch);
+  peer.send(
+    createGetdataMessage(
+      blocksWeAreWaiting.map((blockHash) => [
+        HashType.MSG_BLOCK,
+        blockHash.hash,
+      ])
+    )
+  );
+}
+
+function onBlockMessage(payload: MessagePayload) {
+  const hash = sha256(
+    sha256(payload.subarray(0, 4 + 32 + 32 + 4 + 4 + 4))
+  ) as BlockHash;
+  const index = blocksWeAreWaiting.findIndex((x) => x.hash.equals(hash));
+  if (index < 0) {
+    console.warn(`Got unexpected block ${hash}`);
+    return;
+  }
+  blocksWeAreWaiting.splice(index, 1);
+
+  processBlock(hash, payload as Buffer as BlockPayload);
+
+  if (blocksWeAreWaiting.length === 0) {
+    if (!USE_DEMO_BLOCKS) {
+      fetchPackOfUnprocessedBlocks();
+    } else {
+      console.info(`Not fetching next blocks due to demo mode`);
+    }
+  }
+}
+
+function processBlock(hash: BlockHash, blockPayload: BlockPayload) {
+  console.info(`Processing block ${reverseBuf(hash).toString("hex")}`);
+  // TODO
+}
+
 peer.onMessage = (command, payload) => {
   if (command === "headers") {
     onHeadersMessage(payload);
+  } else if (command === "block") {
+    onBlockMessage(payload);
   } else {
     console.info("msg:", command, payload);
   }
