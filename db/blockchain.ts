@@ -15,7 +15,7 @@ export function createBlockchainStorage(isMemory = false) {
 `);
 
   function pushNewBlockHash(hash: BlockHash) {
-    this.blockchain.prepare(`INSERT INTO blocks (hash) VALUES (?)`).run(hash);
+    blockchain.prepare(`INSERT INTO blocks (hash) VALUES (?)`).run(hash);
   }
 
   const firstBlock = blockchain
@@ -33,4 +33,33 @@ export function createBlockchainStorage(isMemory = false) {
       .map((b) => ({ id: b.id as number, hash: b.hash as BlockHash }));
     return blocks;
   }
+
+  function pushNewKnownBlock(hash: BlockHash) {
+    // TODO: Accept block itself and check that it actually points to the previous block
+    pushNewBlockHash(hash);
+  }
+
+  function getNextUprocessedBlocks(n = 10) {
+    const blocks = blockchain
+      .prepare(
+        `select id, hash from blocks where not processed order by id limit ?`
+      )
+      .all(n)
+      .map((b) => ({ id: b.id as number, hash: b.hash as BlockHash }));
+
+    return blocks;
+  }
+
+  function markBlockAsProccessed(id: number) {
+    blockchain
+      .prepare(`update blocks set processed = true where id = ?`)
+      .run(id);
+  }
+
+  return {
+    getLastKnownBlocks,
+    pushNewKnownBlock,
+    getNextUprocessedBlocks,
+    markBlockAsProccessed,
+  };
 }
