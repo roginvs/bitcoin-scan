@@ -128,8 +128,15 @@ describe("createAnalyzer", () => {
       }
       return Buffer.from(s, "hex");
     }
-    const r = bigintToBuf(sig.r);
-    const s = bigintToBuf(sig.s);
+    function packIntForAsn(b: Buffer) {
+      if (b[0] & 0b10000000) {
+        return joinBuffers(Buffer.from([0]), b);
+      } else {
+        return b;
+      }
+    }
+    const r = packIntForAsn(bigintToBuf(sig.r));
+    const s = packIntForAsn(bigintToBuf(sig.s));
     const signatureAndHashType = joinBuffers(
       Buffer.from([0x30, r.length + s.length + 2 + 2]),
       Buffer.from([0x02, r.length]),
