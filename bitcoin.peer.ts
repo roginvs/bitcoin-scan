@@ -10,6 +10,11 @@ import {
   parseVersion,
 } from "./bitcoin.messages";
 
+/**
+ * This is simple wrapper of Socket
+ * - It buffers Bitcoin messages and calls callback when full message is ready
+ * - It answers on ping/pong messages
+ */
 export function createPeer(host: string, port: number, lastKnownBlock: number) {
   let client = new Socket();
 
@@ -71,8 +76,8 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
   });
   const me = {
     send,
-    onMessage: (command: string, payload: MessagePayload) => {
-      console.warn(`Got message but onMessage handler is not overwritten`);
+    onMessage: (command: string, payload: MessagePayload): void => {
+      throw new Error(`Got message but onMessage handler is not overwritten`);
     },
   };
 
