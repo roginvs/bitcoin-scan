@@ -18,7 +18,7 @@ sqlite3 database/files/transactions.db -quote 'select * from found_keys'
 # Or this way:
 while true; do \
   date ; \
-  echo -n "Unspent transactions: " ; \
+  echo -n "Unspent transaction outputs: " ; \
   sqlite3 database/files/transactions.db -quote 'select count(*) from unspent_transaction_output'; \
   echo -n "Signatures: " ; \
   sqlite3 database/files/transactions.db -quote 'select count(*) from signatures'; \
