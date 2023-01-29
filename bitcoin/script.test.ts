@@ -65,6 +65,6 @@ describe(`Scripting`, () => {
       throw new Error(result);
     }
 
-    console.dir(result, { depth: null });
+    // console.dir(result, { depth: null });
   });
 });
