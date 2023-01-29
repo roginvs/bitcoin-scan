@@ -105,21 +105,12 @@ function fetchPackOfUnprocessedBlocks() {
   }
 
   const demoBlocks: BlockDB[] = [
-    {
-      hash: Buffer.from(
-        "0000000000000000000052275994b49b434f3fc698008ee4a2920e9aebbcba25",
-        "hex"
-      ).reverse() as BlockHash,
-      id: 0 as BlockId,
-    },
-    {
-      hash: Buffer.from(
-        "0000000000000000000456bb21edbb8427586335158c08498daa3236b040c8d8",
-        "hex"
-      ).reverse() as BlockHash,
-      id: 0 as BlockId,
-    },
-  ];
+    "0000000000000000000052275994b49b434f3fc698008ee4a2920e9aebbcba25",
+    "0000000000000000000456bb21edbb8427586335158c08498daa3236b040c8d8",
+  ].map((blockHex) => ({
+    hash: Buffer.from(blockHex, "hex").reverse() as BlockHash,
+    id: 0 as BlockId,
+  }));
 
   const nextBlocksToFetch = USE_DEMO_BLOCKS
     ? demoBlocks
