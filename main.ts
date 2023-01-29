@@ -72,7 +72,7 @@ function onHeadersMessage(payload: MessagePayload) {
           `Got new block ${reverseBuf(lastKnownBlock).toString(
             "hex"
           )} time=${block.timestamp.toISOString()} current height = ${
-            lastKnownBlockFromDb.id
+            lastKnownBlockFromDb.id - 1
           } `
         );
       } else {
