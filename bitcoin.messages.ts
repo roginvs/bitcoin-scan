@@ -1,3 +1,5 @@
+import { Nominal } from "./nominaltypes";
+
 export function joinBuffers(...buffers: Buffer[]) {
   const len = buffers.reduce((acc, cur) => (acc = acc + cur.length), 0);
   const out = Buffer.alloc(len);
@@ -8,3 +10,5 @@ export function joinBuffers(...buffers: Buffer[]) {
   }
   return out;
 }
+
+export type NominalBuffer<T extends string> = Nominal<T, Buffer>;
