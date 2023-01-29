@@ -1,10 +1,16 @@
 import { bitcoinMessageMagic, protocolVersion } from "./consts";
 import { sha256 } from "./hashes";
 import {
+  BitcoinTransaction,
+  BitcoinTransactionIn,
+  BitcoinTransactionOut,
+} from "./messages.parse";
+import {
   BitcoinMessage,
   BlockHash,
   InventoryItem,
   MessagePayload,
+  TransactionPayload,
 } from "./messages.types";
 
 export function buildMessage(command: string, payload: MessagePayload) {
@@ -124,4 +130,46 @@ export function createGetdataMessage(inventories: InventoryItem[]) {
     ...inventories.flatMap(([type, value]) => [packUint32(type), value])
   ) as MessagePayload;
   return buildMessage("getdata", payload);
+}
+
+export function packTxIn(txin: BitcoinTransactionIn) {
+  const outpointIndex = Buffer.alloc(4);
+  outpointIndex.writeUInt32LE(txin.outpointIndex);
+
+  const scriptLen = packVarInt(txin.script.length);
+  const sequence = Buffer.alloc(4);
+  sequence.writeUInt32LE(txin.sequence);
+  return joinBuffers(
+    txin.outpointHash,
+    outpointIndex,
+    scriptLen,
+    txin.script,
+    sequence
+  );
+}
+export function packTxOut(txout: BitcoinTransactionOut) {
+  const value = Buffer.alloc(8);
+  value.writeBigInt64LE(txout.value);
+  const pkScriptLen = packVarInt(txout.script.length);
+  return joinBuffers(value, pkScriptLen, txout.script);
+}
+export function packTx(tx: BitcoinTransaction) {
+  const version = Buffer.alloc(4);
+  version.writeUInt32LE(tx.version);
+  // No flag yet
+  const txInCount = packVarInt(tx.txIn.length);
+  const txInList = tx.txIn.map((txIn) => packTxIn(txIn));
+
+  const txOutCount = packVarInt(tx.txOut.length);
+  const txOutList = tx.txOut.map((txOut) => packTxOut(txOut));
+  const lockTime = Buffer.alloc(4);
+  lockTime.writeUInt32LE(tx.lockTime);
+  return joinBuffers(
+    version,
+    txInCount,
+    ...txInList,
+    txOutCount,
+    ...txOutList,
+    lockTime
+  ) as TransactionPayload;
 }

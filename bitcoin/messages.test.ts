@@ -4,6 +4,7 @@ import {
   buildMessage,
   createGetdataMessage,
   joinBuffers,
+  packTx,
   packVarStr,
 } from "./messages.create";
 import { parseMessage, readTx } from "./messages.parse";
@@ -87,20 +88,30 @@ describe("Bitcoin messages", () => {
   });
 
   describe("Transactions", () => {
-    const [parsed1, rest1, hashingData1] = readTx(sourceTxRaw);
-    expect(rest1.length).toBe(0);
-    expect(sha256(sha256(hashingData1)).reverse().toString("hex")).toBe(
-      "0183bd75b61c3642bc4664a63f86acc6872045305de29722ee3e0c583483cdec"
-    );
+    it(`Reading`, () => {
+      const [parsed1, rest1, hashingData1] = readTx(sourceTxRaw);
+      expect(rest1.length).toBe(0);
+      expect(sha256(sha256(hashingData1)).reverse().toString("hex")).toBe(
+        "0183bd75b61c3642bc4664a63f86acc6872045305de29722ee3e0c583483cdec"
+      );
 
-    const [parsed2, rest2, hashingData2] = readTx(spendingTxRaw);
-    expect(rest2.length).toBe(0);
-    expect(sha256(sha256(hashingData2)).reverse().toString("hex")).toBe(
-      "c30df3c03045d6b0fd2ba83a90144133b85b3fdbb8949850b7a408b852821c54"
-    );
-    expect(parsed2.txIn.length).toBe(1);
-    expect(parsed2.txIn[0].outpointHash.toString("hex")).toBe(
-      sha256(sha256(hashingData1)).toString("hex")
-    );
+      const [parsed2, rest2, hashingData2] = readTx(spendingTxRaw);
+      expect(rest2.length).toBe(0);
+      expect(sha256(sha256(hashingData2)).reverse().toString("hex")).toBe(
+        "c30df3c03045d6b0fd2ba83a90144133b85b3fdbb8949850b7a408b852821c54"
+      );
+      expect(parsed2.txIn.length).toBe(1);
+      expect(parsed2.txIn[0].outpointHash.toString("hex")).toBe(
+        sha256(sha256(hashingData1)).toString("hex")
+      );
+    });
+    it(`Packing`, () => {
+      for (const txRaw of [sourceTxRaw, spendingTxRaw]) {
+        const [parsed, rest] = readTx(txRaw);
+        expect(rest.length).toBe(0);
+        const packed = packTx(parsed);
+        expect(packed.toString("hex")).toBe(txRaw.toString("hex"));
+      }
+    });
   });
 });
