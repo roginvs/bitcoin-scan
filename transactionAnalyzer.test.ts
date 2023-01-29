@@ -88,89 +88,92 @@ describe("createAnalyzer", () => {
 
     const analyzer = createAnalyzer(true);
 
-    analyzer.transaction(txOut);
+    const statsIn = analyzer.transaction(txOut);
+    expect(statsIn.savedOutputsCount).toBe(2);
 
-    const txInForSig1 = packTx({
-      // This will be updated after packing and unpacking
-      hash: Buffer.alloc(0) as TransactionHash,
-      lockTime: 0,
-      version: 1,
-      txIn: [
-        {
-          outpointHash: txOut.hash,
-          outpointIndex: 0,
-          script: pkScript as Buffer as SignatureScript,
-          sequence: 0xffffffff,
-        },
-      ],
-      txOut: [],
-    });
-    const sig1Msg = sha256(
-      joinBuffers(
-        txInForSig1,
-        // hashTypeCode
-        Buffer.from("01000000", "hex")
-      )
-    );
+    for (const outpointIndex of [0, 1]) {
+      const txInForSig = packTx({
+        // This will be updated after packing and unpacking
+        hash: Buffer.alloc(0) as TransactionHash,
+        lockTime: 0,
+        version: 1,
+        txIn: [
+          {
+            outpointHash: txOut.hash,
+            outpointIndex,
+            script: pkScript as Buffer as SignatureScript,
+            sequence: 0xffffffff,
+          },
+        ],
+        txOut: [],
+      });
+      const sig1Msg = sha256(
+        joinBuffers(
+          txInForSig,
+          // hashTypeCode
+          Buffer.from("01000000", "hex")
+        )
+      );
 
-    const k = BigInt("0x31231412412312333");
-    const sig = signature({
-      curve: Secp256k1,
-      msgHash: BigInt("0x" + sha256(sig1Msg).toString("hex")),
-      k,
-      privateKey: BigInt("0x" + privateKeyBuf.toString("hex")),
-    });
+      const k = BigInt("0x31231412412312333");
+      const sig = signature({
+        curve: Secp256k1,
+        msgHash: BigInt("0x" + sha256(sig1Msg).toString("hex")),
+        k,
+        privateKey: BigInt("0x" + privateKeyBuf.toString("hex")),
+      });
 
-    function bigintToBuf(n: BigInt) {
-      let s = n.toString(16);
-      if (s.length % 2 != 0) {
-        s = "0" + s;
+      function bigintToBuf(n: BigInt) {
+        let s = n.toString(16);
+        if (s.length % 2 != 0) {
+          s = "0" + s;
+        }
+        return Buffer.from(s, "hex");
       }
-      return Buffer.from(s, "hex");
-    }
-    function packIntForAsn(b: Buffer) {
-      if (b[0] & 0b10000000) {
-        return joinBuffers(Buffer.from([0]), b);
-      } else {
-        return b;
+      function packIntForAsn(b: Buffer) {
+        if (b[0] & 0b10000000) {
+          return joinBuffers(Buffer.from([0]), b);
+        } else {
+          return b;
+        }
       }
+      const r = packIntForAsn(bigintToBuf(sig.r));
+      const s = packIntForAsn(bigintToBuf(sig.s));
+      const signatureAndHashType = joinBuffers(
+        Buffer.from([0x30, r.length + s.length + 2 + 2]),
+        Buffer.from([0x02, r.length]),
+        r,
+        Buffer.from([0x02, s.length]),
+        s,
+        Buffer.from([1])
+      );
+      expect(asn1parse(signatureAndHashType)[1].length).toBe(1);
+
+      const script = joinBuffers(
+        Buffer.from([signatureAndHashType.length]),
+        signatureAndHashType,
+        Buffer.from([myPublicKeyCompressed.length]),
+        myPublicKeyCompressed
+      ) as SignatureScript;
+      const txIn = {
+        // This will be updated after packing and unpacking
+        hash: Buffer.alloc(0) as TransactionHash,
+        lockTime: 0,
+        version: 1,
+        txIn: [
+          {
+            outpointHash: txOut.hash,
+            outpointIndex,
+            script,
+            sequence: 0xffffffff,
+          },
+        ],
+        txOut: [],
+      };
+
+      const stats = analyzer.transaction(txIn);
+      expect(stats.savedSignatures).toBe(1);
     }
-    const r = packIntForAsn(bigintToBuf(sig.r));
-    const s = packIntForAsn(bigintToBuf(sig.s));
-    const signatureAndHashType = joinBuffers(
-      Buffer.from([0x30, r.length + s.length + 2 + 2]),
-      Buffer.from([0x02, r.length]),
-      r,
-      Buffer.from([0x02, s.length]),
-      s,
-      Buffer.from([1])
-    );
-    expect(asn1parse(signatureAndHashType)[1].length).toBe(1);
-
-    const script = joinBuffers(
-      Buffer.from([signatureAndHashType.length]),
-      signatureAndHashType,
-      Buffer.from([myPublicKeyCompressed.length]),
-      myPublicKeyCompressed
-    ) as SignatureScript;
-    const txIn1 = {
-      // This will be updated after packing and unpacking
-      hash: Buffer.alloc(0) as TransactionHash,
-      lockTime: 0,
-      version: 1,
-      txIn: [
-        {
-          outpointHash: txOut.hash,
-          outpointIndex: 0,
-          script,
-          sequence: 0xffffffff,
-        },
-      ],
-      txOut: [],
-    };
-
-    const stats = analyzer.transaction(txIn1);
-    console.info(stats);
   });
 
   /*
