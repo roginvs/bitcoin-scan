@@ -77,7 +77,9 @@ function onHeadersMessage(payload: MessagePayload) {
         );
       } else {
         console.warn(
-          `Hmm, got block but not understand where it is. Maybe good to save it`
+          `Hmm, got block ${reverseBuf(lastKnownBlock).toString(
+            "hex"
+          )} time=${block.timestamp.toISOString()} but not understand where it is. Maybe good to save it`
         );
       }
 
