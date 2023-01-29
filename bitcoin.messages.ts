@@ -176,7 +176,7 @@ function parseVersionServices(payload: Buffer) {
 export function parseVersion(payload: MessagePayload) {
   const ver = payload.subarray(0, 4);
   const services = payload.subarray(4, 4 + 8);
-  const timestamp = payload.readInt32LE(4 + 8);
+  const timestamp = payload.readUInt32LE(4 + 8);
   // Skip addresses for now
   // Skip nonce for now too
   const [userAgentLen, fromUserAgent] = readVarInt(
@@ -188,7 +188,7 @@ export function parseVersion(payload: MessagePayload) {
   const rest = fromUserAgent.subarray(userAgentLen + 4);
   console.info(
     `Got hello ver=${ver.readUInt32LE(0)} time=${new Date(
-      timestamp
+      timestamp * 1000
     ).toISOString()} userAgent=${userAgent} services=${parseVersionServices(
       services
     ).join(",")} startHeight=${startHeight} rest=${rest.toString("hex")}`
