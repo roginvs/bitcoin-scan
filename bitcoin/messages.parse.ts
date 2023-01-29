@@ -218,7 +218,11 @@ export function readTx(payload: TransactionPayload) {
   const lockTime = buf.readUInt32LE(0);
   buf = buf.subarray(4);
 
-  const hashingSource = payload.subarray(0, payload.length - buf.length);
+  const hashingSource = payload.subarray(
+    0,
+    payload.length - buf.length
+  ) as TransactionPayload;
+  const rest = buf;
   return [
     {
       version,
@@ -226,7 +230,7 @@ export function readTx(payload: TransactionPayload) {
       txOut,
       lockTime,
     },
-    buf,
+    rest,
     hashingSource,
   ] as const;
 }
