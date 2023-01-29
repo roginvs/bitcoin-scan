@@ -121,6 +121,7 @@ export function readBlockHeader(buf: Buffer) {
   const nonce = buf.subarray(4 + 32 + 32 + 4 + 4, 4 + 32 + 32 + 4 + 4 + 4);
   const [txCount, rest] = readVarInt(buf.subarray(4 + 32 + 32 + 4 + 4 + 4));
   const hashingData = buf.subarray(0, 4 + 32 + 32 + 4 + 4 + 4);
+  const hash = sha256(sha256(hashingData)) as BlockHash;
   return [
     {
       version,
@@ -130,9 +131,9 @@ export function readBlockHeader(buf: Buffer) {
       bits,
       nonce,
       txCount,
+      hash,
     },
     rest,
-    hashingData,
   ] as const;
 }
 export type BlockHeader = ReturnType<typeof readBlockHeader>[0];
@@ -208,9 +209,6 @@ export function readTxOut(buf: Buffer) {
 }
 export type BitcoinTransactionOut = ReturnType<typeof readTxOut>[0];
 
-/**
- * Returns parsed data, rest, and hashing slice
- */
 export function readTx(payload: TransactionPayload) {
   let buf: Buffer = payload;
 
@@ -253,10 +251,8 @@ export function readTx(payload: TransactionPayload) {
   const lockTime = buf.readUInt32LE(0);
   buf = buf.subarray(4);
 
-  const hashingSource = payload.subarray(
-    0,
-    payload.length - buf.length
-  ) as TransactionPayload;
+  const hashingSource = payload.subarray(0, payload.length - buf.length);
+  const hash = sha256(sha256(hashingSource));
   const rest = buf;
   return [
     {
@@ -264,9 +260,9 @@ export function readTx(payload: TransactionPayload) {
       txIn,
       txOut,
       lockTime,
+      hash,
     },
     rest,
-    hashingSource,
   ] as const;
 }
 export type BitcoinTransaction = ReturnType<typeof readTx>[0];

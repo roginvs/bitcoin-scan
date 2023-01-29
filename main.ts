@@ -48,18 +48,17 @@ function onHeadersMessage(payload: MessagePayload) {
   let [count, headers] = readVarInt(payload);
   if (count > 0) {
     while (count > 0) {
-      const [block, rest, hashingData] = readBlockHeader(headers);
+      const [block, rest] = readBlockHeader(headers);
       headers = rest;
 
       if (lastKnownBlock && lastKnownBlock.equals(block.prevBlock)) {
-        const blockHash = sha256(sha256(hashingData)) as BlockHash;
-        lastKnownBlock = blockHash;
-        blockchain.pushNewKnownBlock(blockHash);
+        lastKnownBlock = block.hash;
+        blockchain.pushNewKnownBlock(block.hash);
         const lastKnownBlockFromDb = blockchain
           .getLastKnownBlocks()
           .slice()
           .shift()!;
-        if (!lastKnownBlockFromDb.hash.equals(blockHash)) {
+        if (!lastKnownBlockFromDb.hash.equals(block.hash)) {
           throw new Error(
             `Internal error: database must have last block the one we pushed!`
           );
