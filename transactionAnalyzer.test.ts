@@ -1,12 +1,19 @@
 import { createPrivateKey, createPublicKey, generateKeyPairSync } from "crypto";
+import { asn1parse } from "./bitcoin/asn1";
 import { compressPublicKey } from "./bitcoin/compressPublicKey";
 import { ripemd160, sha256 } from "./bitcoin/hashes";
 import { packTx } from "./bitcoin/messages.create";
 import { BitcoinTransaction, readTx } from "./bitcoin/messages.parse";
-import { PkScript, TransactionHash } from "./bitcoin/messages.types";
+import {
+  PkScript,
+  SignatureScript,
+  TransactionHash,
+} from "./bitcoin/messages.types";
 import { isSourceScriptP2PKH } from "./bitcoin/script";
 import { sourceTxRaw, spendingTxRaw } from "./bitcoin/testdata";
 import { joinBuffers } from "./bitcoin/utils";
+import { Secp256k1 } from "./my-elliptic-curves/curves.named";
+import { signature } from "./my-elliptic-curves/ecdsa";
 import { createAnalyzer } from "./transactionAnalyzer";
 
 describe("createAnalyzer", () => {
@@ -26,7 +33,6 @@ describe("createAnalyzer", () => {
     }
   });
 
-  /*
   it(`Catches duplicate r`, () => {
     const privKeySec1 = Buffer.from(
       "MHQCAQEEIB8g6XfObz3nqZLyJn449IlRAeFaKBX62uU8SOWwE5E5oAcGBSuBBAAKoUQDQgAEGQwy8UYanDS2pbnB/zY2Ev4f+I4bJZA68giEWqx11LlIf69ZVHtCnHFSB0zBfZzCqcl4GjOs+/PQyXeVsKJGYg==",
@@ -59,7 +65,14 @@ describe("createAnalyzer", () => {
         hash: Buffer.alloc(0) as TransactionHash,
         lockTime: 0,
         version: 1,
-        txIn: [],
+        txIn: [
+          {
+            outpointHash: Buffer.alloc(32).fill(0) as TransactionHash,
+            outpointIndex: 0,
+            script: Buffer.alloc(0) as SignatureScript,
+            sequence: 1,
+          },
+        ],
         txOut: [
           {
             script: pkScript,
@@ -77,20 +90,85 @@ describe("createAnalyzer", () => {
 
     analyzer.transaction(txOut);
 
-    const txInForSig = readTx(
-      packTx({
-        // This will be updated after packing and unpacking
-        hash: Buffer.alloc(0) as TransactionHash,
-        lockTime: 0,
-        version: 1,
-        txIn: [{}],
-        txOut: [],
-      })
-    )[0];
+    const txInForSig1 = packTx({
+      // This will be updated after packing and unpacking
+      hash: Buffer.alloc(0) as TransactionHash,
+      lockTime: 0,
+      version: 1,
+      txIn: [
+        {
+          outpointHash: txOut.hash,
+          outpointIndex: 0,
+          script: pkScript as Buffer as SignatureScript,
+          sequence: 0xffffffff,
+        },
+      ],
+      txOut: [],
+    });
+    const sig1Msg = sha256(
+      joinBuffers(
+        txInForSig1,
+        // hashTypeCode
+        Buffer.from("01000000", "hex")
+      )
+    );
+
+    const k = BigInt("0x31231412412312333");
+    const sig = signature({
+      curve: Secp256k1,
+      msgHash: BigInt("0x" + sha256(sig1Msg).toString("hex")),
+      k,
+      privateKey: BigInt("0x" + privateKeyBuf.toString("hex")),
+    });
+
+    function bigintToBuf(n: BigInt) {
+      let s = n.toString(16);
+      if (s.length % 2 != 0) {
+        s = "0" + s;
+      }
+      return Buffer.from(s, "hex");
+    }
+    const r = bigintToBuf(sig.r);
+    const s = bigintToBuf(sig.s);
+    const signatureAndHashType = joinBuffers(
+      Buffer.from([0x30, r.length + s.length + 2 + 2]),
+      Buffer.from([0x02, r.length]),
+      r,
+      Buffer.from([0x02, s.length]),
+      s,
+      Buffer.from([1])
+    );
+    expect(asn1parse(signatureAndHashType)[1].length).toBe(1);
+
+    const script = joinBuffers(
+      Buffer.from([signatureAndHashType.length]),
+      signatureAndHashType,
+      Buffer.from([myPublicKeyCompressed.length]),
+      myPublicKeyCompressed
+    ) as SignatureScript;
+    const txIn1 = {
+      // This will be updated after packing and unpacking
+      hash: Buffer.alloc(0) as TransactionHash,
+      lockTime: 0,
+      version: 1,
+      txIn: [
+        {
+          outpointHash: txOut.hash,
+          outpointIndex: 0,
+          script,
+          sequence: 0xffffffff,
+        },
+      ],
+      txOut: [],
+    };
+
+    const stats = analyzer.transaction(txIn1);
+    console.info(stats);
   });
-  */
+
+  /*
   it(`Recovers private key`, () => {
-    /*
+    
     Those are spending txes (in Buffer order):
       4d70dc463c4ca1cafdb40c57d58b2b5fdcade4675289a78c7fd67e2086199e25
       b491171b8a31e5e2bcfb87bb3561a820df0b312eb5e133b1118dca9bf7fbed19
@@ -110,6 +188,7 @@ describe("createAnalyzer", () => {
         121333 00000000000022474e654ec4ebd6cd665a3602d6cd5ddb34c91039d152974fec
       9197b170e4b8b2aa438d122a2ffe99a3e138cc682532cefecbc34803209aca5f
         121343 0000000000005a8bb3f60dafac542328a83d930d0fd6811e77758189022230bb
-    */
+    
   });
+  */
 });
