@@ -176,6 +176,7 @@ function parseVersionServices(payload: Buffer) {
 export function parseVersion(payload: MessagePayload) {
   const ver = payload.subarray(0, 4);
   const services = payload.subarray(4, 4 + 8);
+  // Timestamp is 64bit but for now I do not care
   const timestamp = payload.readUInt32LE(4 + 8);
   // Skip addresses for now
   // Skip nonce for now too
