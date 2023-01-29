@@ -67,3 +67,36 @@ export function packVarStr(str: string) {
   out.write(str, strLen.length, "latin1");
   return out;
 }
+
+function packUint32(val: number) {
+  const buf = Buffer.alloc(4);
+  buf.writeUInt32LE(val);
+  return buf;
+}
+
+export function createVersionMessage(lastKnownBlock: number) {
+  const services = Buffer.from("0100000000000000", "hex");
+  const date = Buffer.alloc(8).fill(0);
+  date.writeInt32LE(new Date().getTime() / 1000);
+  const addr = Buffer.from(
+    "010000000000000000000000000000000000FFFF000000000000",
+    "hex"
+  );
+  const nodeId = Buffer.from("3B2EB35D8CE61711", "hex");
+  const subVersion = packVarStr("/Satoshi:0.7.2/"); // /Satoshi:0.16.2(bitcore)/
+  const lastKnownBlockBuf = packUint32(lastKnownBlock);
+  const payload = joinBuffers(
+    protocolVersion,
+    services,
+    date,
+    addr,
+    addr,
+    nodeId,
+    subVersion,
+    lastKnownBlockBuf
+  ) as MessagePayload;
+  return buildMessage("version", payload);
+}
+export function createVerackMessage() {
+  return buildMessage("verack", Buffer.from("") as MessagePayload);
+}
