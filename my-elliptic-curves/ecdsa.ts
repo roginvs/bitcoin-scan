@@ -98,13 +98,19 @@ export function get_private_key_if_diff_k_is_known(
     pointForFirstSig,
     get_point_inverse(pointForFirstSig, curve.p),
   ];
-  const gKdiff = modulo_power_point(curve.G, kDiff, curve.a, curve.p);
-  const pointsForSecondsSig = pointsForFirstSig.map((point) =>
-    point_add(point, gKdiff, curve.a, curve.p)
-  );
+  if (kDiff !== BigInt(0)) {
+    const gKdiff = modulo_power_point(curve.G, kDiff, curve.a, curve.p);
+    const pointsForSecondsSig = pointsForFirstSig.map((point) =>
+      point_add(point, gKdiff, curve.a, curve.p)
+    );
 
-  if (pointsForSecondsSig.filter((p) => p && p[0] === sig2.r).length === 0) {
-    throw new Error(`Provided kDiff is not correct!`);
+    if (pointsForSecondsSig.filter((p) => p && p[0] === sig2.r).length === 0) {
+      throw new Error(`Provided kDiff is not correct!`);
+    }
+  } else {
+    if (sig1.r !== sig2.r) {
+      throw new Error(`Provided kDiff is not correct!`);
+    }
   }
 
   const r2inverse = modulo_inverse(sig2.r, curve.n);
