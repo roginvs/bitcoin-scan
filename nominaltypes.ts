@@ -7,8 +7,6 @@ export function castName<T extends string, U>(
   return value as Nominal<T, U>;
 }
 
-type TEST = Nominal<"test", string>;
-
 type GetNominal<T> = T extends infer U & { _nominal: infer V extends string }
   ? V
   : never;
