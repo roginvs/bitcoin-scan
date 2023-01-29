@@ -1,12 +1,14 @@
 import { genesisBlockHash } from "./consts";
+import { sha256 } from "./hashes";
 import {
   buildMessage,
   createGetdataMessage,
   joinBuffers,
   packVarStr,
 } from "./messages.create";
-import { parseMessage } from "./messages.parse";
+import { parseMessage, readTx } from "./messages.parse";
 import { HashType, MessagePayload } from "./messages.types";
+import { sourceTxRaw, spendingTxRaw } from "./testdata";
 
 function bufFromStr(str: string) {
   return Buffer.from(
@@ -82,5 +84,23 @@ describe("Bitcoin messages", () => {
       "01" + "02000000" + genesisBlockHash.toString("hex")
     );
     expect(parsed[2].length).toBe(0);
+  });
+
+  describe("Transactions", () => {
+    const [parsed1, rest1, hashingData1] = readTx(sourceTxRaw);
+    expect(rest1.length).toBe(0);
+    expect(sha256(sha256(hashingData1)).reverse().toString("hex")).toBe(
+      "0183bd75b61c3642bc4664a63f86acc6872045305de29722ee3e0c583483cdec"
+    );
+
+    const [parsed2, rest2, hashingData2] = readTx(spendingTxRaw);
+    expect(rest2.length).toBe(0);
+    expect(sha256(sha256(hashingData2)).reverse().toString("hex")).toBe(
+      "c30df3c03045d6b0fd2ba83a90144133b85b3fdbb8949850b7a408b852821c54"
+    );
+    expect(parsed2.txIn.length).toBe(1);
+    expect(parsed2.txIn[0].outpointHash.toString("hex")).toBe(
+      sha256(sha256(hashingData1)).toString("hex")
+    );
   });
 });

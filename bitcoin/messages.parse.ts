@@ -1,6 +1,15 @@
 import { bitcoinMessageMagic, protocolVersion } from "./consts";
 import { sha256 } from "./hashes";
-import { BitcoinMessage, BlockHash, MessagePayload } from "./messages.types";
+import {
+  BitcoinMessage,
+  BlockHash,
+  BlockPayload,
+  MessagePayload,
+  PkScript,
+  SignatureScript,
+  TransactionPayload,
+  TransationHash,
+} from "./messages.types";
 
 export function parseMessage(buf: Buffer) {
   if (buf.length < 4 + 12 + 4 + 4) {
@@ -125,3 +134,100 @@ export function readBlockHeader(buf: Buffer) {
   ] as const;
 }
 export type BlockHeader = ReturnType<typeof readBlockHeader>[0];
+
+export function readTxIn(buf: Buffer) {
+  const outpointHash = buf.subarray(0, 32) as TransationHash;
+  const outpointIndex = buf.readUInt32LE(32);
+  let scriptLen;
+  [scriptLen, buf] = readVarInt(buf.subarray(36));
+  const script = buf.subarray(0, scriptLen) as SignatureScript;
+  buf = buf.subarray(scriptLen);
+  const sequence = buf.readUInt32LE(0);
+  buf = buf.subarray(4);
+  return [
+    {
+      outpointHash,
+      outpointIndex,
+      script,
+      sequence,
+    },
+    buf,
+  ] as const;
+}
+export type BitcoinTransactionIn = ReturnType<typeof readTxIn>[0];
+
+export function readTxOut(buf: Buffer) {
+  const value = buf.subarray(0, 8).readBigInt64LE(0);
+  buf = buf.subarray(8);
+  let scriptLen;
+  [scriptLen, buf] = readVarInt(buf);
+  const script = buf.subarray(0, scriptLen) as PkScript;
+  buf = buf.subarray(scriptLen);
+  return [
+    {
+      value,
+      script,
+    },
+    buf,
+  ] as const;
+}
+export type BitcoinTransactionOut = ReturnType<typeof readTxOut>[0];
+
+/**
+ * Returns parsed data, rest, and hashing slice
+ */
+export function readTx(payload: TransactionPayload) {
+  let buf: Buffer = payload;
+
+  const version = buf.readUInt32LE(0);
+  const isFlag = buf[4] === 0;
+  if (isFlag && buf[5] !== 1) {
+    console.error(buf);
+    throw new Error("Unknown flag");
+  }
+
+  buf = isFlag ? buf.subarray(6) : buf.subarray(4);
+
+  let txInCount;
+  [txInCount, buf] = readVarInt(buf);
+  if (txInCount === 0) {
+    throw new Error("LOL tx_in count is zero");
+  }
+  const txIn: BitcoinTransactionIn[] = [];
+  while (txInCount > 0) {
+    let tx;
+    [tx, buf] = readTxIn(buf);
+    txIn.push(tx);
+    txInCount--;
+  }
+
+  let txOutCount;
+  [txOutCount, buf] = readVarInt(buf);
+  const txOut: BitcoinTransactionOut[] = [];
+  while (txOutCount > 0) {
+    let tx;
+    [tx, buf] = readTxOut(buf);
+    txOut.push(tx);
+    txOutCount--;
+  }
+
+  if (isFlag) {
+    throw new Error("Not implemented yet");
+  }
+
+  const lockTime = buf.readUInt32LE(0);
+  buf = buf.subarray(4);
+
+  const hashingSource = payload.subarray(0, payload.length - buf.length);
+  return [
+    {
+      version,
+      txIn,
+      txOut,
+      lockTime,
+    },
+    buf,
+    hashingSource,
+  ] as const;
+}
+export type BitcoinTransaction = ReturnType<typeof readTx>[0];

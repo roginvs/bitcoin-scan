@@ -2,9 +2,15 @@ import { Nominal } from "../nominal_types/nominaltypes";
 
 export type BitcoinMessage = Nominal<"bitcoin message", Buffer>;
 export type MessagePayload = Nominal<"message payload", Buffer>;
+
 export type BlockHash = Nominal<"block hash", Buffer>;
 export type TransationHash = Nominal<"transaction hash", Buffer>;
+
 export type BlockPayload = Nominal<"block payload", Buffer>;
+export type TransactionPayload = Nominal<"transaction payload", Buffer>;
+
+export type PkScript = Nominal<"public key script of tx_out", Buffer>;
+export type SignatureScript = Nominal<"signature script of tx_in", Buffer>;
 
 export enum HashType {
   /** Any data of with this number may be ignored */

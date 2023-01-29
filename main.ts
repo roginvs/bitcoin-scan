@@ -158,9 +158,35 @@ function onBlockMessage(payload: MessagePayload) {
   }
 }
 
-function processBlock(hash: BlockHash, blockPayload: BlockPayload) {
+function processBlock(hash: BlockHash, payload: BlockPayload) {
   console.info(`Processing block ${reverseBuf(hash).toString("hex")}`);
   // TODO
+  /*
+  const [block, transactions] = readBlockHeader(payload);
+  console.info(`\n\n--------------\nBlock=`, hash, block);
+  let buf = transactions;
+  const txs: Tx[] = [];
+  for (let i = 0; i < block.txCount; i++) {
+    let tx: Tx;
+    [tx, buf] = readTx(buf);
+    txs.push(tx);
+    if (i === 0 || i === 1 || i === 2) {
+      console.info("=================tx====");
+      console.info(sha256(sha256(tx.hashingSource)).toString("hex"));
+      console.info(tx);
+      console.info(
+        `Input scripts: `,
+        tx.txIn.map((txin) => txin.script.toString("hex")),
+      );
+      console.info("Full transaction: ", tx.hashingSource.toString("hex"));
+      console.info(sha256(sha256(tx.hashingSource)).toString("hex"));
+      console.info(`--------------------------\n`);
+    }
+  }
+  if (buf.length > 0) {
+    throw new Error("Some data is left after reading transactions");
+  }
+  */
 }
 
 peer.onMessage = (command, payload) => {
