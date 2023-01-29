@@ -13,5 +13,5 @@ Currently works only for P2PKH scripts.
 Then check found keys
 
 ```
-sqlite3 db/transactions.db -quote 'select * from found_keys'
+sqlite3 database/files/transactions.db -quote 'select * from found_keys'
 ```
