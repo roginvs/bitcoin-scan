@@ -10,7 +10,7 @@ import { createTransactionsStorage } from "./db/transactions";
 export function createAnalyzer(isMemory: boolean = false) {
   const storage = createTransactionsStorage(isMemory);
 
-  function transaction(tx: BitcoinTransaction) {
+  function transaction(tx: BitcoinTransaction, blockInformation: string) {
     function debug(msg: string) {
       // console.info(`Tx ${tx.hash.toString("hex")} ${msg}`);
     }
@@ -67,8 +67,9 @@ export function createAnalyzer(isMemory: boolean = false) {
         signatureCheck.msg,
         signatureCheck.r,
         signatureCheck.s,
-        tx.hash,
-        index
+        blockInformation
+        // tx.hash,
+        // index
       );
       if (isTheSameR) {
         keysFound++;

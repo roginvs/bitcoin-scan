@@ -21,13 +21,13 @@ describe("createAnalyzer", () => {
     const analyzer = createAnalyzer(true);
     {
       const sourceTx = readTx(sourceTxRaw)[0];
-      const stats1 = analyzer.transaction(sourceTx);
+      const stats1 = analyzer.transaction(sourceTx, "some info");
       expect(stats1.savedOutputsCount).toBe(1);
       expect(stats1.savedSignatures).toBe(0);
     }
     {
       const spendingTx = readTx(spendingTxRaw)[0];
-      const stats2 = analyzer.transaction(spendingTx);
+      const stats2 = analyzer.transaction(spendingTx, "some info");
       expect(stats2.savedOutputsCount).toBe(1);
       expect(stats2.savedSignatures).toBe(1);
     }
@@ -88,7 +88,7 @@ describe("createAnalyzer", () => {
 
     const analyzer = createAnalyzer(true);
 
-    const statsIn = analyzer.transaction(txOut);
+    const statsIn = analyzer.transaction(txOut, "some infoo");
     expect(statsIn.savedOutputsCount).toBe(2);
 
     for (const outpointIndex of [0, 1]) {
@@ -171,7 +171,7 @@ describe("createAnalyzer", () => {
         txOut: [],
       };
 
-      const stats = analyzer.transaction(txIn);
+      const stats = analyzer.transaction(txIn, "some info");
       expect(stats.savedSignatures).toBe(1);
       if (outpointIndex === 1) {
         expect(stats.keysFound).toBe(1);

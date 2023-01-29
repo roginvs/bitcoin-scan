@@ -31,9 +31,9 @@ export function createTransactionsStorage(isMemory = false) {
     compressed_public_key CHARACTER(33) NOT NULL, 
     msg CHARACTER (32) NOT NULL,
     r CHARACTER(32) NOT NULL,
-    s CHARACTER(32) NOT NULL,
-    spending_tx_hash CHARACTER(32) NOT NULL,
-    spending_tx_input_index INTEGER NOT NULL
+    s CHARACTER(32) NOT NULL
+    // spending_tx_hash CHARACTER(32) NOT NULL,
+    // spending_tx_input_index INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS signature_pub_r ON signatures
     (compressed_public_key, r);
@@ -89,10 +89,10 @@ export function createTransactionsStorage(isMemory = false) {
         compressed_public_key,
         msg,
         r,
-        s,
-        spending_tx_hash,
-        spending_tx_input_index
-      ) values (?, ?, ?, ?, ?, ?)
+        s
+        // spending_tx_hash,
+        // spending_tx_input_index
+      ) values (?, ?, ?, ?, ?)
   `);
 
   const checkDuplicatesSql = sql.prepare(`
@@ -100,9 +100,9 @@ export function createTransactionsStorage(isMemory = false) {
       compressed_public_key,
       msg,
       r,
-      s,
-      spending_tx_hash,
-      spending_tx_input_index
+      s
+      // spending_tx_hash,
+      // spending_tx_input_index
     from signatures
     where compressed_public_key = ? and r = ?
  
@@ -113,8 +113,8 @@ export function createTransactionsStorage(isMemory = false) {
     msg: Buffer;
     r: Buffer;
     s: Buffer;
-    spending_tx_hash: TransactionHash;
-    spending_tx_input_index: number;
+    //spending_tx_hash: TransactionHash;
+    //spending_tx_input_index: number;
   }
 
   function saveSignatureDetails(
@@ -122,8 +122,9 @@ export function createTransactionsStorage(isMemory = false) {
     msg: Buffer,
     r: Buffer,
     s: Buffer,
-    spending_tx_hash: TransactionHash,
-    spending_tx_input_index: number
+    blockInformation: string
+    //spending_tx_hash: TransactionHash,
+    //spending_tx_input_index: number
   ) {
     const sameValues = checkDuplicatesSql.all(
       compressed_public_key,
@@ -141,8 +142,8 @@ export function createTransactionsStorage(isMemory = false) {
         msg,
         r,
         s,
-        spending_tx_hash,
-        spending_tx_input_index,
+        //spending_tx_hash,
+        //spending_tx_input_index,
       },
     ];
     const isNewKeyDerived = derivePrivateKey(dataToDeriveKey);
@@ -151,9 +152,9 @@ export function createTransactionsStorage(isMemory = false) {
       compressed_public_key,
       msg,
       r,
-      s,
-      spending_tx_hash,
-      spending_tx_input_index
+      s
+      // spending_tx_hash,
+      // spending_tx_input_index
     );
     return isNewKeyDerived;
   }

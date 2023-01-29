@@ -156,22 +156,26 @@ function onBlockMessage(payload: BlockPayload) {
 }
 
 function processBlock(block: BitcoinBlock, blockId: BlockId) {
-  console.info(
-    `Processing block ${reverseBuf(block.hash).toString(
-      "hex"
-    )} n=${blockId} date=${block.timestamp.toISOString()}`
-  );
+  const blockInformation = `${reverseBuf(block.hash).toString("hex")} n=${
+    blockId - 1
+  } date=${block.timestamp.toISOString()}`;
+  console.info(`Processing block ${blockInformation}`);
   let savedOutputsCount = 0;
   let savedSignatures = 0;
+  let keysFound = 0;
   for (const tx of block.transactions) {
-    const stats = analyzer.transaction(tx);
+    const stats = analyzer.transaction(tx, blockInformation);
     savedOutputsCount += stats.savedOutputsCount;
     savedSignatures += stats.savedSignatures;
+    keysFound += stats.keysFound;
   }
   blockchain.markBlockAsProccessed(blockId);
   console.info(
     `  tx=${block.transactions.length} savedOutputsCount=${savedOutputsCount} savedSignatures=${savedSignatures}`
   );
+  if (keysFound > 0) {
+    console.info(`FOUND NEW KEYS`);
+  }
 }
 
 peer.onMessage = (command, payload) => {
