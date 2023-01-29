@@ -95,24 +95,6 @@ export function createTransactionsStorage(isMemory = false) {
       ) values (?, ?, ?, ?, ?, ?)
   `);
 
-  function saveSignatureDetails(
-    compressed_public_key: Buffer,
-    msg: Buffer,
-    r: Buffer,
-    s: Buffer,
-    spending_tx_hash: TransactionHash,
-    spending_tx_input_index: number
-  ) {
-    saveSignatureDetailsSql.run(
-      compressed_public_key,
-      msg,
-      r,
-      s,
-      spending_tx_hash,
-      spending_tx_input_index
-    );
-  }
-
   const checkDuplicatesSql = sql.prepare(`
     select  
       compressed_public_key,
@@ -123,22 +105,70 @@ export function createTransactionsStorage(isMemory = false) {
       spending_tx_input_index
     from signatures
     where compressed_public_key = ? and r = ?
-    group by msg
-    having count(*) > 1
+ 
   `);
-  function checkDuplicates(compressed_public_key: Buffer, r: Buffer) {
-    const sameValues = checkDuplicatesSql.all(compressed_public_key, r) as {
-      compressed_public_key: Buffer;
-      msg: Buffer;
-      r: Buffer;
-      s: Buffer;
-      spending_tx_hash: TransactionHash;
-      spending_tx_input_index: number;
-    }[];
-    if (sameValues.length > 1) {
-      console.info(sameValues);
-      throw new Error("AND HERE WE STOP");
+
+  interface TransactionRow {
+    compressed_public_key: Buffer;
+    msg: Buffer;
+    r: Buffer;
+    s: Buffer;
+    spending_tx_hash: TransactionHash;
+    spending_tx_input_index: number;
+  }
+
+  function saveSignatureDetails(
+    compressed_public_key: Buffer,
+    msg: Buffer,
+    r: Buffer,
+    s: Buffer,
+    spending_tx_hash: TransactionHash,
+    spending_tx_input_index: number
+  ) {
+    const sameValues = checkDuplicatesSql.all(
+      compressed_public_key,
+      r
+    ) as TransactionRow[];
+    if (sameValues.some((valuesInDb) => valuesInDb.s.equals(s))) {
+      // Ok, we already have data with such compressed_public_key,r,s
+      return false;
     }
+
+    const dataToDeriveKey = [
+      ...sameValues,
+      {
+        compressed_public_key,
+        msg,
+        r,
+        s,
+        spending_tx_hash,
+        spending_tx_input_index,
+      },
+    ];
+    const isNewKeyDerived = derivePrivateKey(dataToDeriveKey);
+
+    saveSignatureDetailsSql.run(
+      compressed_public_key,
+      msg,
+      r,
+      s,
+      spending_tx_hash,
+      spending_tx_input_index
+    );
+    return isNewKeyDerived;
+  }
+
+  function derivePrivateKey(data: TransactionRow[]) {
+    let foundKey = false;
+    for (let i = 0; i < data.length - 1; i++) {
+      for (let j = i + 1; j < data.length; j++) {
+        foundKey ||= derivePrivateKeyFromPair(data[i], data[j]);
+      }
+    }
+    return foundKey;
+  }
+  function derivePrivateKeyFromPair(a: TransactionRow, b: TransactionRow) {
+    return false;
   }
 
   return {
@@ -146,6 +176,5 @@ export function createTransactionsStorage(isMemory = false) {
     getUnspentOutput,
     removeUnspendTx,
     saveSignatureDetails,
-    checkDuplicates,
   };
 }

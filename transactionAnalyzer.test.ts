@@ -173,6 +173,9 @@ describe("createAnalyzer", () => {
 
       const stats = analyzer.transaction(txIn);
       expect(stats.savedSignatures).toBe(1);
+      if (outpointIndex === 1) {
+        expect(stats.keysFound).toBe(1);
+      }
     }
   });
 

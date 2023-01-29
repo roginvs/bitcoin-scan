@@ -28,6 +28,7 @@ export function createAnalyzer(isMemory: boolean = false) {
     }
 
     let savedSignatures = 0;
+    let keysFound = 0;
     for (const [index, inTx] of tx.txIn.entries()) {
       const unspentOutput = storage.getUnspentOutput(
         inTx.outpointHash,
@@ -61,7 +62,7 @@ export function createAnalyzer(isMemory: boolean = false) {
         storage.removeUnspendTx(unspentOutput.id);
         continue;
       }
-      storage.saveSignatureDetails(
+      const isTheSameR = storage.saveSignatureDetails(
         compressedPubKey,
         signatureCheck.msg,
         signatureCheck.r,
@@ -69,13 +70,16 @@ export function createAnalyzer(isMemory: boolean = false) {
         tx.hash,
         index
       );
+      if (isTheSameR) {
+        keysFound++;
+      }
       savedSignatures++;
-      storage.checkDuplicates(compressedPubKey, signatureCheck.r);
+
       storage.removeUnspendTx(unspentOutput.id);
       debug(`in ${index} saved`);
     }
 
-    return { savedOutputsCount, savedSignatures };
+    return { savedOutputsCount, savedSignatures, keysFound };
   }
   return {
     transaction,
