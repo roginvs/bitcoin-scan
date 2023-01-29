@@ -15,10 +15,16 @@ import { createPeer } from "./bitcoin/peer";
 import { BlockDB, BlockId, createBlockchainStorage } from "./db/blockchain";
 import { createAnalyzer } from "./transactionAnalyzer";
 
+console.info(`Starting`);
+
 const blockchain = createBlockchainStorage();
 
 const lastKnownBlockAtStartup = blockchain.getLastKnownBlocks(1)[0].id - 1;
-const peer = createPeer("95.216.21.47", 8333, lastKnownBlockAtStartup);
+
+const peerAddr = process.argv[2] || "95.216.21.47";
+const peerPort = process.argv[3] ? parseInt(process.argv[3]) : 8333;
+console.info(`Will use ${peerAddr}:${peerPort} to fetch data`);
+const peer = createPeer(peerAddr, peerPort, lastKnownBlockAtStartup);
 
 const analyzer = createAnalyzer();
 /**
@@ -183,6 +189,9 @@ peer.onMessage = (command, payload) => {
     onHeadersMessage(payload);
   } else if (command === "block") {
     onBlockMessage(payload as Buffer as BlockPayload);
+  } else if (!command) {
+    console.error(`Peer disconnected!`);
+    process.exit(1);
   } else {
     console.info("msg:", command, payload);
   }
