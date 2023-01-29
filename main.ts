@@ -4,7 +4,7 @@ import {
   createGetdataMessage,
   createGetheadersMessage,
 } from "./bitcoin/messages.create";
-import { readBlockHeader, readVarInt } from "./bitcoin/messages.parse";
+import { BitcoinBlock, readBlock, readVarInt } from "./bitcoin/messages.parse";
 import {
   BlockHash,
   BlockPayload,
@@ -48,7 +48,7 @@ function onHeadersMessage(payload: MessagePayload) {
   let [count, headers] = readVarInt(payload);
   if (count > 0) {
     while (count > 0) {
-      const [block, rest] = readBlockHeader(headers);
+      const [block, rest] = readBlock(headers as BlockPayload);
       headers = rest;
 
       if (lastKnownBlock && lastKnownBlock.equals(block.prevBlock)) {
@@ -135,18 +135,21 @@ function fetchPackOfUnprocessedBlocks() {
   );
 }
 
-function onBlockMessage(payload: MessagePayload) {
-  const hash = sha256(
-    sha256(payload.subarray(0, 4 + 32 + 32 + 4 + 4 + 4))
-  ) as BlockHash;
-  const index = blocksWeAreWaiting.findIndex((x) => x.hash.equals(hash));
+function onBlockMessage(payload: BlockPayload) {
+  const [block, rest] = readBlock(payload);
+  if (rest.length !== 0) {
+    throw new Error(
+      `Got some data after block message ${rest.toString("hex")}`
+    );
+  }
+  const index = blocksWeAreWaiting.findIndex((x) => x.hash.equals(block.hash));
   if (index < 0) {
-    console.warn(`Got unexpected block ${hash}`);
+    console.warn(`Got unexpected block ${block.hash}`);
     return;
   }
   blocksWeAreWaiting.splice(index, 1);
 
-  processBlock(hash, payload as Buffer as BlockPayload);
+  processBlock(block);
 
   if (blocksWeAreWaiting.length === 0) {
     if (!USE_DEMO_BLOCKS) {
@@ -157,8 +160,8 @@ function onBlockMessage(payload: MessagePayload) {
   }
 }
 
-function processBlock(hash: BlockHash, payload: BlockPayload) {
-  console.info(`Processing block ${reverseBuf(hash).toString("hex")}`);
+function processBlock(block: BitcoinBlock) {
+  console.info(`Processing block ${reverseBuf(block.hash).toString("hex")}`);
   // TODO
   /*
   const [block, transactions] = readBlockHeader(payload);
@@ -192,7 +195,7 @@ peer.onMessage = (command, payload) => {
   if (command === "headers") {
     onHeadersMessage(payload);
   } else if (command === "block") {
-    onBlockMessage(payload);
+    onBlockMessage(payload as Buffer as BlockPayload);
   } else {
     console.info("msg:", command, payload);
   }

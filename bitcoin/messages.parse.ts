@@ -108,7 +108,7 @@ export function parseVersion(payload: MessagePayload) {
   );
 }
 
-export function readBlockHeader(buf: Buffer) {
+export function readBlock(buf: BlockPayload) {
   const version = buf.subarray(0, 4);
   const prevBlock = buf.subarray(4, 4 + 32);
   const merkleRoot = buf.subarray(4 + 32, 4 + 32 + 32) as MerkleRootHash;
@@ -119,9 +119,22 @@ export function readBlockHeader(buf: Buffer) {
     .subarray(4 + 32 + 32 + 4, 4 + 32 + 32 + 4 + 4)
     .readUInt32LE();
   const nonce = buf.subarray(4 + 32 + 32 + 4 + 4, 4 + 32 + 32 + 4 + 4 + 4);
-  const [txCount, rest] = readVarInt(buf.subarray(4 + 32 + 32 + 4 + 4 + 4));
+  const [txCount, transactionsBuf] = readVarInt(
+    buf.subarray(4 + 32 + 32 + 4 + 4 + 4)
+  );
   const hashingData = buf.subarray(0, 4 + 32 + 32 + 4 + 4 + 4);
   const hash = sha256(sha256(hashingData)) as BlockHash;
+
+  // If data is block header then txCount is zero so it is fine
+  const transactions: BitcoinTransaction[] = [];
+  let txBuf = transactionsBuf;
+  for (let i = 0; i < txCount; i++) {
+    let tx: BitcoinTransaction;
+    [tx, txBuf] = readTx(txBuf as TransactionPayload);
+    transactions.push(tx);
+  }
+  const rest = txBuf;
+
   return [
     {
       version,
@@ -132,11 +145,12 @@ export function readBlockHeader(buf: Buffer) {
       nonce,
       txCount,
       hash,
+      transactions,
     },
     rest,
   ] as const;
 }
-export type BlockHeader = ReturnType<typeof readBlockHeader>[0];
+export type BitcoinBlock = ReturnType<typeof readBlock>[0];
 
 function calculateMerkleRoot(transactionHashes: TransationHash[]) {
   let arr = transactionHashes.slice() as Buffer[];
@@ -152,23 +166,6 @@ function calculateMerkleRoot(transactionHashes: TransationHash[]) {
     arr = newArr;
   }
   return arr[0] as MerkleRootHash;
-}
-
-function readBlockFull(payload: BlockPayload) {
-  // TODO
-
-  const [block, transactions] = readBlockHeader(payload);
-
-  let buf = transactions;
-  const txs: BitcoinTransaction[] = [];
-  for (let i = 0; i < block.txCount; i++) {
-    let tx: BitcoinTransaction;
-    [tx, buf] = readTx(buf as TransactionPayload);
-    txs.push(tx);
-  }
-  if (buf.length > 0) {
-    throw new Error("Some data is left after reading transactions");
-  }
 }
 
 export function readTxIn(buf: Buffer) {
