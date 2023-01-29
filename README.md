@@ -14,4 +14,21 @@ Then check found keys
 
 ```
 sqlite3 database/files/transactions.db -quote 'select * from found_keys'
+
+# Or this way:
+while true; do \
+  date ; \
+  echo -n "Unspent transactions: " ; \
+  sqlite3 database/files/transactions.db -quote 'select count(*) from unspent_transaction_output'; \
+  echo -n "Signatures: " ; \
+  sqlite3 database/files/transactions.db -quote 'select count(*) from signatures'; \
+  echo -n "Processed blocks: " ; \
+  sqlite3 database/files/blockchain.db -quote 'select count(*) from blocks where is_processed'; \
+  echo "File sizes"; \
+  ls -lah database/files/blockchain.db database/files/transactions.db ; \
+  echo "Found keys so far: " ; \
+  sqlite3 database/files/transactions.db -quote 'select * from found_keys'; \
+  echo "" ; \
+  sleep 10;
+done
 ```
