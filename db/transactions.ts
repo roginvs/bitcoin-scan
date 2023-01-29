@@ -9,6 +9,7 @@ import {
   PkScript,
   TransactionHash,
 } from "../bitcoin/messages.types";
+import { joinBuffers } from "../bitcoin/utils";
 import { Secp256k1 } from "../my-elliptic-curves/curves.named";
 import { get_private_key_if_diff_k_is_known } from "../my-elliptic-curves/ecdsa";
 import { Nominal } from "../nominal_types/nominaltypes";
@@ -276,11 +277,10 @@ export function checkThatThisPrivateKeyForThisPublicKey(
   publicKeyExpected: Buffer
 ) {
   const privKeySec1 = Buffer.from(
-    "30540201010400" +
-      privateKey.toString("hex") +
-      "a00706052b8104000aa14403420004190c32f1461a9c34b6a5b9c1ff363612fe1ff88e1b25903af208845aac75d4b9487faf59547b429c7152074cc17d9cc2a9c9781a33acfbf3d0c97795b0a24662",
+    "300E0201010400" + privateKey.toString("hex") + "a00706052b8104000a",
     "hex"
   );
+
   const diff = privateKey.length;
   privKeySec1[1] += diff;
   privKeySec1[6] += diff;

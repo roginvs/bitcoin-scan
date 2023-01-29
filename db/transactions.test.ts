@@ -69,7 +69,7 @@ describe("Transcation storage and deriving", () => {
     }
   });
 
-  it.only(`checkThatThisPrivateKeyForThisPublicKey`, () => {
+  it(`checkThatThisPrivateKeyForThisPublicKey`, () => {
     const privKey = Buffer.from(
       "8b184d0143d89f76c342cbd9ffa96329ece0e854e6416fd1f58230b90f007ba0",
       "hex"
