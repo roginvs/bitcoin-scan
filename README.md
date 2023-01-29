@@ -36,4 +36,9 @@ done
 ## TODO:
 
 - Listen to incoming updates and fetch new data immediately when it is available
+
 - Sometimes public key is uncompressed so generated bitcoin wallet is wrong
+
+- Implement other scripts
+
+- Slighly split transactions database logic with recovery logic
