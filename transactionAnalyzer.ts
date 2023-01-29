@@ -7,7 +7,7 @@ import {
 } from "./bitcoin/script";
 import { createTransactionsStorage } from "./db/transactions";
 
-export function createAnalyzer(isMemory: boolean) {
+export function createAnalyzer(isMemory: boolean = false) {
   const storage = createTransactionsStorage(isMemory);
 
   function transaction(tx: BitcoinTransaction) {

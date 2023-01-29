@@ -13,12 +13,14 @@ import {
 } from "./bitcoin/messages.types";
 import { createPeer } from "./bitcoin/peer";
 import { BlockDB, BlockId, createBlockchainStorage } from "./db/blockchain";
+import { createAnalyzer } from "./transactionAnalyzer";
 
 const blockchain = createBlockchainStorage();
 
 const lastKnownBlockAtStartup = blockchain.getLastKnownBlocks(1)[0].id - 1;
 const peer = createPeer("95.216.21.47", 8333, lastKnownBlockAtStartup);
 
+const analyzer = createAnalyzer();
 /**
  * We ask for blocks using "getheaders" message
  * And then we parse result in onHeaders
@@ -163,7 +165,16 @@ function onBlockMessage(payload: BlockPayload) {
 
 function processBlock(block: BitcoinBlock) {
   console.info(`Processing block ${reverseBuf(block.hash).toString("hex")}`);
-  // TODO: pass each transaction into analyzer
+  let savedOutputsCount = 0;
+  let savedSignatures = 0;
+  for (const tx of block.transactions) {
+    const stats = analyzer.transaction(tx);
+    savedOutputsCount += stats.savedOutputsCount;
+    savedSignatures += stats.savedSignatures;
+  }
+  console.info(
+    `  tx=${block.transactions.length} savedOutputsCount=${savedOutputsCount} savedSignatures=${savedSignatures}`
+  );
 }
 
 peer.onMessage = (command, payload) => {
