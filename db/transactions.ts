@@ -1,6 +1,9 @@
 import Database from "better-sqlite3";
+import { createPrivateKey, createPublicKey } from "crypto";
+import { bitcoinAddressFromP2PKH } from "../bitcoin/base58";
+import { compressPublicKey } from "../bitcoin/compressPublicKey";
 import { genesisBlockHash } from "../bitcoin/consts";
-import { sha256 } from "../bitcoin/hashes";
+import { ripemd160, sha256 } from "../bitcoin/hashes";
 import {
   BlockHash,
   PkScript,
@@ -40,6 +43,14 @@ export function createTransactionsStorage(isMemory = false) {
   );
   CREATE INDEX IF NOT EXISTS signature_pub_r ON signatures
     (compressed_public_key, r);
+
+  CREATE TABLE IF NOT EXISTS found_keys (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    compressed_public_key CHARACTER(33) NOT NULL, 
+    bitcoin_wallet CHARACTER(40), -- Have no idea about hard limit
+    private_key CHARACTER(32) NOT NULL,
+    info TEXT NOT NULL
+  )
 `);
 
   // Use
@@ -149,7 +160,7 @@ export function createTransactionsStorage(isMemory = false) {
         //spending_tx_input_index,
       },
     ];
-    const isNewKeyDerived = derivePrivateKey(dataToDeriveKey);
+    const isNewKeyDerived = derivePrivateKey(dataToDeriveKey, blockInformation);
 
     saveSignatureDetailsSql.run(
       compressed_public_key,
@@ -162,16 +173,31 @@ export function createTransactionsStorage(isMemory = false) {
     return isNewKeyDerived;
   }
 
-  function derivePrivateKey(data: TransactionRow[]) {
+  function derivePrivateKey(data: TransactionRow[], blockInfo: string) {
     let foundKey = false;
     for (let i = 0; i < data.length - 1; i++) {
       for (let j = i + 1; j < data.length; j++) {
-        foundKey ||= derivePrivateKeyFromPair(data[i], data[j]);
+        foundKey ||= derivePrivateKeyFromPair(data[i], data[j], blockInfo);
       }
     }
     return foundKey;
   }
-  function derivePrivateKeyFromPair(a: TransactionRow, b: TransactionRow) {
+  const isThisPubKeyAlreadyThereSql = sql.prepare(
+    `select id from found_keys where compressed_public_key = ?`
+  );
+  const insertNewKey = sql.prepare(`
+    insert into found_keys (
+      compressed_public_key,
+      bitcoin_wallet,
+      private_key,
+      info
+    ) values (?, ?, ?, ?)
+  `);
+  function derivePrivateKeyFromPair(
+    a: TransactionRow,
+    b: TransactionRow,
+    blockInfo: string
+  ) {
     if (!a.compressed_public_key.equals(b.compressed_public_key)) {
       console.warn(`How this can happen?`);
       return false;
@@ -189,8 +215,11 @@ export function createTransactionsStorage(isMemory = false) {
       return false;
     }
 
-    // TODO: Check that we do not have such private key
-    const privateKey = get_private_key_if_diff_k_is_known(
+    if (isThisPubKeyAlreadyThereSql.get(a.compressed_public_key)) {
+      return false;
+    }
+
+    const privateKeyBigInt = get_private_key_if_diff_k_is_known(
       Secp256k1,
       {
         r: BigInt("0x" + a.r.toString("hex")),
@@ -204,9 +233,34 @@ export function createTransactionsStorage(isMemory = false) {
       BigInt("0x" + sha256(b.msg).toString("hex")),
       BigInt(0)
     );
-    // Save it to the database
 
-    return false;
+    let privateKeyStr = privateKeyBigInt.toString(16);
+    if (privateKeyStr.length % 2 !== 0) {
+      privateKeyStr = "0" + privateKeyStr;
+    }
+    const privateKeyBuf = Buffer.from(privateKeyStr, "hex");
+
+    if (
+      !checkThatThisPrivateKeyForThisPublicKey(
+        privateKeyBuf,
+        a.compressed_public_key
+      )
+    ) {
+      console.warn(`LOL WHAT, why my key is not recovered?`);
+      return false;
+    }
+
+    const walletString = bitcoinAddressFromP2PKH(
+      ripemd160(sha256(a.compressed_public_key))
+    );
+    insertNewKey.run(
+      a.compressed_public_key,
+      walletString,
+      privateKeyBuf,
+      blockInfo
+    );
+
+    return true;
   }
 
   return {
@@ -215,4 +269,31 @@ export function createTransactionsStorage(isMemory = false) {
     removeUnspendTx,
     saveSignatureDetails,
   };
+}
+
+export function checkThatThisPrivateKeyForThisPublicKey(
+  privateKey: Buffer,
+  publicKeyExpected: Buffer
+) {
+  const privKeySec1 = Buffer.from(
+    "30540201010400" +
+      privateKey.toString("hex") +
+      "a00706052b8104000aa14403420004190c32f1461a9c34b6a5b9c1ff363612fe1ff88e1b25903af208845aac75d4b9487faf59547b429c7152074cc17d9cc2a9c9781a33acfbf3d0c97795b0a24662",
+    "hex"
+  );
+  const diff = privateKey.length;
+  privKeySec1[1] += diff;
+  privKeySec1[6] += diff;
+
+  const myPrivKey = createPrivateKey({
+    key: privKeySec1,
+    format: "der",
+    type: "sec1",
+  });
+  const myPublicKey = createPublicKey(myPrivKey);
+  const myPublicKeyUncompressed = myPublicKey
+    .export({ format: "der", type: "spki" })
+    .subarray(20 + 2 + 1, 20 + 2 + 1 + 66);
+  const myPublicKeyCompressed = compressPublicKey(myPublicKeyUncompressed)!;
+  return publicKeyExpected.equals(myPublicKeyCompressed);
 }
