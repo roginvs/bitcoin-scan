@@ -1,9 +1,21 @@
-import {
-  checkThatThisPrivateKeyForThisPublicKey,
-  createTransactionsStorage,
-} from "./transactions";
+import { createTransactionsStorage } from "./db/transactions";
+import { checkThatThisPrivateKeyForThisPublicKey } from "./keyDerive";
 
-describe("Transcation storage and deriving", () => {
+describe(`Key derive`, () => {
+  it(`checkThatThisPrivateKeyForThisPublicKey`, () => {
+    const privKey = Buffer.from(
+      "8b184d0143d89f76c342cbd9ffa96329ece0e854e6416fd1f58230b90f007ba0",
+      "hex"
+    );
+    const pubKeyExpected = Buffer.from(
+      "039ba39856eec011b79f1acb997760ed9d3f90d477077d17df2571d94b2fa2137b",
+      "hex"
+    );
+    expect(
+      checkThatThisPrivateKeyForThisPublicKey(privKey, pubKeyExpected)
+    ).toStrictEqual(true);
+  });
+
   it(`Example keys`, () => {
     const storage = createTransactionsStorage(true);
 
@@ -71,19 +83,5 @@ describe("Transcation storage and deriving", () => {
       }
     }
     expect(pubKeys).toStrictEqual(1);
-  });
-
-  it(`checkThatThisPrivateKeyForThisPublicKey`, () => {
-    const privKey = Buffer.from(
-      "8b184d0143d89f76c342cbd9ffa96329ece0e854e6416fd1f58230b90f007ba0",
-      "hex"
-    );
-    const pubKeyExpected = Buffer.from(
-      "039ba39856eec011b79f1acb997760ed9d3f90d477077d17df2571d94b2fa2137b",
-      "hex"
-    );
-    expect(
-      checkThatThisPrivateKeyForThisPublicKey(privKey, pubKeyExpected)
-    ).toStrictEqual(true);
   });
 });

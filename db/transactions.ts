@@ -1,20 +1,18 @@
 import Database from "better-sqlite3";
-import { createPrivateKey, createPublicKey } from "crypto";
-import { bitcoinAddressFromP2PKH } from "../bitcoin/base58";
-import { compressPublicKey } from "../bitcoin/compressPublicKey";
-import { genesisBlockHash } from "../bitcoin/consts";
-import { ripemd160, sha256 } from "../bitcoin/hashes";
-import {
-  BlockHash,
-  PkScript,
-  TransactionHash,
-} from "../bitcoin/messages.types";
-import { joinBuffers } from "../bitcoin/utils";
-import { Secp256k1 } from "../my-elliptic-curves/curves.named";
-import { get_private_key_if_diff_k_is_known } from "../my-elliptic-curves/ecdsa";
+import { PkScript, TransactionHash } from "../bitcoin/messages.types";
+import { derivePrivateKeyFromPair } from "../keyDerive";
 import { Nominal } from "../nominal_types/nominaltypes";
 
 export type UnspentTxId = Nominal<"unspent tx id", number>;
+
+export interface TransactionRow {
+  compressed_public_key: Buffer;
+  msg: Buffer;
+  r: Buffer;
+  s: Buffer;
+  //spending_tx_hash: TransactionHash;
+  //spending_tx_input_index: number;
+}
 
 export function createTransactionsStorage(isMemory = false) {
   const sql = new Database(
@@ -123,15 +121,6 @@ export function createTransactionsStorage(isMemory = false) {
  
   `);
 
-  interface TransactionRow {
-    compressed_public_key: Buffer;
-    msg: Buffer;
-    r: Buffer;
-    s: Buffer;
-    //spending_tx_hash: TransactionHash;
-    //spending_tx_input_index: number;
-  }
-
   function saveSignatureDetails(
     compressed_public_key: Buffer,
     msg: Buffer,
@@ -174,89 +163,39 @@ export function createTransactionsStorage(isMemory = false) {
     return isNewKeyDerived;
   }
 
-  function derivePrivateKey(data: TransactionRow[], blockInfo: string) {
-    let foundKey = false;
-    for (let i = 0; i < data.length - 1; i++) {
-      for (let j = i + 1; j < data.length; j++) {
-        foundKey ||= derivePrivateKeyFromPair(data[i], data[j], blockInfo);
-      }
-    }
-    return foundKey;
-  }
   const isThisPubKeyAlreadyThereSql = sql.prepare(
     `select id from found_keys where compressed_public_key = ?`
   );
   const insertNewKey = sql.prepare(`
-    insert into found_keys (
-      compressed_public_key,
-      bitcoin_wallet,
-      private_key,
-      info
-    ) values (?, ?, ?, ?)
-  `);
-  function derivePrivateKeyFromPair(
-    a: TransactionRow,
-    b: TransactionRow,
-    blockInfo: string
-  ) {
-    if (!a.compressed_public_key.equals(b.compressed_public_key)) {
-      throw new Error(`Internal error, this should never happen`);
-    }
-    if (!a.r.equals(b.r)) {
-      throw new Error(`Internal error, this should never happen`);
-    }
-    if (a.s.equals(b.s)) {
-      throw new Error(`Internal error, this should never happen`);
-    }
-    if (a.msg.equals(b.msg)) {
-      throw new Error(`Internal error, this should never happen`);
-    }
+  insert into found_keys (
+    compressed_public_key,
+    bitcoin_wallet,
+    private_key,
+    info
+  ) values (?, ?, ?, ?)
+`);
+  function derivePrivateKey(data: TransactionRow[], blockInfo: string) {
+    let foundKey = false;
+    for (let i = 0; i < data.length - 1; i++) {
+      if (isThisPubKeyAlreadyThereSql.get(data[i].compressed_public_key)) {
+        continue;
+      }
+      for (let j = i + 1; j < data.length; j++) {
+        if (isThisPubKeyAlreadyThereSql.get(data[j].compressed_public_key)) {
+          continue;
+        }
 
-    if (isThisPubKeyAlreadyThereSql.get(a.compressed_public_key)) {
-      return false;
+        const key = derivePrivateKeyFromPair(data[i], data[j]);
+        insertNewKey.run(
+          key.compressed_public_key,
+          key.walletString,
+          key.privateKeyBuf,
+          blockInfo
+        );
+        foundKey = true;
+      }
     }
-
-    const privateKeyBigInt = get_private_key_if_diff_k_is_known(
-      Secp256k1,
-      {
-        r: BigInt("0x" + a.r.toString("hex")),
-        s: BigInt("0x" + a.s.toString("hex")),
-      },
-      BigInt("0x" + sha256(a.msg).toString("hex")),
-      {
-        r: BigInt("0x" + b.r.toString("hex")),
-        s: BigInt("0x" + b.s.toString("hex")),
-      },
-      BigInt("0x" + sha256(b.msg).toString("hex")),
-      BigInt(0)
-    );
-
-    let privateKeyStr = privateKeyBigInt.toString(16);
-    if (privateKeyStr.length % 2 !== 0) {
-      privateKeyStr = "0" + privateKeyStr;
-    }
-    const privateKeyBuf = Buffer.from(privateKeyStr, "hex");
-
-    if (
-      !checkThatThisPrivateKeyForThisPublicKey(
-        privateKeyBuf,
-        a.compressed_public_key
-      )
-    ) {
-      throw new Error(`Internal error, LOL WHAT, why my key is not recovered`);
-    }
-
-    const walletString = bitcoinAddressFromP2PKH(
-      ripemd160(sha256(a.compressed_public_key))
-    );
-    insertNewKey.run(
-      a.compressed_public_key,
-      walletString,
-      privateKeyBuf,
-      blockInfo
-    );
-
-    return true;
+    return foundKey;
   }
 
   return {
@@ -265,30 +204,4 @@ export function createTransactionsStorage(isMemory = false) {
     removeUnspendTx,
     saveSignatureDetails,
   };
-}
-
-export function checkThatThisPrivateKeyForThisPublicKey(
-  privateKey: Buffer,
-  publicKeyExpected: Buffer
-) {
-  const privKeySec1 = Buffer.from(
-    "300E0201010400" + privateKey.toString("hex") + "a00706052b8104000a",
-    "hex"
-  );
-
-  const diff = privateKey.length;
-  privKeySec1[1] += diff;
-  privKeySec1[6] += diff;
-
-  const myPrivKey = createPrivateKey({
-    key: privKeySec1,
-    format: "der",
-    type: "sec1",
-  });
-  const myPublicKey = createPublicKey(myPrivKey);
-  const myPublicKeyUncompressed = myPublicKey
-    .export({ format: "der", type: "spki" })
-    .subarray(20 + 2 + 1, 20 + 2 + 1 + 66);
-  const myPublicKeyCompressed = compressPublicKey(myPublicKeyUncompressed)!;
-  return publicKeyExpected.equals(myPublicKeyCompressed);
 }
