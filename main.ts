@@ -163,7 +163,7 @@ function onBlockMessage(payload: BlockPayload) {
 
 function processBlock(block: BitcoinBlock) {
   console.info(`Processing block ${reverseBuf(block.hash).toString("hex")}`);
-  // TODO
+  // TODO: pass each transaction into analyzer
 }
 
 peer.onMessage = (command, payload) => {
