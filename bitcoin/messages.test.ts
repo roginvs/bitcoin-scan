@@ -1,4 +1,4 @@
-import { buildMessage, joinBuffers, packVarStr } from "./messages";
+import { buildMessage, joinBuffers, packVarStr } from "./messages.create";
 import { MessagePayload } from "./messages.types";
 
 function bufFromStr(str: string) {

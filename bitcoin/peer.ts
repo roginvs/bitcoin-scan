@@ -1,12 +1,11 @@
 import { Socket } from "net";
+import { parseMessage, parseVersion } from "./messages.parse";
 import {
   buildMessage,
   createVerackMessage,
   createVersionMessage,
   joinBuffers,
-  parseMessage,
-  parseVersion,
-} from "./messages";
+} from "./messages.create";
 import { BitcoinMessage, MessagePayload } from "./messages.types";
 
 /**
