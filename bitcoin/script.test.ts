@@ -64,7 +64,7 @@ describe(`Scripting`, () => {
     if (typeof result === "string") {
       throw new Error(result);
     }
-
+    console.dir(result, { depth: null });
     // TODO
   });
 });

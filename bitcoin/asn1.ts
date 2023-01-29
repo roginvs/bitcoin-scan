@@ -37,6 +37,11 @@ export function asn1parse(buf: Buffer): [Asn1, Buffer] {
       type: "oid",
       value: data,
     };
+  } else if (type === 0x02) {
+    result = {
+      type: "integer",
+      value: data,
+    };
   } else if (type === 0x03) {
     if (data[0] !== 0) {
       throw new Error(`Non byte bitstrings are not supported`);
