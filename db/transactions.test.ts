@@ -63,10 +63,14 @@ describe("Transcation storage and deriving", () => {
         ),
       ],
     ] as const;
+    let pubKeys = 0;
     for (const [pubKey, msg, r, s] of data) {
       const stats = storage.saveSignatureDetails(pubKey, msg, r, s, "lol");
-      console.info(stats);
+      if (stats) {
+        pubKeys += 1;
+      }
     }
+    expect(pubKeys).toStrictEqual(1);
   });
 
   it(`checkThatThisPrivateKeyForThisPublicKey`, () => {

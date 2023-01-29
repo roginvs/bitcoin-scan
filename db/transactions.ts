@@ -200,20 +200,16 @@ export function createTransactionsStorage(isMemory = false) {
     blockInfo: string
   ) {
     if (!a.compressed_public_key.equals(b.compressed_public_key)) {
-      console.warn(`How this can happen?`);
-      return false;
+      throw new Error(`Internal error, this should never happen`);
     }
     if (!a.r.equals(b.r)) {
-      console.warn(`How this can happen?`);
-      return false;
+      throw new Error(`Internal error, this should never happen`);
     }
     if (a.s.equals(b.s)) {
-      console.warn(`Same s, this should not be provided?`);
-      return false;
+      throw new Error(`Internal error, this should never happen`);
     }
     if (a.msg.equals(b.msg)) {
-      console.warn(`Same msg, this should not be provided?`);
-      return false;
+      throw new Error(`Internal error, this should never happen`);
     }
 
     if (isThisPubKeyAlreadyThereSql.get(a.compressed_public_key)) {
@@ -247,8 +243,7 @@ export function createTransactionsStorage(isMemory = false) {
         a.compressed_public_key
       )
     ) {
-      console.warn(`LOL WHAT, why my key is not recovered?`);
-      return false;
+      throw new Error(`Internal error, LOL WHAT, why my key is not recovered`);
     }
 
     const walletString = bitcoinAddressFromP2PKH(
