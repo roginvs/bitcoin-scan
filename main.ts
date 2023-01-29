@@ -150,9 +150,10 @@ function onBlockMessage(payload: BlockPayload) {
     console.warn(`Got unexpected block ${block.hash}`);
     return;
   }
+  const blockData = blocksWeAreWaiting[index];
   blocksWeAreWaiting.splice(index, 1);
 
-  processBlock(block);
+  processBlock(block, blockData.id);
 
   if (blocksWeAreWaiting.length === 0) {
     if (!USE_DEMO_BLOCKS) {
@@ -163,8 +164,12 @@ function onBlockMessage(payload: BlockPayload) {
   }
 }
 
-function processBlock(block: BitcoinBlock) {
-  console.info(`Processing block ${reverseBuf(block.hash).toString("hex")}`);
+function processBlock(block: BitcoinBlock, blockId: BlockId) {
+  console.info(
+    `Processing block ${reverseBuf(block.hash).toString(
+      "hex"
+    )} n=${blockId} date=${block.timestamp.toISOString()}`
+  );
   let savedOutputsCount = 0;
   let savedSignatures = 0;
   for (const tx of block.transactions) {
@@ -172,6 +177,7 @@ function processBlock(block: BitcoinBlock) {
     savedOutputsCount += stats.savedOutputsCount;
     savedSignatures += stats.savedSignatures;
   }
+  blockchain.markBlockAsProccessed(blockId);
   console.info(
     `  tx=${block.transactions.length} savedOutputsCount=${savedOutputsCount} savedSignatures=${savedSignatures}`
   );
