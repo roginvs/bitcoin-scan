@@ -91,18 +91,31 @@ describe("Bitcoin messages", () => {
     it(`Reading`, () => {
       const [parsed1, rest1] = readTx(sourceTxRaw);
       expect(rest1.length).toBe(0);
-      expect(sha256(sha256(parsed1.hash)).reverse().toString("hex")).toBe(
+      expect(sha256(sha256(sourceTxRaw)).reverse().toString("hex")).toBe(
         "0183bd75b61c3642bc4664a63f86acc6872045305de29722ee3e0c583483cdec"
+      );
+      expect(parsed1.hash.toString("hex")).toBe(
+        Buffer.from(
+          "0183bd75b61c3642bc4664a63f86acc6872045305de29722ee3e0c583483cdec",
+          "hex"
+        )
+          .reverse()
+          .toString("hex")
       );
 
       const [parsed2, rest2] = readTx(spendingTxRaw);
       expect(rest2.length).toBe(0);
-      expect(sha256(sha256(parsed2.hash)).reverse().toString("hex")).toBe(
-        "c30df3c03045d6b0fd2ba83a90144133b85b3fdbb8949850b7a408b852821c54"
+      expect(parsed2.hash.toString("hex")).toBe(
+        Buffer.from(
+          "c30df3c03045d6b0fd2ba83a90144133b85b3fdbb8949850b7a408b852821c54",
+          "hex"
+        )
+          .reverse()
+          .toString("hex")
       );
       expect(parsed2.txIn.length).toBe(1);
       expect(parsed2.txIn[0].outpointHash.toString("hex")).toBe(
-        sha256(sha256(parsed1.hash)).toString("hex")
+        parsed1.hash.toString("hex")
       );
     });
     it(`Packing`, () => {
