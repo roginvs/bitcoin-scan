@@ -52,6 +52,7 @@ function onHeadersMessage(payload: MessagePayload) {
       headers = rest;
 
       if (lastKnownBlock && lastKnownBlock.equals(block.prevBlock)) {
+        // It might be good to check difficulty for this block
         lastKnownBlock = block.hash;
         blockchain.pushNewKnownBlock(block.hash);
         const lastKnownBlockFromDb = blockchain
