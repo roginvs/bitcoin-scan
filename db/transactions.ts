@@ -39,6 +39,19 @@ export function createTransactionsStorage(isMemory = false) {
     (compressed_public_key, r);
 `);
 
+  // Use
+  // .mode quote
+  // to show values in sqlite console
+
+  const FIX_EXISTING_DUPLICATES = true;
+  if (FIX_EXISTING_DUPLICATES) {
+    sql.exec(`
+          delete from signatures where id in (
+           select id from signatures group by compressed_public_key, r,s, msg having count(*) > 1
+          );
+        `);
+  }
+
   const insertSql = sql.prepare(`insert into unspent_transaction_output 
     (transaction_hash, output_id, pub_script) values (?, ?, ?)`);
   function addUnspentTxOutput(
@@ -110,6 +123,8 @@ export function createTransactionsStorage(isMemory = false) {
       spending_tx_input_index
     from signatures
     where compressed_public_key = ? and r = ?
+    group by msg
+    having count(*) > 1
   `);
   function checkDuplicates(compressed_public_key: Buffer, r: Buffer) {
     const sameValues = checkDuplicatesSql.all(compressed_public_key, r) as {

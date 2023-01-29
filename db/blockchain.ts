@@ -21,6 +21,11 @@ export function createBlockchainStorage(isMemory = false) {
     is_processed BOOLEAN NOT NULL DEFAULT FALSE
   );
 `);
+  /*
+
+update blocks set is_processed = false where id >= 121488;
+
+*/
 
   function pushNewBlockHash(hash: BlockHash) {
     blockchain.prepare(`INSERT INTO blocks (hash) VALUES (?)`).run(hash);
