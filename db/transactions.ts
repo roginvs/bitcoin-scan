@@ -169,6 +169,25 @@ export function createTransactionsStorage(isMemory = false) {
     return foundKey;
   }
   function derivePrivateKeyFromPair(a: TransactionRow, b: TransactionRow) {
+    if (!a.compressed_public_key.equals(b.compressed_public_key)) {
+      console.warn(`How this can happen?`);
+      return false;
+    }
+    if (!a.r.equals(b.r)) {
+      console.warn(`How this can happen?`);
+      return false;
+    }
+    if (a.s.equals(b.s)) {
+      console.warn(`Same s, this should not be provided?`);
+      return false;
+    }
+    if (a.msg.equals(b.msg)) {
+      console.warn(`Same msg, this should not be provided?`);
+      return false;
+    }
+
+    //
+
     return false;
   }
 
