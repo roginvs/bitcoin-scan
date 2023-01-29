@@ -42,3 +42,14 @@ done
 - Implement other scripts
 
 - Slighly split transactions database logic with recovery logic
+
+- Implement transaction flag and witness
+
+## Links
+
+https://www.blockchain.com/explorer
+https://en.bitcoin.it/wiki/OP_CHECKSIG
+https://developer.bitcoin.org/devguide/transactions.html#locktime_parsing_rules
+https://en.bitcoin.it/wiki/Script
+https://en.bitcoin.it/wiki/Protocol_documentation
+https://bitnodes.io/nodes/?q=Finland
