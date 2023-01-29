@@ -179,7 +179,6 @@ export function parseVersion(payload: MessagePayload) {
   const timestamp = payload.readInt32LE(4 + 8);
   // Skip addresses for now
   // Skip nonce for now too
-  const userAgentStart = 4 + 8 + 8 + 26 + 26 + 8;
   const [userAgentLen, fromUserAgent] = readVarInt(
     payload.subarray(4 + 8 + 8 + 26 + 26 + 8)
   );
@@ -188,10 +187,29 @@ export function parseVersion(payload: MessagePayload) {
 
   const rest = fromUserAgent.subarray(userAgentLen + 4);
   console.info(
-    `Got hello ver=${ver.readUInt32LE(
-      0
-    )} userAgent=${userAgent} services=${parseVersionServices(services).join(
-      ","
-    )} startHeight=${startHeight} rest=${rest.toString("hex")}`
+    `Got hello ver=${ver.readUInt32LE(0)} time=${new Date(
+      timestamp
+    ).toISOString()} userAgent=${userAgent} services=${parseVersionServices(
+      services
+    ).join(",")} startHeight=${startHeight} rest=${rest.toString("hex")}`
   );
+}
+
+export const genesisBlockHash = Buffer.from(
+  "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+  "hex"
+).reverse() as BlockHash;
+
+export type BlockHash = Nominal<"block hash", Buffer>;
+export function createGetheadersMessage(
+  hashes: BlockHash[],
+  hashStop: BlockHash = Buffer.alloc(32).fill(0) as BlockHash
+) {
+  const payload = joinBuffers(
+    protocolVersion,
+    packVarInt(hashes.length),
+    ...hashes,
+    hashStop
+  ) as MessagePayload;
+  return buildMessage("getheaders", payload);
 }
