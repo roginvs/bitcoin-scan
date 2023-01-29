@@ -1,10 +1,13 @@
 import Database from "better-sqlite3";
 import { genesisBlockHash } from "../bitcoin/consts";
+import { sha256 } from "../bitcoin/hashes";
 import {
   BlockHash,
   PkScript,
   TransactionHash,
 } from "../bitcoin/messages.types";
+import { Secp256k1 } from "../my-elliptic-curves/curves.named";
+import { get_private_key_if_diff_k_is_known } from "../my-elliptic-curves/ecdsa";
 import { Nominal } from "../nominal_types/nominaltypes";
 
 export type UnspentTxId = Nominal<"unspent tx id", number>;
@@ -186,7 +189,22 @@ export function createTransactionsStorage(isMemory = false) {
       return false;
     }
 
-    //
+    // TODO: Check that we do not have such private key
+    const privateKey = get_private_key_if_diff_k_is_known(
+      Secp256k1,
+      {
+        r: BigInt("0x" + a.r.toString("hex")),
+        s: BigInt("0x" + a.s.toString("hex")),
+      },
+      BigInt("0x" + sha256(a.msg).toString("hex")),
+      {
+        r: BigInt("0x" + b.r.toString("hex")),
+        s: BigInt("0x" + b.s.toString("hex")),
+      },
+      BigInt("0x" + sha256(b.msg).toString("hex")),
+      BigInt(0)
+    );
+    // Save it to the database
 
     return false;
   }
