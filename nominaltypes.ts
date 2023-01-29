@@ -16,6 +16,9 @@ type GetNominalSrc<T> = T extends { _nominal: infer V extends string } & infer U
     Partial<T>
   : never;
 
+/**
+ * Use "x as TTT" instead
+ */
 export function cast<T extends any & { _nominal: string }>(
   value: GetNominalSrc<T>
 ): T {

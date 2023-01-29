@@ -5,7 +5,7 @@ describe("Nominal types", () => {
     type LOL = Nominal<"lol", string>;
     type KEK = Nominal<"kek", string>;
 
-    const lol1 = cast<LOL>("some string");
+    let lol1 = cast<LOL>("some string");
     // @ts-expect-error Because number is not part of string
     const lol2 = cast<KEK>(123);
 
@@ -19,5 +19,13 @@ describe("Nominal types", () => {
 
     // @ts-expect-error Nominal typing preventing this
     kek2 = lol1;
+
+    // The same effect
+    let lol3 = "somestring2" as LOL;
+    lol3 = lol1;
+    lol1 = lol3;
+
+    // @ts-expect-error Because numbers is not a string
+    let lol4 = 123 as LOL;
   });
 });
