@@ -16,10 +16,7 @@ export function get_point_from_x(
   module: bigint
 ): Point {
   const ySquare = (modulo_power(x, BigInt(3), module) + a * x + b) % module;
-  let y = square_root(ySquare, module);
-  if (y > module / BigInt(2)) {
-    y = module - y;
-  }
+  const y = square_root(ySquare, module);
   return [x, y];
 }
 
