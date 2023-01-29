@@ -97,7 +97,7 @@ function onHeadersMessage(payload: MessagePayload) {
 
 const blocksWeAreWaiting: BlockDB[] = [];
 
-const USE_DEMO_BLOCKS = true;
+const USE_DEMO_BLOCKS = false;
 function fetchPackOfUnprocessedBlocks() {
   if (blocksWeAreWaiting.length > 0) {
     console.warn(`LOL Who called this func?`);
