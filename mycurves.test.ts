@@ -4,6 +4,7 @@ import { check_P2PKH_SIGHASH_ALL } from "./bitcoin/script";
 import { sourceTxRaw, spendingTxRaw } from "./bitcoin/testdata";
 import { Secp256k1 } from "./my-elliptic-curves/curves.named";
 import { check_signature } from "./my-elliptic-curves/ecdsa";
+import { uncompressPublicKey } from "./my-elliptic-curves/uncompressPublicKey";
 
 describe(`Scripting`, () => {
   it(`Verify transactions with BigInt implementation`, () => {
@@ -19,16 +20,17 @@ describe(`Scripting`, () => {
     if (typeof result === "string") {
       throw new Error(result);
     }
-    /*
+
+    const msgHash = BigInt("0x" + sha256(result.msg).toString("hex"));
+
     const checkResult = check_signature({
       curve: Secp256k1,
-      get,
+      publicKey: uncompressPublicKey(Secp256k1, result.pubKey),
       msgHash,
-      r,
-      s,
+      r: BigInt("0x" + result.r.toString("hex")),
+      s: BigInt("0x" + result.s.toString("hex")),
     });
-    */
 
-    console.dir(result, { depth: null });
+    expect(checkResult).toStrictEqual(true);
   });
 });

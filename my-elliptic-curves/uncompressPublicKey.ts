@@ -3,9 +3,13 @@ import {
   get_point_from_x,
   get_point_inverse,
   is_on_curve,
+  Point,
 } from "./curves";
 
-export function uncompressPublicKey(curve: CurveParams, publicKey: Buffer) {
+export function uncompressPublicKey(
+  curve: CurveParams,
+  publicKey: Buffer
+): Point {
   const first = publicKey[0];
   if (first === 0x04) {
     if (publicKey.length !== 32 + 32 + 1) {
