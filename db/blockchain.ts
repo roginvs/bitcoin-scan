@@ -1,7 +1,13 @@
 import Database from "better-sqlite3";
 import { genesisBlockHash } from "../bitcoin/consts";
 import { BlockHash } from "../bitcoin/messages.types";
+import { Nominal } from "../nominal_types/nominaltypes";
 
+export type BlockId = Nominal<"block id", number>;
+export type BlockDB = {
+  id: BlockId;
+  hash: BlockHash;
+};
 export function createBlockchainStorage(isMemory = false) {
   const blockchain = new Database(isMemory ? ":memory:" : "blockchain.db");
 
@@ -10,7 +16,7 @@ export function createBlockchainStorage(isMemory = false) {
   CREATE TABLE IF NOT EXISTS blocks (
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
     hash CHARACTER(32) NOT NULL, 
-    processed BOOLEAN NOT NULL DEFAULT FALSE
+    is_processed BOOLEAN NOT NULL DEFAULT FALSE
   );
 `);
 
@@ -26,11 +32,11 @@ export function createBlockchainStorage(isMemory = false) {
     pushNewBlockHash(genesisBlockHash);
   }
 
-  function getLastKnownBlocks(n = 10) {
+  function getLastKnownBlocks(n = 10): BlockDB[] {
     const blocks = blockchain
       .prepare(`select id, hash from blocks order by id desc limit ?`)
-      .all(n)
-      .map((b) => ({ id: b.id as number, hash: b.hash as BlockHash }));
+      .all(n);
+
     return blocks;
   }
 
@@ -39,20 +45,19 @@ export function createBlockchainStorage(isMemory = false) {
     pushNewBlockHash(hash);
   }
 
-  function getNextUprocessedBlocks(n = 10) {
+  function getNextUprocessedBlocks(n = 10): BlockDB[] {
     const blocks = blockchain
       .prepare(
-        `select id, hash from blocks where not processed order by id limit ?`
+        `select id, hash from blocks where not is_processed order by id limit ?`
       )
-      .all(n)
-      .map((b) => ({ id: b.id as number, hash: b.hash as BlockHash }));
+      .all(n);
 
     return blocks;
   }
 
-  function markBlockAsProccessed(id: number) {
+  function markBlockAsProccessed(id: BlockId) {
     blockchain
-      .prepare(`update blocks set processed = true where id = ?`)
+      .prepare(`update blocks set is_processed = true where id = ?`)
       .run(id);
   }
 
