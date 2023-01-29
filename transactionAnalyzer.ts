@@ -5,7 +5,7 @@ import {
   isSignatureScriptLooksLikeP2PKH,
   isSourceScriptP2PKH,
 } from "./bitcoin/script";
-import { createTransactionsStorage } from "./db/transactions";
+import { createTransactionsStorage } from "./database/transactions";
 
 export function createAnalyzer(isMemory: boolean = false) {
   const storage = createTransactionsStorage(isMemory);

@@ -12,7 +12,11 @@ import {
   MessagePayload,
 } from "./bitcoin/messages.types";
 import { createPeer } from "./bitcoin/peer";
-import { BlockDB, BlockId, createBlockchainStorage } from "./db/blockchain";
+import {
+  BlockDB,
+  BlockId,
+  createBlockchainStorage,
+} from "./database/blockchain";
 import { createAnalyzer } from "./transactionAnalyzer";
 
 console.info(`Starting`);

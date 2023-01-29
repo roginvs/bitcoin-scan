@@ -2,7 +2,7 @@ import { createPrivateKey, createPublicKey } from "crypto";
 import { bitcoinAddressFromP2PKH } from "./bitcoin/base58";
 import { compressPublicKey } from "./bitcoin/compressPublicKey";
 import { ripemd160, sha256 } from "./bitcoin/hashes";
-import { TransactionRow } from "./db/transactions";
+import { TransactionRow } from "./database/transactions";
 import { Secp256k1 } from "./my-elliptic-curves/curves.named";
 import { get_private_key_if_diff_k_is_known } from "./my-elliptic-curves/ecdsa";
 

@@ -16,7 +16,7 @@ export interface TransactionRow {
 
 export function createTransactionsStorage(isMemory = false) {
   const sql = new Database(
-    isMemory ? ":memory:" : __dirname + "/transactions.db"
+    isMemory ? ":memory:" : __dirname + "/files/transactions.db"
   );
 
   sql.pragma("journal_mode = WAL");
