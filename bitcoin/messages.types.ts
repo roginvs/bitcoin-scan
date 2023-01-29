@@ -5,6 +5,7 @@ export type MessagePayload = Nominal<"message payload", Buffer>;
 
 export type BlockHash = Nominal<"block hash", Buffer>;
 export type TransationHash = Nominal<"transaction hash", Buffer>;
+export type MerkleRootHash = Nominal<"merkle root hash", Buffer>;
 
 export type BlockPayload = Nominal<"block payload", Buffer>;
 export type TransactionPayload = Nominal<"transaction payload", Buffer>;

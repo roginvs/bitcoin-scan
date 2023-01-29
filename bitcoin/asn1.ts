@@ -1,4 +1,4 @@
-import { joinBuffers } from "./messages.create";
+import { joinBuffers } from "./utils";
 
 const asn1prefixForDemoKey = Buffer.from(
   "3036301006072a8648ce3d020106052b8104000a032200",

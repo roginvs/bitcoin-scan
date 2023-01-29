@@ -12,6 +12,7 @@ import {
   MessagePayload,
   TransactionPayload,
 } from "./messages.types";
+import { joinBuffers } from "./utils";
 
 export function buildMessage(command: string, payload: MessagePayload) {
   const commandBuf = Buffer.alloc(12).fill(0);
@@ -56,17 +57,6 @@ function packVarInt(value: number) {
     b.writeBigInt64LE(BigInt(value), 1);
     return b;
   }
-}
-
-export function joinBuffers(...buffers: Buffer[]) {
-  const len = buffers.reduce((acc, cur) => (acc = acc + cur.length), 0);
-  const out = Buffer.alloc(len);
-  let i = 0;
-  for (const b of buffers) {
-    b.copy(out, i);
-    i += b.length;
-  }
-  return out;
 }
 
 export function packVarStr(str: string) {

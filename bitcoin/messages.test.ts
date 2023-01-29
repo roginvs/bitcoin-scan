@@ -3,13 +3,13 @@ import { sha256 } from "./hashes";
 import {
   buildMessage,
   createGetdataMessage,
-  joinBuffers,
   packTx,
   packVarStr,
 } from "./messages.create";
 import { parseMessage, readTx } from "./messages.parse";
 import { HashType, MessagePayload } from "./messages.types";
 import { sourceTxRaw, spendingTxRaw } from "./testdata";
+import { joinBuffers } from "./utils";
 
 function bufFromStr(str: string) {
   return Buffer.from(

@@ -4,12 +4,14 @@ import {
   BitcoinMessage,
   BlockHash,
   BlockPayload,
+  MerkleRootHash,
   MessagePayload,
   PkScript,
   SignatureScript,
   TransactionPayload,
   TransationHash,
 } from "./messages.types";
+import { joinBuffers } from "./utils";
 
 export function parseMessage(buf: Buffer) {
   if (buf.length < 4 + 12 + 4 + 4) {
@@ -109,7 +111,7 @@ export function parseVersion(payload: MessagePayload) {
 export function readBlockHeader(buf: Buffer) {
   const version = buf.subarray(0, 4);
   const prevBlock = buf.subarray(4, 4 + 32);
-  const merkleRoot = buf.subarray(4 + 32, 4 + 32 + 32);
+  const merkleRoot = buf.subarray(4 + 32, 4 + 32 + 32) as MerkleRootHash;
   const timestamp = new Date(
     buf.subarray(4 + 32 + 32, 4 + 32 + 32 + 4).readUInt32LE() * 1000
   );
@@ -134,6 +136,39 @@ export function readBlockHeader(buf: Buffer) {
   ] as const;
 }
 export type BlockHeader = ReturnType<typeof readBlockHeader>[0];
+
+function calculateMerkleRoot(transactionHashes: TransationHash[]) {
+  let arr = transactionHashes.slice() as Buffer[];
+  while (arr.length > 1) {
+    const newArr: Buffer[] = [];
+    for (let i = 0; i < arr.length; i += 2) {
+      const A = arr[i];
+      const B = i + 1 < arr.length ? arr[i + 1] : A;
+      const join = joinBuffers(A, B);
+      const hash = sha256(sha256(join));
+      newArr.push(hash);
+    }
+    arr = newArr;
+  }
+  return arr[0] as MerkleRootHash;
+}
+
+function readBlockFull(payload: BlockPayload) {
+  // TODO
+
+  const [block, transactions] = readBlockHeader(payload);
+
+  let buf = transactions;
+  const txs: BitcoinTransaction[] = [];
+  for (let i = 0; i < block.txCount; i++) {
+    let tx: BitcoinTransaction;
+    [tx, buf] = readTx(buf as TransactionPayload);
+    txs.push(tx);
+  }
+  if (buf.length > 0) {
+    throw new Error("Some data is left after reading transactions");
+  }
+}
 
 export function readTxIn(buf: Buffer) {
   const outpointHash = buf.subarray(0, 32) as TransationHash;

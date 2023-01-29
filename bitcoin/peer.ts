@@ -4,9 +4,9 @@ import {
   buildMessage,
   createVerackMessage,
   createVersionMessage,
-  joinBuffers,
 } from "./messages.create";
 import { BitcoinMessage, MessagePayload } from "./messages.types";
+import { joinBuffers } from "./utils";
 
 /**
  * This is simple wrapper of Socket
