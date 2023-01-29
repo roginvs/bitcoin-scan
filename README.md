@@ -45,6 +45,8 @@ done
 
 - Implement transaction flag and witness
 
+- Maybe automatically create transaction to withdraw funds into pre-defined wallet
+
 ## Links
 
 https://www.blockchain.com/explorer
