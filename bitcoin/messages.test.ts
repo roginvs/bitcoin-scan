@@ -1,5 +1,12 @@
-import { buildMessage, joinBuffers, packVarStr } from "./messages.create";
-import { MessagePayload } from "./messages.types";
+import { genesisBlockHash } from "./consts";
+import {
+  buildMessage,
+  createGetdataMessage,
+  joinBuffers,
+  packVarStr,
+} from "./messages.create";
+import { parseMessage } from "./messages.parse";
+import { HashType, MessagePayload } from "./messages.types";
 
 function bufFromStr(str: string) {
   return Buffer.from(
@@ -65,5 +72,15 @@ describe("Bitcoin messages", () => {
     expect(packVarStr("/Satoshi:0.7.2/").toString("hex").toUpperCase()).toBe(
       "0F 2F 53 61 74 6F 73 68 69 3A 30 2E 37 2E 32 2F".replace(/ /g, "")
     );
+  });
+
+  it(`createGetdataMessage`, () => {
+    const msg = createGetdataMessage([[HashType.MSG_BLOCK, genesisBlockHash]]);
+    const parsed = parseMessage(msg)!;
+    expect(parsed[0]).toBe("getdata");
+    expect(parsed[1].toString("hex")).toBe(
+      "01" + "02000000" + genesisBlockHash.toString("hex")
+    );
+    expect(parsed[2].length).toBe(0);
   });
 });

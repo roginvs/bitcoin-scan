@@ -3,6 +3,7 @@ import { Nominal } from "../nominal_types/nominaltypes";
 export type BitcoinMessage = Nominal<"bitcoin message", Buffer>;
 export type MessagePayload = Nominal<"message payload", Buffer>;
 export type BlockHash = Nominal<"block hash", Buffer>;
+export type TransationHash = Nominal<"transaction hash", Buffer>;
 
 export enum HashType {
   /** Any data of with this number may be ignored */
@@ -22,3 +23,7 @@ export enum HashType {
   /** Hash of a block with witness data. Only to be used in getdata message. Indicates the reply should be a merkleblock message rather than a block message; this only works if a bloom filter has been set. See BIP 144 for more info. */
   MSG_FILTERED_WITNESS_BLOCK = 0x40000003,
 }
+
+export type InventoryItem =
+  | [type: HashType.MSG_TX, value: TransationHash]
+  | [type: HashType.MSG_BLOCK, value: BlockHash];

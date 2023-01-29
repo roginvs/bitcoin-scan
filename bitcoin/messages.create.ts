@@ -1,6 +1,11 @@
 import { bitcoinMessageMagic, protocolVersion } from "./consts";
 import { sha256 } from "./hashes";
-import { BitcoinMessage, BlockHash, MessagePayload } from "./messages.types";
+import {
+  BitcoinMessage,
+  BlockHash,
+  InventoryItem,
+  MessagePayload,
+} from "./messages.types";
 
 export function buildMessage(command: string, payload: MessagePayload) {
   const commandBuf = Buffer.alloc(12).fill(0);
@@ -110,4 +115,13 @@ export function createGetheadersMessage(
     hashStop
   ) as MessagePayload;
   return buildMessage("getheaders", payload);
+}
+
+export function createGetdataMessage(inventories: InventoryItem[]) {
+  const invCount = packVarInt(inventories.length);
+  const payload = joinBuffers(
+    invCount,
+    ...inventories.flatMap(([type, value]) => [packUint32(type), value])
+  ) as MessagePayload;
+  return buildMessage("getdata", payload);
 }
