@@ -32,8 +32,8 @@ export function createTransactionsStorage(isMemory = false) {
     msg CHARACTER (32) NOT NULL,
     r CHARACTER(32) NOT NULL,
     s CHARACTER(32) NOT NULL
-    // spending_tx_hash CHARACTER(32) NOT NULL,
-    // spending_tx_input_index INTEGER NOT NULL
+    -- spending_tx_hash CHARACTER(32) NOT NULL,
+    -- spending_tx_input_index INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS signature_pub_r ON signatures
     (compressed_public_key, r);
@@ -90,9 +90,9 @@ export function createTransactionsStorage(isMemory = false) {
         msg,
         r,
         s
-        // spending_tx_hash,
-        // spending_tx_input_index
-      ) values (?, ?, ?, ?, ?)
+        -- spending_tx_hash,
+        -- spending_tx_input_index
+      ) values (?, ?, ?, ?)
   `);
 
   const checkDuplicatesSql = sql.prepare(`
@@ -101,8 +101,8 @@ export function createTransactionsStorage(isMemory = false) {
       msg,
       r,
       s
-      // spending_tx_hash,
-      // spending_tx_input_index
+      -- spending_tx_hash,
+      -- spending_tx_input_index
     from signatures
     where compressed_public_key = ? and r = ?
  
