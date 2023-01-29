@@ -1,6 +1,11 @@
+import { sha256 } from "./hashes";
 import { readTx } from "./messages.parse";
 import { SignatureScript } from "./messages.types";
-import { isSignatureScriptLooksLikeP2PKH, isSourceScriptP2PKH } from "./script";
+import {
+  check_P2PKH_SIGHASH_ALL,
+  isSignatureScriptLooksLikeP2PKH,
+  isSourceScriptP2PKH,
+} from "./script";
 import { sourceTxRaw, spendingTxRaw } from "./testdata";
 
 // Bitcoin IDE
@@ -9,8 +14,8 @@ import { sourceTxRaw, spendingTxRaw } from "./testdata";
 describe(`Scripting`, () => {
   it(`isSourceScriptP2PKH`, () => {
     expect(
-      isSourceScriptP2PKH(readTx(sourceTxRaw)[0].txOut[0].script)
-    ).toStrictEqual(null);
+      typeof isSourceScriptP2PKH(readTx(sourceTxRaw)[0].txOut[0].script)
+    ).toBe("string");
 
     expect(
       isSourceScriptP2PKH(readTx(sourceTxRaw)[0].txOut[1].script)?.toString(
@@ -31,9 +36,35 @@ describe(`Scripting`, () => {
     expect(source0).toBeTruthy();
 
     expect(
-      isSignatureScriptLooksLikeP2PKH(
+      typeof isSignatureScriptLooksLikeP2PKH(
         Buffer.from("002233", "hex") as SignatureScript
       )
-    ).toBeFalsy();
+    ).toBe("string");
+  });
+
+  it(`Verify transactions`, () => {
+    const spendingTxParsed = readTx(spendingTxRaw)[0];
+    if (spendingTxParsed.txIn.length !== 1) {
+      throw new Error(`LOL we want 1 input`);
+    }
+
+    if (
+      !spendingTxParsed.txIn[0].outpointHash.equals(sha256(sha256(sourceTxRaw)))
+    ) {
+      throw new Error(`Our source transaction is wrong`);
+    }
+
+    const sourceTxParsed = readTx(sourceTxRaw)[0];
+
+    const sourcePkScript =
+      sourceTxParsed.txOut[spendingTxParsed.txIn[0].outpointIndex].script;
+
+    const result = check_P2PKH_SIGHASH_ALL(spendingTxParsed, 0, sourcePkScript);
+
+    if (typeof result === "string") {
+      throw new Error(result);
+    }
+
+    // TODO
   });
 });

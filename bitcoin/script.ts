@@ -1,25 +1,26 @@
+import { createPublicKey, verify } from "crypto";
+import { create_spki_der_from_pubkey } from "./asn1";
+import { ripemd160, sha256 } from "./hashes";
+import { packTx } from "./messages.create";
+import { BitcoinTransaction } from "./messages.parse";
 import { PkScript, SignatureScript } from "./messages.types";
+import { joinBuffers } from "./utils";
 
 export function isSourceScriptP2PKH(sourcePkScript: PkScript) {
   if (sourcePkScript.length !== 0x14 + 5) {
-    // "wrong len";
-    return null;
+    return "wrong len";
   }
   if (sourcePkScript[0] !== 0x76) {
-    // "first command is not OP_DUP";
-    return null;
+    return "first command is not OP_DUP";
   }
   if (sourcePkScript[1] !== 0xa9) {
-    // "second command is not OP_HASH160";
-    return null;
+    return "second command is not OP_HASH160";
   }
   if (sourcePkScript[2 + 1 + 0x14 + 0] !== 0x88) {
-    // "no OP_EQUALVERIFY command";
-    return null;
+    return "no OP_EQUALVERIFY command";
   }
   if (sourcePkScript[2 + 1 + 0x14 + 1] !== 0xac) {
-    // "no OP_CHECKSIG command";
-    return null;
+    return "no OP_CHECKSIG command";
   }
   const pubkeyHash = sourcePkScript.subarray(3, 3 + 0x14);
   return pubkeyHash;
@@ -28,12 +29,10 @@ export function isSourceScriptP2PKH(sourcePkScript: PkScript) {
 export function isSignatureScriptLooksLikeP2PKH(inputScript: SignatureScript) {
   const signatureAndHashTypeLen = inputScript[0];
   if (signatureAndHashTypeLen < 0x01 || signatureAndHashTypeLen > 0x4b) {
-    // "input script first is not push to stack";
-    return null;
+    return "input script first is not push to stack";
   }
   if (inputScript.length < signatureAndHashTypeLen + 1) {
-    // "not enough length for signature";
-    return null;
+    return "not enough length for signature";
   }
   const signatureAndHashType = inputScript.subarray(
     1,
@@ -41,20 +40,17 @@ export function isSignatureScriptLooksLikeP2PKH(inputScript: SignatureScript) {
   );
   const pubkeyLen = inputScript[1 + signatureAndHashTypeLen];
   if (pubkeyLen < 0x01 || pubkeyLen > 0x4b) {
-    // "input script second command is not push to stack";
-    return null;
+    return "input script second command is not push to stack";
   }
   if (inputScript.length < 1 + signatureAndHashTypeLen + 1 + pubkeyLen) {
-    // "not enough len for pubkey";
-    return null;
+    return "not enough len for pubkey";
   }
   const pubKey = inputScript.subarray(
     1 + signatureAndHashTypeLen + 1,
     1 + signatureAndHashTypeLen + 1 + pubkeyLen
   );
   if (inputScript.length !== 1 + signatureAndHashTypeLen + 1 + pubkeyLen) {
-    // "some data is left on input script";
-    return null;
+    return "some data is left on input script";
   }
   const signatureDer = signatureAndHashType.slice(
     0,
@@ -65,5 +61,70 @@ export function isSignatureScriptLooksLikeP2PKH(inputScript: SignatureScript) {
     pubKey,
     signatureDer,
     hashCodeType,
+  };
+}
+
+export function check_P2PKH_SIGHASH_ALL(
+  spending: BitcoinTransaction,
+  spendingIndex: number,
+  sourcePkScript: PkScript
+) {
+  const pubkeyHashExpected = isSourceScriptP2PKH(sourcePkScript);
+  if (typeof pubkeyHashExpected === "string") {
+    return pubkeyHashExpected;
+  }
+  const inputScript = spending.txIn[spendingIndex].script;
+  const inputScriptParsed = isSignatureScriptLooksLikeP2PKH(inputScript);
+  if (typeof inputScriptParsed === "string") {
+    return inputScriptParsed;
+  }
+  const { pubKey, signatureDer, hashCodeType } = inputScriptParsed;
+  const pubkeyHashObserved = ripemd160(sha256(pubKey));
+  if (!pubkeyHashExpected.equals(pubkeyHashObserved)) {
+    return "pubKey hash is not equal";
+  }
+  if (hashCodeType !== 0x01) {
+    return `This hashCodeType=${hashCodeType} is not supported yet`;
+  }
+
+  const txNew: BitcoinTransaction = {
+    ...spending,
+    txIn: spending.txIn.map((txIn, index) => {
+      if (index !== spendingIndex) {
+        return {
+          ...txIn,
+          script: Buffer.alloc(0) as SignatureScript,
+        };
+      } else {
+        return {
+          ...txIn,
+          // We do not check OP_CODESEPARATORS here
+          script: sourcePkScript as Buffer as SignatureScript,
+        };
+      }
+    }),
+  };
+
+  const dataToVerify = sha256(
+    joinBuffers(
+      packTx(txNew),
+      // hashTypeCode
+      Buffer.from("01000000", "hex")
+    )
+  );
+
+  const pub = createPublicKey({
+    key: create_spki_der_from_pubkey(pubKey),
+    type: "spki",
+    format: "der",
+  });
+
+  const verifyResult = verify(undefined, dataToVerify, pub, signatureDer);
+  if (!verifyResult) {
+    return "Verification failed";
+  }
+
+  return {
+    ok: "ok",
   };
 }
