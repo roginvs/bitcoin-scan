@@ -96,3 +96,32 @@ export function parseVersion(payload: MessagePayload) {
     ).join(",")} startHeight=${startHeight} rest=${rest.toString("hex")}`
   );
 }
+
+export function readBlockHeader(buf: Buffer) {
+  const version = buf.subarray(0, 4);
+  const prevBlock = buf.subarray(4, 4 + 32);
+  const merkleRoot = buf.subarray(4 + 32, 4 + 32 + 32);
+  const timestamp = new Date(
+    buf.subarray(4 + 32 + 32, 4 + 32 + 32 + 4).readUInt32LE() * 1000
+  );
+  const bits = buf
+    .subarray(4 + 32 + 32 + 4, 4 + 32 + 32 + 4 + 4)
+    .readUInt32LE();
+  const nonce = buf.subarray(4 + 32 + 32 + 4 + 4, 4 + 32 + 32 + 4 + 4 + 4);
+  const [txCount, rest] = readVarInt(buf.subarray(4 + 32 + 32 + 4 + 4 + 4));
+  const hashingData = buf.subarray(0, 4 + 32 + 32 + 4 + 4 + 4);
+  return [
+    {
+      version,
+      prevBlock,
+      merkleRoot,
+      timestamp,
+      bits,
+      nonce,
+      txCount,
+    },
+    rest,
+    hashingData,
+  ] as const;
+}
+export type BlockHeader = ReturnType<typeof readBlockHeader>[0];

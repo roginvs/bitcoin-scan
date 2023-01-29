@@ -9,7 +9,9 @@ export type BlockDB = {
   hash: BlockHash;
 };
 export function createBlockchainStorage(isMemory = false) {
-  const blockchain = new Database(isMemory ? ":memory:" : "blockchain.db");
+  const blockchain = new Database(
+    isMemory ? ":memory:" : __dirname + "/blockchain.db"
+  );
 
   blockchain.pragma("journal_mode = WAL");
   blockchain.exec(`
