@@ -1,5 +1,6 @@
+import { bitcoinMessageMagic, protocolVersion } from "./consts";
 import { sha256 } from "./hashes";
-import { Nominal } from "./nominaltypes";
+import { BitcoinMessage, BlockHash, MessagePayload } from "./messages.types";
 
 export function joinBuffers(...buffers: Buffer[]) {
   const len = buffers.reduce((acc, cur) => (acc = acc + cur.length), 0);
@@ -12,30 +13,27 @@ export function joinBuffers(...buffers: Buffer[]) {
   return out;
 }
 
-export type BitcoinMessage = Nominal<"bitcoin message", Buffer>;
-export type MessagePayload = Nominal<"message payload", Buffer>;
-
-const magicBuf = Buffer.from("F9BEB4D9", "hex");
 export function buildMessage(command: string, payload: MessagePayload) {
   const commandBuf = Buffer.alloc(12).fill(0);
   commandBuf.write(command);
 
   const out = Buffer.alloc(
-    magicBuf.length + commandBuf.length + 4 + 4 + payload.length
+    bitcoinMessageMagic.length + commandBuf.length + 4 + 4 + payload.length
   );
-  magicBuf.copy(out, 0);
-  commandBuf.copy(out, magicBuf.length);
-  out.writeInt32LE(payload.length, magicBuf.length + commandBuf.length);
+  bitcoinMessageMagic.copy(out, 0);
+  commandBuf.copy(out, bitcoinMessageMagic.length);
+  out.writeInt32LE(
+    payload.length,
+    bitcoinMessageMagic.length + commandBuf.length
+  );
 
   const checksum = sha256(sha256(payload)).subarray(0, 4);
-  checksum.copy(out, magicBuf.length + commandBuf.length + 4);
+  checksum.copy(out, bitcoinMessageMagic.length + commandBuf.length + 4);
 
-  payload.copy(out, magicBuf.length + commandBuf.length + 4 + 4);
+  payload.copy(out, bitcoinMessageMagic.length + commandBuf.length + 4 + 4);
 
   return out as BitcoinMessage;
 }
-
-const protocolVersion = Buffer.from("62EA0000", "hex");
 
 function packVarInt(value: number) {
   if (value < 0xfd) {
@@ -106,7 +104,7 @@ export function parseMessage(buf: Buffer) {
     return null;
   }
   const magic = buf.subarray(0, 4);
-  if (!magic.equals(magicBuf)) {
+  if (!magic.equals(bitcoinMessageMagic)) {
     console.warn(`Got some other magic`, magic);
   }
   const commandBuf = buf.subarray(4, 4 + 12);
@@ -196,12 +194,6 @@ export function parseVersion(payload: MessagePayload) {
   );
 }
 
-export const genesisBlockHash = Buffer.from(
-  "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
-  "hex"
-).reverse() as BlockHash;
-
-export type BlockHash = Nominal<"block hash", Buffer>;
 export function createGetheadersMessage(
   hashes: BlockHash[],
   hashStop: BlockHash = Buffer.alloc(32).fill(0) as BlockHash

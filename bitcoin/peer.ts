@@ -1,14 +1,13 @@
 import { Socket } from "net";
 import {
-  BitcoinMessage,
   buildMessage,
   createVerackMessage,
   createVersionMessage,
   joinBuffers,
-  MessagePayload,
   parseMessage,
   parseVersion,
-} from "./bitcoin.messages";
+} from "./messages";
+import { BitcoinMessage, MessagePayload } from "./messages.types";
 
 /**
  * This is simple wrapper of Socket

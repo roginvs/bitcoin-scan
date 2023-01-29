@@ -1,9 +1,5 @@
-import {
-  buildMessage,
-  joinBuffers,
-  packVarStr,
-  MessagePayload,
-} from "./bitcoin.messages";
+import { buildMessage, joinBuffers, packVarStr } from "./messages";
+import { MessagePayload } from "./messages.types";
 
 function bufFromStr(str: string) {
   return Buffer.from(
