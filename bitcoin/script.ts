@@ -1,4 +1,4 @@
-import { PkScript } from "./messages.types";
+import { PkScript, SignatureScript } from "./messages.types";
 
 export function isSourceScriptP2PKH(sourcePkScript: PkScript) {
   if (sourcePkScript.length !== 0x14 + 5) {
@@ -23,4 +23,47 @@ export function isSourceScriptP2PKH(sourcePkScript: PkScript) {
   }
   const pubkeyHash = sourcePkScript.subarray(3, 3 + 0x14);
   return pubkeyHash;
+}
+
+export function isSignatureScriptLooksLikeP2PKH(inputScript: SignatureScript) {
+  const signatureAndHashTypeLen = inputScript[0];
+  if (signatureAndHashTypeLen < 0x01 || signatureAndHashTypeLen > 0x4b) {
+    // "input script first is not push to stack";
+    return null;
+  }
+  if (inputScript.length < signatureAndHashTypeLen + 1) {
+    // "not enough length for signature";
+    return null;
+  }
+  const signatureAndHashType = inputScript.subarray(
+    1,
+    1 + signatureAndHashTypeLen
+  );
+  const pubkeyLen = inputScript[1 + signatureAndHashTypeLen];
+  if (pubkeyLen < 0x01 || pubkeyLen > 0x4b) {
+    // "input script second command is not push to stack";
+    return null;
+  }
+  if (inputScript.length < 1 + signatureAndHashTypeLen + 1 + pubkeyLen) {
+    // "not enough len for pubkey";
+    return null;
+  }
+  const pubKey = inputScript.subarray(
+    1 + signatureAndHashTypeLen + 1,
+    1 + signatureAndHashTypeLen + 1 + pubkeyLen
+  );
+  if (inputScript.length !== 1 + signatureAndHashTypeLen + 1 + pubkeyLen) {
+    // "some data is left on input script";
+    return null;
+  }
+  const signatureDer = signatureAndHashType.slice(
+    0,
+    signatureAndHashType.length - 1
+  );
+  const hashCodeType = signatureAndHashType[signatureAndHashType.length - 1];
+  return {
+    pubKey,
+    signatureDer,
+    hashCodeType,
+  };
 }
