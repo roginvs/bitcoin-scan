@@ -71,7 +71,9 @@ function onHeadersMessage(payload: MessagePayload) {
         console.info(
           `Got new block ${reverseBuf(lastKnownBlock).toString(
             "hex"
-          )} current height = ${lastKnownBlockFromDb.id} `
+          )} time=${block.timestamp.toISOString()} current height = ${
+            lastKnownBlockFromDb.id
+          } `
         );
       } else {
         console.warn(
