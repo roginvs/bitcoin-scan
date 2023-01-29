@@ -4,7 +4,7 @@ export type BitcoinMessage = Nominal<"bitcoin message", Buffer>;
 export type MessagePayload = Nominal<"message payload", Buffer>;
 
 export type BlockHash = Nominal<"block hash", Buffer>;
-export type TransationHash = Nominal<"transaction hash", Buffer>;
+export type TransactionHash = Nominal<"transaction hash", Buffer>;
 export type MerkleRootHash = Nominal<"merkle root hash", Buffer>;
 
 export type BlockPayload = Nominal<"block payload", Buffer>;
@@ -33,5 +33,5 @@ export enum HashType {
 }
 
 export type InventoryItem =
-  | [type: HashType.MSG_TX, value: TransationHash]
+  | [type: HashType.MSG_TX, value: TransactionHash]
   | [type: HashType.MSG_BLOCK, value: BlockHash];

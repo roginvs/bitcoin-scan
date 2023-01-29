@@ -9,7 +9,7 @@ import {
   PkScript,
   SignatureScript,
   TransactionPayload,
-  TransationHash,
+  TransactionHash,
 } from "./messages.types";
 import { joinBuffers } from "./utils";
 
@@ -161,7 +161,7 @@ export function readBlock(buf: BlockPayload) {
 }
 export type BitcoinBlock = ReturnType<typeof readBlock>[0];
 
-function calculateMerkleRoot(transactionHashes: TransationHash[]) {
+function calculateMerkleRoot(transactionHashes: TransactionHash[]) {
   let arr = transactionHashes.slice() as Buffer[];
   while (arr.length > 1) {
     const newArr: Buffer[] = [];
@@ -178,7 +178,7 @@ function calculateMerkleRoot(transactionHashes: TransationHash[]) {
 }
 
 export function readTxIn(buf: Buffer) {
-  const outpointHash = buf.subarray(0, 32) as TransationHash;
+  const outpointHash = buf.subarray(0, 32) as TransactionHash;
   const outpointIndex = buf.readUInt32LE(32);
   let scriptLen;
   [scriptLen, buf] = readVarInt(buf.subarray(36));
@@ -258,7 +258,7 @@ export function readTx(payload: TransactionPayload) {
   buf = buf.subarray(4);
 
   const hashingSource = payload.subarray(0, payload.length - buf.length);
-  const hash = sha256(sha256(hashingSource)) as TransationHash;
+  const hash = sha256(sha256(hashingSource)) as TransactionHash;
   const rest = buf;
   return [
     {
