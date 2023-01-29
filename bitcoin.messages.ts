@@ -34,3 +34,36 @@ export function buildMessage(command: string, payload: MessagePayload) {
 
   return out as BitcoinMessage;
 }
+
+const protocolVersion = Buffer.from("62EA0000", "hex");
+
+function packVarInt(value: number) {
+  if (value < 0xfd) {
+    const b = Buffer.alloc(1);
+    b[0] = value;
+    return b;
+  } else if (value < 0xffff) {
+    const b = Buffer.alloc(3);
+    b[0] = 0xfd;
+    b.writeUInt16LE(value, 1);
+    return b;
+  } else if (value < 0xffffffff) {
+    const b = Buffer.alloc(5);
+    b[0] = 0xfe;
+    b.writeUInt32LE(value, 1);
+    return b;
+  } else {
+    const b = Buffer.alloc(9);
+    b[0] = 0xff;
+    b.writeBigInt64LE(BigInt(value), 1);
+    return b;
+  }
+}
+
+export function packVarStr(str: string) {
+  const strLen = packVarInt(str.length);
+  const out = Buffer.alloc(strLen.length + str.length);
+  strLen.copy(out, 0);
+  out.write(str, strLen.length, "latin1");
+  return out;
+}

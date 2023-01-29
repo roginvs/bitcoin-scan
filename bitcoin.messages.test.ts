@@ -1,4 +1,9 @@
-import { buildMessage, joinBuffers, MessagePayload } from "./bitcoin.messages";
+import {
+  buildMessage,
+  joinBuffers,
+  packVarStr,
+  MessagePayload,
+} from "./bitcoin.messages";
 
 function bufFromStr(str: string) {
   return Buffer.from(
@@ -56,6 +61,13 @@ describe("Bitcoin messages", () => {
         00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 FF   
         FF 0A 00 00 01 20 8D  
         `).toString("hex")
+    );
+  });
+
+  it(`packVarStr`, () => {
+    expect(packVarStr("").toString("hex")).toBe("00");
+    expect(packVarStr("/Satoshi:0.7.2/").toString("hex").toUpperCase()).toBe(
+      "0F 2F 53 61 74 6F 73 68 69 3A 30 2E 37 2E 32 2F".replace(/ /g, "")
     );
   });
 });
