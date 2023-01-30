@@ -146,6 +146,8 @@ function onBlockMessage(payload: BlockPayload) {
       `Got some data after block message ${rest.toString("hex")}`
     );
   }
+  // TODO: Ensure that we receiving blocks in correct order
+  // TODO: Throw if we receive "notfound"
   const index = blocksWeAreWaiting.findIndex((x) => x.hash.equals(block.hash));
   if (index < 0) {
     console.warn(`Got unexpected block ${block.hash}`);
