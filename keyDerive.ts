@@ -4,7 +4,7 @@ import { compressPublicKey } from "./bitcoin/compressPublicKey";
 import { ripemd160, sha256 } from "./bitcoin/hashes";
 import { TransactionRow } from "./database/transactions";
 import { Secp256k1 } from "./my-elliptic-curves/curves.named";
-import { get_private_key_if_diff_k_is_known } from "./my-elliptic-curves/ecdsa";
+import { get_private_key_if_k_is_the_same } from "./my-elliptic-curves/ecdsa";
 
 export function derivePrivateKeyFromPair(a: TransactionRow, b: TransactionRow) {
   if (!a.compressed_public_key.equals(b.compressed_public_key)) {
@@ -20,7 +20,7 @@ export function derivePrivateKeyFromPair(a: TransactionRow, b: TransactionRow) {
     throw new Error(`Internal error, this should never happen`);
   }
 
-  const privateKeyBigInt = get_private_key_if_diff_k_is_known(
+  const privateKeyBigInt = get_private_key_if_k_is_the_same(
     Secp256k1,
     {
       r: BigInt("0x" + a.r.toString("hex")),
@@ -31,8 +31,7 @@ export function derivePrivateKeyFromPair(a: TransactionRow, b: TransactionRow) {
       r: BigInt("0x" + b.r.toString("hex")),
       s: BigInt("0x" + b.s.toString("hex")),
     },
-    BigInt("0x" + sha256(b.msg).toString("hex")),
-    BigInt(0)
+    BigInt("0x" + sha256(b.msg).toString("hex"))
   );
 
   let privateKeyStr = privateKeyBigInt.toString(16);
