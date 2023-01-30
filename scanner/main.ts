@@ -10,7 +10,7 @@ import {
   HashType,
   MessagePayload,
 } from "../bitcoin/messages.types";
-import { createPeer } from "../bitcoin/peer";
+import { createPeer } from "../bitcoin/peer.outgoing";
 import {
   BlockDB,
   BlockId,
