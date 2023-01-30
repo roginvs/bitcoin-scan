@@ -56,7 +56,7 @@ export function createTransactionsStorage(isMemory = false) {
   // .mode quote
   // to show values in sqlite console
 
-  const FIX_EXISTING_DUPLICATES = true;
+  const FIX_EXISTING_DUPLICATES = false;
   if (FIX_EXISTING_DUPLICATES) {
     sql.exec(`
           delete from signatures where id in (
