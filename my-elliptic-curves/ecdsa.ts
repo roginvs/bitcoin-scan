@@ -82,6 +82,29 @@ export function check_signature({
   return x1modn === r;
 }
 
+export function get_private_key_if_k_is_the_same(
+  curve: CurveParams,
+  sig1: Signature,
+  msgHash1: bigint,
+  sig2: Signature,
+  msgHash2: bigint
+) {
+  if (sig1.r !== sig2.r) {
+    throw new Error(`Provided kDiff is not correct!`);
+  }
+  if (msgHash1 === msgHash2) {
+    throw new Error(`Messages should be different!`);
+  }
+  const kTop = (msgHash1 + curve.n - msgHash2) % curve.n;
+  const kBottom = (sig1.s + curve.n - sig2.s) % curve.n;
+  const k = (kTop * modulo_inverse(kBottom, curve.n)) % curve.n;
+
+  const privateKey =
+    (((((sig1.s * k) % curve.n) + curve.n - msgHash1) % curve.n) *
+      modulo_inverse(sig1.r, curve.n)) %
+    curve.n;
+  return privateKey;
+}
 export function get_private_key_if_diff_k_is_known(
   curve: CurveParams,
   sig1: Signature,
@@ -90,6 +113,15 @@ export function get_private_key_if_diff_k_is_known(
   msgHash2: bigint,
   kDiff: bigint
 ) {
+  if (kDiff === BigInt(0)) {
+    return get_private_key_if_k_is_the_same(
+      curve,
+      sig1,
+      msgHash1,
+      sig2,
+      msgHash2
+    );
+  }
   const pointForFirstSig = get_point_from_x(sig1.r, curve.a, curve.b, curve.p);
   if (!pointForFirstSig) {
     throw new Error("Must be non-zero point");
@@ -98,19 +130,14 @@ export function get_private_key_if_diff_k_is_known(
     pointForFirstSig,
     get_point_inverse(pointForFirstSig, curve.p),
   ];
-  if (kDiff !== BigInt(0)) {
-    const gKdiff = modulo_power_point(curve.G, kDiff, curve.a, curve.p);
-    const pointsForSecondsSig = pointsForFirstSig.map((point) =>
-      point_add(point, gKdiff, curve.a, curve.p)
-    );
 
-    if (pointsForSecondsSig.filter((p) => p && p[0] === sig2.r).length === 0) {
-      throw new Error(`Provided kDiff is not correct!`);
-    }
-  } else {
-    if (sig1.r !== sig2.r) {
-      throw new Error(`Provided kDiff is not correct!`);
-    }
+  const gKdiff = modulo_power_point(curve.G, kDiff, curve.a, curve.p);
+  const pointsForSecondsSig = pointsForFirstSig.map((point) =>
+    point_add(point, gKdiff, curve.a, curve.p)
+  );
+
+  if (pointsForSecondsSig.filter((p) => p && p[0] === sig2.r).length === 0) {
+    throw new Error(`Provided kDiff is not correct!`);
   }
 
   const r2inverse = modulo_inverse(sig2.r, curve.n);
