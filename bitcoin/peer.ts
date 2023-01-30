@@ -39,6 +39,12 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
     me.onMessage("", Buffer.alloc(0) as MessagePayload);
   });
 
+  client.on("error", (e) => {
+    console.warn(`Connection error: ${e.name} ${e.message}`);
+    // Nothing here but we should have a listener to prevent crashing
+    // We clear everything in the "close" listener
+  });
+
   const send = (msg: BitcoinMessage) => {
     if (sendThisMessagesWhenConnected) {
       sendThisMessagesWhenConnected.push(msg);
