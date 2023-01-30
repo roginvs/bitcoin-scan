@@ -37,6 +37,7 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
   };
 
   let incomingBuf: Buffer = Buffer.alloc(0);
+
   client.on("data", (data) => {
     if (incomingBuf.length === 0) {
       incomingBuf = data;

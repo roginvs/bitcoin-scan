@@ -197,7 +197,7 @@ peer.onMessage = (command, payload) => {
     onBlockMessage(payload as Buffer as BlockPayload);
   } else if (!command) {
     console.error(`Peer disconnected!`);
-    process.exit(1);
+    // We should exit automatically because there should be no listeners anymore
   } else {
     console.info("msg:", command, payload);
   }
