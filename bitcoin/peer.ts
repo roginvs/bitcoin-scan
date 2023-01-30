@@ -25,6 +25,17 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
 
   client.on("close", function () {
     console.log("Connection closed");
+
+    if (pingTimerInterval) {
+      clearInterval(pingTimerInterval);
+      pingTimerInterval = null;
+    }
+
+    for (const timer of watchdogTimers.values()) {
+      clearTimeout(timer);
+    }
+    watchdogTimers.clear();
+
     me.onMessage("", Buffer.alloc(0) as MessagePayload);
   });
 
@@ -36,8 +47,35 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
     }
   };
 
-  let incomingBuf: Buffer = Buffer.alloc(0);
+  const watchdogTimers = new Map<string, NodeJS.Timer>();
+  function clearWatchdog(kind: string) {
+    const existingTimer = watchdogTimers.get(kind);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    } else {
+      console.warn(`Can not clear existing timer ${kind}, no timer`);
+    }
+  }
+  function raiseWatchdog(kind: string, timeout = 30000) {
+    const existingTimer = watchdogTimers.get(kind);
+    if (existingTimer) {
+      console.warn(`Already have timer for ${kind}`);
+      clearTimeout(existingTimer);
+    }
+    watchdogTimers.set(
+      kind,
+      setTimeout(() => {
+        console.warn(`Watchdog timer ${kind} was not cleared!`);
+        client.destroy();
+      }, timeout)
+    );
+  }
 
+  raiseWatchdog("initial connection");
+
+  let pingTimerInterval: NodeJS.Timer | null;
+
+  let incomingBuf: Buffer = Buffer.alloc(0);
   client.on("data", (data) => {
     if (incomingBuf.length === 0) {
       incomingBuf = data;
@@ -55,6 +93,21 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
       if (command === "verack") {
         continue;
       } else if (command === "version") {
+        clearWatchdog("initial connection");
+        if (pingTimerInterval) {
+          console.warn(`Seeing "version" once again`);
+          client.destroy();
+          return;
+        }
+
+        pingTimerInterval = setInterval(() => {
+          const pingPayload = Buffer.from(new Array(8).fill(0)).map(() =>
+            Math.floor(Math.random() * 256)
+          ) as MessagePayload;
+          client.write(buildMessage("ping", pingPayload));
+          raiseWatchdog("pong" + pingPayload.toString("hex"));
+        }, 120 * 1000);
+
         parseVersion(payload);
         client.write(createVerackMessage());
 
@@ -68,6 +121,8 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
         // do nothing
       } else if (command === "ping") {
         client.write(buildMessage("pong", payload));
+      } else if (command === "pong") {
+        clearWatchdog("pong" + payload.toString("hex"));
       } else {
         me.onMessage(command, payload);
       }
@@ -78,6 +133,8 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
     onMessage: (command: string, payload: MessagePayload): void => {
       throw new Error(`Got message but onMessage handler is not overwritten`);
     },
+    raiseWatchdog,
+    clearWatchdog,
   };
 
   return me;
