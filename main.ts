@@ -29,8 +29,11 @@ const peerAddr = process.argv[2] || "95.216.21.47";
 const peerPort = process.argv[3] ? parseInt(process.argv[3]) : 8333;
 console.info(`Will use ${peerAddr}:${peerPort} to fetch data`);
 const peer = createPeer(peerAddr, peerPort, lastKnownBlockAtStartup);
+console.info("Peer created");
 
 const analyzer = createAnalyzer();
+console.info("Analyzer created");
+
 /**
  * We ask for blocks using "getheaders" message
  * And then we parse result in onHeaders
