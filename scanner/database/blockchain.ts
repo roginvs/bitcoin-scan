@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import { genesisBlockHash } from "../../bitcoin/consts";
 import { BlockHash } from "../../bitcoin/messages.types";
 import { Nominal } from "../../nominal_types/nominaltypes";
-import { dataFolder } from "./config";
+import { getDbPath } from "./config";
 
 export type BlockId = Nominal<"block id", number>;
 export type BlockDB = {
@@ -11,7 +11,7 @@ export type BlockDB = {
 };
 export function createBlockchainStorage(isMemory = false) {
   const blockchain = new Database(
-    isMemory ? ":memory:" : dataFolder + "/blockchain.db"
+    isMemory ? ":memory:" : getDbPath("blockchain.db")
   );
 
   blockchain.pragma("journal_mode = WAL");

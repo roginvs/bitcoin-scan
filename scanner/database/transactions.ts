@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import { PkScript, TransactionHash } from "../../bitcoin/messages.types";
 import { derivePrivateKeyFromPair } from "../../crypto/keyDerive";
 import { Nominal } from "../../nominal_types/nominaltypes";
-import { dataFolder } from "./config";
+import { getDbPath } from "./config";
 
 export type UnspentTxId = Nominal<"unspent tx id", number>;
 
@@ -17,7 +17,7 @@ export interface TransactionRow {
 
 export function createTransactionsStorage(isMemory = false) {
   const sql = new Database(
-    isMemory ? ":memory:" : dataFolder + "/transactions.db"
+    isMemory ? ":memory:" : getDbPath("/transactions.db")
   );
 
   sql.pragma("journal_mode = WAL");
