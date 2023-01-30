@@ -1,4 +1,4 @@
-import { createTransactionsStorage } from "./database/transactions";
+import { createTransactionsStorage } from "../scanner/database/transactions";
 import { checkThatThisPrivateKeyForThisPublicKey } from "./keyDerive";
 
 describe(`Key derive`, () => {

@@ -1,7 +1,8 @@
 import Database from "better-sqlite3";
-import { PkScript, TransactionHash } from "../bitcoin/messages.types";
-import { derivePrivateKeyFromPair } from "../keyDerive";
-import { Nominal } from "../nominal_types/nominaltypes";
+import { PkScript, TransactionHash } from "../../bitcoin/messages.types";
+import { derivePrivateKeyFromPair } from "../../crypto/keyDerive";
+import { Nominal } from "../../nominal_types/nominaltypes";
+import { dataFolder } from "./config";
 
 export type UnspentTxId = Nominal<"unspent tx id", number>;
 
@@ -16,7 +17,7 @@ export interface TransactionRow {
 
 export function createTransactionsStorage(isMemory = false) {
   const sql = new Database(
-    isMemory ? ":memory:" : __dirname + "/files/transactions.db"
+    isMemory ? ":memory:" : dataFolder + "/transactions.db"
   );
 
   sql.pragma("journal_mode = WAL");

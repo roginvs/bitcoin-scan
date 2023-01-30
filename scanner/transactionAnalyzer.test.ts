@@ -1,19 +1,19 @@
 import { createPrivateKey, createPublicKey, generateKeyPairSync } from "crypto";
-import { asn1parse } from "./bitcoin/asn1";
-import { compressPublicKey } from "./bitcoin/compressPublicKey";
-import { ripemd160, sha256 } from "./bitcoin/hashes";
-import { packTx } from "./bitcoin/messages.create";
-import { BitcoinTransaction, readTx } from "./bitcoin/messages.parse";
+import { asn1parse } from "../bitcoin/asn1";
+import { compressPublicKey } from "../bitcoin/compressPublicKey";
+import { ripemd160, sha256 } from "../bitcoin/hashes";
+import { packTx } from "../bitcoin/messages.create";
+import { BitcoinTransaction, readTx } from "../bitcoin/messages.parse";
 import {
   PkScript,
   SignatureScript,
   TransactionHash,
-} from "./bitcoin/messages.types";
-import { isSourceScriptP2PKH } from "./bitcoin/script";
-import { sourceTxRaw, spendingTxRaw } from "./bitcoin/testdata";
-import { joinBuffers } from "./bitcoin/utils";
-import { Secp256k1 } from "./my-elliptic-curves/curves.named";
-import { signature } from "./my-elliptic-curves/ecdsa";
+} from "../bitcoin/messages.types";
+import { isSourceScriptP2PKH } from "../bitcoin/script";
+import { sourceTxRaw, spendingTxRaw } from "../bitcoin/testdata";
+import { joinBuffers } from "../bitcoin/utils";
+import { Secp256k1 } from "../my-elliptic-curves/curves.named";
+import { signature } from "../my-elliptic-curves/ecdsa";
 import { createAnalyzer } from "./transactionAnalyzer";
 
 describe("createAnalyzer", () => {

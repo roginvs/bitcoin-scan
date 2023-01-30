@@ -1,10 +1,10 @@
-import { sha256 } from "./bitcoin/hashes";
-import { readTx } from "./bitcoin/messages.parse";
-import { check_P2PKH_SIGHASH_ALL } from "./bitcoin/script";
-import { sourceTxRaw, spendingTxRaw } from "./bitcoin/testdata";
-import { Secp256k1 } from "./my-elliptic-curves/curves.named";
-import { check_signature } from "./my-elliptic-curves/ecdsa";
-import { uncompressPublicKey } from "./my-elliptic-curves/uncompressPublicKey";
+import { sha256 } from "../bitcoin/hashes";
+import { readTx } from "../bitcoin/messages.parse";
+import { check_P2PKH_SIGHASH_ALL } from "../bitcoin/script";
+import { sourceTxRaw, spendingTxRaw } from "../bitcoin/testdata";
+import { Secp256k1 } from "../my-elliptic-curves/curves.named";
+import { check_signature } from "../my-elliptic-curves/ecdsa";
+import { uncompressPublicKey } from "../my-elliptic-curves/uncompressPublicKey";
 
 describe(`Scripting`, () => {
   it(`Verify transactions with BigInt implementation`, () => {

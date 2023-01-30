@@ -1,17 +1,16 @@
-import { genesisBlockHash } from "./bitcoin/consts";
-import { sha256 } from "./bitcoin/hashes";
+import "dotenv-defaults/config";
 import {
   createGetdataMessage,
   createGetheadersMessage,
-} from "./bitcoin/messages.create";
-import { BitcoinBlock, readBlock, readVarInt } from "./bitcoin/messages.parse";
+} from "../bitcoin/messages.create";
+import { BitcoinBlock, readBlock, readVarInt } from "../bitcoin/messages.parse";
 import {
   BlockHash,
   BlockPayload,
   HashType,
   MessagePayload,
-} from "./bitcoin/messages.types";
-import { createPeer } from "./bitcoin/peer";
+} from "../bitcoin/messages.types";
+import { createPeer } from "../bitcoin/peer";
 import {
   BlockDB,
   BlockId,

@@ -1,12 +1,17 @@
 import { createPrivateKey, createPublicKey } from "crypto";
-import { bitcoinAddressFromP2PKH } from "./bitcoin/base58";
-import { compressPublicKey } from "./bitcoin/compressPublicKey";
-import { ripemd160, sha256 } from "./bitcoin/hashes";
-import { TransactionRow } from "./database/transactions";
-import { Secp256k1 } from "./my-elliptic-curves/curves.named";
-import { get_private_key_if_k_is_the_same } from "./my-elliptic-curves/ecdsa";
+import { bitcoinAddressFromP2PKH } from "../bitcoin/base58";
+import { compressPublicKey } from "../bitcoin/compressPublicKey";
+import { ripemd160, sha256 } from "../bitcoin/hashes";
+import { Secp256k1 } from "../my-elliptic-curves/curves.named";
+import { get_private_key_if_k_is_the_same } from "../my-elliptic-curves/ecdsa";
 
-export function derivePrivateKeyFromPair(a: TransactionRow, b: TransactionRow) {
+export interface SignatureInfo {
+  compressed_public_key: Buffer;
+  msg: Buffer;
+  r: Buffer;
+  s: Buffer;
+}
+export function derivePrivateKeyFromPair(a: SignatureInfo, b: SignatureInfo) {
   if (!a.compressed_public_key.equals(b.compressed_public_key)) {
     throw new Error(`Internal error, this should never happen`);
   }
