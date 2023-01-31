@@ -10,6 +10,8 @@ import {
   SignatureScript,
   TransactionPayload,
   TransactionHash,
+  InventoryItem,
+  HashType,
 } from "./messages.types";
 import { joinBuffers } from "./utils";
 
@@ -272,3 +274,26 @@ export function readTx(payload: TransactionPayload) {
   ] as const;
 }
 export type BitcoinTransaction = ReturnType<typeof readTx>[0];
+
+export function readInvPayload(payload: MessagePayload) {
+  let inventories: InventoryItem[] = [];
+  let [count, buf] = readVarInt(payload);
+  if (buf.length !== count * 36) {
+    throw new Error(`Wrong length for inv payload`);
+  }
+  while (count > 0) {
+    const type = buf.readUInt32LE();
+    const hash = buf.subarray(4, 4 + 32);
+    if (type === HashType.ERROR) {
+      // do nothing, just ignore
+    } else if (type === HashType.MSG_BLOCK) {
+      inventories.push([type, hash as BlockHash]);
+    } else if (type === HashType.MSG_TX) {
+      inventories.push([type, hash as TransactionHash]);
+    } else {
+      // TODO
+      // Just ignore for now
+    }
+  }
+  return inventories;
+}

@@ -141,6 +141,9 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
     },
     raiseWatchdog,
     clearWatchdog,
+    close() {
+      client.destroy();
+    },
   };
 
   return me;
