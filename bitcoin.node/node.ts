@@ -1,6 +1,5 @@
-import { BitcoinBlock } from "./messages.parse";
-import { BlockHash, TransactionHash } from "./messages.types";
-import { NodeStorage } from "./node.storage";
+import { BitcoinBlock } from "../bitcoin.protocol/messages.parse";
+import { BlockHash, TransactionHash } from "../bitcoin.protocol/messages.types";
 
 export type PeerAddr = [string, number];
 export function createBitcoinNode(
