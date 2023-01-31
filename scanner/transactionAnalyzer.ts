@@ -1,10 +1,10 @@
-import { compressPublicKey } from "../bitcoin/compressPublicKey";
-import { BitcoinTransaction } from "../bitcoin/messages.parse";
+import { compressPublicKey } from "../bitcoin.protocol/compressPublicKey";
+import { BitcoinTransaction } from "../bitcoin.protocol/messages.parse";
 import {
   check_P2PKH_SIGHASH_ALL,
   isSignatureScriptLooksLikeP2PKH,
   isSourceScriptP2PKH,
-} from "../bitcoin/script";
+} from "../bitcoin.protocol/script";
 import { createTransactionsStorage } from "./database/transactions";
 
 export function createAnalyzer(isMemory: boolean = false) {

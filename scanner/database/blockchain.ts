@@ -1,6 +1,6 @@
 import Database from "better-sqlite3";
-import { genesisBlockHash } from "../../bitcoin/consts";
-import { BlockHash } from "../../bitcoin/messages.types";
+import { genesisBlockHash } from "../../bitcoin.protocol/consts";
+import { BlockHash } from "../../bitcoin.protocol/messages.types";
 import { Nominal } from "../../nominal_types/nominaltypes";
 import { getDbPath } from "./config";
 

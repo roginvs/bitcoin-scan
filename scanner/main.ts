@@ -2,15 +2,19 @@ import "dotenv-defaults/config";
 import {
   createGetdataMessage,
   createGetheadersMessage,
-} from "../bitcoin/messages.create";
-import { BitcoinBlock, readBlock, readVarInt } from "../bitcoin/messages.parse";
+} from "../bitcoin.protocol/messages.create";
+import {
+  BitcoinBlock,
+  readBlock,
+  readVarInt,
+} from "../bitcoin.protocol/messages.parse";
 import {
   BlockHash,
   BlockPayload,
   HashType,
   MessagePayload,
-} from "../bitcoin/messages.types";
-import { createPeer } from "../bitcoin/peer.outgoing";
+} from "../bitcoin.protocol/messages.types";
+import { createPeer } from "../bitcoin.protocol/peer.outgoing";
 import {
   BlockDB,
   BlockId,

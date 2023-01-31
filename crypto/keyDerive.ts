@@ -1,7 +1,7 @@
 import { createPrivateKey, createPublicKey } from "crypto";
-import { bitcoinAddressFromP2PKH } from "../bitcoin/base58";
-import { compressPublicKey } from "../bitcoin/compressPublicKey";
-import { ripemd160, sha256 } from "../bitcoin/hashes";
+import { bitcoinAddressFromP2PKH } from "../bitcoin.protocol/base58";
+import { compressPublicKey } from "../bitcoin.protocol/compressPublicKey";
+import { ripemd160, sha256 } from "../bitcoin.protocol/hashes";
 import { Secp256k1 } from "../my-elliptic-curves/curves.named";
 import { get_private_key_if_k_is_the_same } from "../my-elliptic-curves/ecdsa";
 

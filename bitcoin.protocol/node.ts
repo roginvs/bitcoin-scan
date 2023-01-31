@@ -14,9 +14,23 @@ export function createBitcoinNode(
    */
   onNewBlock?: (block: BitcoinBlock) => void
 ) {
+  /*
+    Simple implementation:
+        - We connect to the first peer
+        - Do "getheaders"
+        - Receive headers, check that we got our previous
+          - For each header ask for a block
+          -
+        - When it is done then check "inv" messages
+        
+        - If disconnected then connect to next
+        
+
+    */
+
   const me = {
     getSavedBlocks(cursorName: string, onBlock: (block: BitcoinBlock) => void) {
-      // Maybe return only when all saved blocks
+      // Maybe return only when all saved blocks are pushed
     },
     destroy() {
       throw new Error(`Not implemented`);

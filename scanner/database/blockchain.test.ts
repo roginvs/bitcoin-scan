@@ -1,5 +1,5 @@
-import { genesisBlockHash } from "../../bitcoin/consts";
-import { BlockHash } from "../../bitcoin/messages.types";
+import { genesisBlockHash } from "../../bitcoin.protocol/consts";
+import { BlockHash } from "../../bitcoin.protocol/messages.types";
 import { createBlockchainStorage } from "./blockchain";
 
 describe("Blockchain database", () => {

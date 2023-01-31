@@ -1,5 +1,8 @@
 import Database from "better-sqlite3";
-import { PkScript, TransactionHash } from "../../bitcoin/messages.types";
+import {
+  PkScript,
+  TransactionHash,
+} from "../../bitcoin.protocol/messages.types";
 import { derivePrivateKeyFromPair } from "../../crypto/keyDerive";
 import { Nominal } from "../../nominal_types/nominaltypes";
 import { getDbPath } from "./config";
