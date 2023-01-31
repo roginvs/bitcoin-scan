@@ -281,9 +281,9 @@ export function readInvPayload(payload: MessagePayload) {
   if (buf.length !== count * 36) {
     throw new Error(`Wrong length for inv payload`);
   }
-  while (count > 0) {
-    const type = buf.readUInt32LE();
-    const hash = buf.subarray(4, 4 + 32);
+  for (let i = 0; i < count; i++) {
+    const type = buf.readUInt32LE(36 * i);
+    const hash = buf.subarray(36 * i + 4, 36 * i + 4 + 32);
     if (type === HashType.ERROR) {
       // do nothing, just ignore
     } else if (type === HashType.MSG_BLOCK) {
