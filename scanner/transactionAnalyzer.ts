@@ -1,4 +1,5 @@
 import { compressPublicKey } from "../bitcoin.protocol/compressPublicKey";
+import { packTx } from "../bitcoin.protocol/messages.create";
 import { BitcoinTransaction } from "../bitcoin.protocol/messages.parse";
 import {
   check_P2PKH_SIGHASH_ALL,
@@ -51,6 +52,9 @@ export function createAnalyzer(isMemory: boolean = false) {
         unspentOutput.pub_script
       );
       if (typeof signatureCheck === "string") {
+        console.info(`Failed on this transaction`, tx);
+        console.info(packTx(tx).toString("hex"));
+
         throw new Error(
           `Why we have unverified transaction in the blockchain?`
         );
