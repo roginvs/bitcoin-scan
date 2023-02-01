@@ -28,7 +28,7 @@ export function createBitcoinNode(
    * When callback returns then state is saved into database
    *
    */
-  onNewBlock?: (block: BitcoinBlock) => void
+  onNewValidatedBlock?: (block: BitcoinBlock) => void
 ) {
   const storage = createNodeStorage();
 

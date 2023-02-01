@@ -27,12 +27,12 @@ export function createNodeStorage(isMemory = false) {
     CREATE TABLE IF NOT EXISTS block_transactions (
       block_id INTEGER PRIMARY KEY,
       txhash CHARACTER(32) NOT NULL,
-      index_in_tne_block INTEGER NOT NULL,
-      data BLOB NOT NULL 
+      index_in_the_block INTEGER NOT NULL,
+      data BLOB NOT NULL
     );
     CREATE INDEX IF NOT EXISTS transaction_hash ON block_transactions (txhash);
 
-
+    
 `);
 
   function getLastKnownBlocksHashes(n = 10): BlockHash[] {
