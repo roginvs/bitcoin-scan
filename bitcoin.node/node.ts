@@ -72,7 +72,7 @@ Algoritm:
   let canFetchBlocks = false;
 
   const peersBlocksTasks = new Map<PeerConnection, BlockHash>();
-  const blocksDownloadingNow = new Set<string>(); // We can not compare buffers directly!
+  const blocksDownloadingNowStartedAt = new Map<string, Date>(); // We can not compare buffers directly!
   const bufferedBlocks = new Map<string, BitcoinBlock>();
 
   function connectToPeer(addr: PeerAddr) {
@@ -144,7 +144,9 @@ Algoritm:
 
     const peerDownloadingBlock = peersBlocksTasks.get(peer);
     if (peerDownloadingBlock) {
-      blocksDownloadingNow.delete(peerDownloadingBlock.toString("hex"));
+      blocksDownloadingNowStartedAt.delete(
+        peerDownloadingBlock.toString("hex")
+      );
       peersBlocksTasks.delete(peer);
       givePeersTasksToDownloadBlocks();
     }
@@ -342,7 +344,12 @@ Algoritm:
     }
 
     peersBlocksTasks.delete(peer);
-    blocksDownloadingNow.delete(expectingBlockHash.toString("hex"));
+    const downloadStartedAt = blocksDownloadingNowStartedAt.get(
+      expectingBlockHash.toString("hex")
+    )!;
+    const durationSeconds =
+      (new Date().getTime() - downloadStartedAt.getTime()) / 1000;
+    blocksDownloadingNowStartedAt.delete(expectingBlockHash.toString("hex"));
     peer.clearWatchdog("get-block-" + expectingBlockHash.toString("hex"));
 
     const storageExpectingBlock = storage
@@ -360,7 +367,7 @@ Algoritm:
       console.info(
         `Block download: ${peer.id} downloaded ${dumpBuf(
           block.hash
-        )} which is going to database`
+        )} in ${durationSeconds}s, block is going to database`
       );
 
       // TODO: Validate block
@@ -408,7 +415,7 @@ Algoritm:
       console.info(
         `Block download: ${peer.id} downloaded ${dumpBuf(
           block.hash
-        )} which is going to buffer`
+        )} in ${durationSeconds}s, keeping data in buffer`
       );
       bufferedBlocks.set(block.hash.toString("hex"), block);
     }
@@ -429,7 +436,9 @@ Algoritm:
           console.info(`Block download: ${peer.id} do not have ${blockHash}`);
           // Sad that this peer do not have this block. Let's hope others will have it
           peersBlocksTasks.delete(peer);
-          blocksDownloadingNow.delete(expectingBlockHash.toString("hex"));
+          blocksDownloadingNowStartedAt.delete(
+            expectingBlockHash.toString("hex")
+          );
           givePeersTasksToDownloadBlocks();
         }
       } else {
@@ -453,7 +462,7 @@ Algoritm:
     const blocksToDownload = storage
       .getBlockIdsWithoutTransactions(MAX_BUFFERED_BLOCKS)
       .filter((blockHash) => {
-        const notDownloadingNow = !blocksDownloadingNow.has(
+        const notDownloadingNow = !blocksDownloadingNowStartedAt.has(
           blockHash.toString("hex")
         );
         const notInBuffer = !bufferedBlocks.has(blockHash.toString("hex"));
@@ -488,7 +497,7 @@ Algoritm:
       console.info(`  ${peer.id} will download ${dumpBuf(blockHash)}`);
 
       peersBlocksTasks.set(peer, blockHash);
-      blocksDownloadingNow.add(blockHash.toString("hex"));
+      blocksDownloadingNowStartedAt.set(blockHash.toString("hex"), new Date());
       peer.send(
         createGetdataMessage([[HashType.MSG_WITNESS_BLOCK, blockHash]])
       );
