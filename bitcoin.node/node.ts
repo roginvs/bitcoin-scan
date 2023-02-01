@@ -118,6 +118,8 @@ Algoritm:
       }
     } else if (cmd === "headers") {
       onHeadersMessage(peer, payload);
+    } else if (cmd === "addr") {
+      onAddrMessage(peer, payload);
     }
   }
 
@@ -199,6 +201,10 @@ Algoritm:
         console.info(`TODO: Headers are fetched, start to fetch blocks`);
       }
     }
+  }
+
+  function onAddrMessage(peer: PeerConnection, payload: MessagePayload) {
+    // TODO:
   }
 
   return {
