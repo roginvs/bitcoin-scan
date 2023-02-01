@@ -1,6 +1,10 @@
 import { sha256 } from "./hashes";
 import { readTx } from "./messages.parse";
-import { SignatureScript } from "./messages.types";
+import {
+  PkScript,
+  SignatureScript,
+  TransactionPayload,
+} from "./messages.types";
 import {
   check_P2PKH_SIGHASH_ALL,
   isSignatureScriptLooksLikeP2PKH,
@@ -66,5 +70,40 @@ describe(`Scripting`, () => {
     }
 
     // console.dir(result, { depth: null });
+  });
+
+  it(`Verifies transaction with witness`, () => {
+    // Magic to split such string
+    // .split(/(.{64})/).filter(x => x)
+
+    const spendingRaw = Buffer.from(
+      [
+        "01000000000102a43a32534210f0af3436e263590b26554a544e2ee4aa48b06b",
+        "00667780c8b5d0000000006b483045022100856c58def37ef5b701ce865a0392",
+        "bebb38521fded2543ca3b30b77a87dcdf8c40220794d08af48f8c78700def25f",
+        "b029557104ea3535b5b4e68ad647fe77f5b440a2012103ae8f91d2d97330edc5",
+        "561805518a91178bc74c08b53879fe9769c659837d5a8bffffffff566978cc0d",
+        "b5a605a42b26c18ea1144df9dd1b1a71997d93a6b101e11be054fe0000000000",
+        "ffffffff011cd12d00000000001976a9149ff2deba0b4027c6225e4f97c470ec",
+        "b52de9106d88ac0002483045022100bea9e757f3c407af04f567bc833b0ec7e6",
+        "9520089e72efcb562165f058c5cc90022015f2be1196a363909b57480626e0fe",
+        "1282807a83fe2b3747c5a934ccbf86466f0121036f6b062f37b883145cea4f69",
+        "21d0fb5002bd509f760a8fecf70bc64ec9fe377800000000",
+      ].join(""),
+      "hex"
+    ) as TransactionPayload;
+
+    const pkScript = Buffer.from(
+      "76a9146fbe35ac00cc26a3f0d0393da8e0ce47856b54d188ac",
+      "hex"
+    ) as PkScript;
+
+    const [tx, rest] = readTx(spendingRaw);
+    expect(rest.length).toBe(0);
+    const result = check_P2PKH_SIGHASH_ALL(tx, 0, pkScript);
+
+    if (typeof result === "string") {
+      throw new Error(result);
+    }
   });
 });
