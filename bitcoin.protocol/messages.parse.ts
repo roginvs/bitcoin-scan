@@ -144,8 +144,8 @@ export function readBlock(buf: BlockPayload) {
   const [txCount, transactionsBuf] = readVarInt(
     buf.subarray(4 + 32 + 32 + 4 + 4 + 4)
   );
-  const hashingData = buf.subarray(0, 4 + 32 + 32 + 4 + 4 + 4);
-  const hash = sha256(sha256(hashingData)) as BlockHash;
+  const blockHeader = buf.subarray(0, 4 + 32 + 32 + 4 + 4 + 4);
+  const hash = sha256(sha256(blockHeader)) as BlockHash;
 
   // If data is block header then txCount is zero so it is fine
   const transactions: BitcoinTransaction[] = [];
@@ -217,6 +217,7 @@ export function readBlock(buf: BlockPayload) {
       txCount,
       hash,
       transactions,
+      blockHeader,
     },
     rest,
   ] as const;
@@ -344,7 +345,10 @@ export function readTx(payload: TransactionPayload) {
     isWitness,
   } as const;
 
-  const fullTransactionBuf = payload.subarray(0, payload.length - buf.length);
+  const fullTransactionBuf = payload.subarray(
+    0,
+    payload.length - buf.length
+  ) as TransactionPayload;
   let txid: TransactionHash;
   if (!isWitness) {
     txid = sha256(sha256(fullTransactionBuf)) as TransactionHash;
@@ -354,6 +358,7 @@ export function readTx(payload: TransactionPayload) {
       isWitness: false,
       txid: Buffer.alloc(0) as TransactionHash,
       wtxid: Buffer.alloc(0) as TransactionHash,
+      payload: Buffer.alloc(0) as TransactionPayload,
     });
     txid = sha256(sha256(packedWithNoWitness)) as TransactionHash;
   }
@@ -384,6 +389,7 @@ export function readTx(payload: TransactionPayload) {
       ...txNoHashes,
       txid,
       wtxid,
+      payload: fullTransactionBuf,
     },
     rest,
   ] as const;

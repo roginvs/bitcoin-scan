@@ -8,6 +8,7 @@ import {
   PkScript,
   SignatureScript,
   TransactionHash,
+  TransactionPayload,
 } from "../bitcoin.protocol/messages.types";
 import { isSourceScriptP2PKH } from "../bitcoin.protocol/script";
 import { sourceTxRaw, spendingTxRaw } from "../bitcoin.protocol/testdata";
@@ -64,6 +65,7 @@ describe("createAnalyzer", () => {
         // This will be updated after packing and unpacking
         txid: Buffer.alloc(0) as TransactionHash,
         wtxid: Buffer.alloc(0) as TransactionHash,
+        payload: Buffer.alloc(0) as TransactionPayload,
         isWitness: false,
         lockTime: 0,
         version: 1,
@@ -99,6 +101,7 @@ describe("createAnalyzer", () => {
         // This will be updated after packing and unpacking
         txid: Buffer.alloc(0) as TransactionHash,
         wtxid: Buffer.alloc(0) as TransactionHash,
+        payload: Buffer.alloc(0) as TransactionPayload,
         isWitness: false,
         lockTime: 0,
         version: 1,
@@ -165,6 +168,7 @@ describe("createAnalyzer", () => {
         // This will be updated after packing and unpacking
         txid: Buffer.alloc(0) as TransactionHash,
         wtxid: Buffer.alloc(0) as TransactionHash,
+        payload: Buffer.alloc(0) as TransactionPayload,
         isWitness: false,
         lockTime: 0,
         version: 1,

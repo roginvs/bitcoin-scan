@@ -53,13 +53,16 @@ export function createNodeStorage(isMemory = false) {
   }
 
   function pushNewBlockHeader(hash: BlockHash, blockHeader: BlockPayload) {
+    if (blockHeader.length !== 80) {
+      throw new Error(`We expect block header here!`);
+    }
     sql
       .prepare(
         `
       insert into headerschain (hash, header) values (?, ?)
     `
       )
-      .run(hash, blockHeader.subarray(0, 4 + 32 + 32 + 4 + 4 + 4));
+      .run(hash, blockHeader);
   }
 
   function pruneLastNBlocksData(n: number) {
