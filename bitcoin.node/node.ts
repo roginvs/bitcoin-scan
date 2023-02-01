@@ -164,6 +164,7 @@ Algoritm:
     let lastKnownBlock = storage.getLastKnownBlocksHashes().slice().shift()!;
 
     let [count, headers] = readVarInt(payload);
+    console.info(`${peer.id} Got headers for ${count} blocks`);
     if (count > 0) {
       while (count > 0) {
         const [block, rest] = readBlock(headers as BlockPayload);
@@ -234,9 +235,7 @@ Algoritm:
       }
     }
     console.info(
-      `${peer.id} Got headers for ${count} blocks, current height = ${
-        (storage.getLastKnownBlockId() || 0) - 1
-      }`
+      `$${peer.id} Current height = ${(storage.getLastKnownBlockId() || 0) - 1}`
     );
   }
 
