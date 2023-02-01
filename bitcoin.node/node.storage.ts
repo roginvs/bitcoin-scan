@@ -65,22 +65,18 @@ export function createNodeStorage(isMemory = false) {
       .run(hash, blockHeader);
   }
 
-  function pruneLastNBlocksData(n: number) {
-    // TODO
-    const dbId = sql
-      .prepare(
-        `
-          select id from blockchain order by id desc limit 1 offset ?
-        `
-      )
-      .get().id;
+  function pruneSavedTxes(n: number) {
+    // Not sure that sub-query is optimal but let it be so
     sql
       .prepare(
         `
-        delete from blocks where id < ?
-      `
+          delete from block_transactions where block_numeric_id <=
+        (select block_numeric_id from block_transactions 
+          group by block_numeric_id 
+          order by block_numeric_id desc limit 1 offset ?)
+        `
       )
-      .run(dbId);
+      .run(n);
   }
 
   function getLastKnownBlockId() {
@@ -129,7 +125,7 @@ export function createNodeStorage(isMemory = false) {
         `
       select id, hash from headerschain where id > (
       select ifnull(max(block_numeric_id),0) from block_transactions
-      ) order by id limit ?;
+      ) order by id limit ?
     `
       )
       .all(n)
@@ -164,8 +160,8 @@ export function createNodeStorage(isMemory = false) {
   return {
     getLastKnownBlocksHashes,
     pushNewBlockHeader,
-    pruneLastNBlocksData,
     getLastKnownBlockId,
+    pruneSavedTxes,
     getBlockIdsWithoutTransactions,
     saveBlockTransactions,
     getBlockHeader,

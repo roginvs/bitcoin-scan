@@ -545,11 +545,16 @@ Algoritm:
     return block;
   }
 
+  function pruneSavedTxes(keepLastNBlocks: number) {
+    storage.pruneSavedTxes(keepLastNBlocks);
+  }
+
   const me: BitcoinNodeApi = {
     destroy() {
       throw new Error(`Not implemented`);
     },
     getBlock,
+    pruneSavedTxes,
   };
   plugins.forEach((plugin) => plugin.onCreate?.(me));
   return me;

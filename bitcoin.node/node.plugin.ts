@@ -7,7 +7,7 @@ import { BlockHash, TransactionHash } from "../bitcoin.protocol/messages.types";
 export interface BitcoinNodeApi {
   // getTransaction(txId: TransactionHash): BitcoinTransaction;
   getBlock(blockHash: BlockHash): BitcoinBlock;
-  // pruneSavedTxes
+  pruneSavedTxes(keepLastNBlocks: number): void;
   destroy(): void;
 
   // getSavedBlocks(cursorName: string, onBlock: (block: BitcoinBlock) => void): void
