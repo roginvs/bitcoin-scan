@@ -72,6 +72,7 @@ Algoritm:
   let canFetchBlocks = false;
 
   const peersBlocksTasks = new Map<PeerConnection, BlockHash>();
+  const blocksDownloadingNow = new Set<BlockHash>();
   const bufferedBlocks = new Map<BlockHash, BitcoinBlock>();
 
   function connectToPeer(addr: PeerAddr) {
@@ -141,7 +142,9 @@ Algoritm:
       }
     }
 
-    if (peersBlocksTasks.has(peer)) {
+    const peerDownloadingBlock = peersBlocksTasks.get(peer);
+    if (peerDownloadingBlock) {
+      blocksDownloadingNow.delete(peerDownloadingBlock);
       peersBlocksTasks.delete(peer);
       givePeersTasksToDownloadBlocks();
     }
@@ -339,6 +342,7 @@ Algoritm:
     }
 
     peersBlocksTasks.delete(peer);
+    blocksDownloadingNow.delete(expectingBlockHash);
 
     const storageExpectingBlock = storage
       .getBlockIdsWithoutTransactions(1)
@@ -422,6 +426,7 @@ Algoritm:
           console.info(`Block download: ${peer.id} do not have ${blockHash}`);
           // Sad that this peer do not have this block. Let's hope others will have it
           peersBlocksTasks.delete(peer);
+          blocksDownloadingNow.delete(expectingBlockHash);
           givePeersTasksToDownloadBlocks();
         }
       } else {
@@ -442,11 +447,15 @@ Algoritm:
       // We already have a lot data which is unprocessed yet
       return;
     }
-    const thresholdOfBuffer = MAX_BUFFERED_BLOCKS - bufferedBlocks.size;
-    const blocksToDownload = storage.getBlockIdsWithoutTransactions(
-      Math.min(MAX_DOWNLOADING_PEERS, thresholdOfBuffer)
-    );
+    const blocksToDownload = storage
+      .getBlockIdsWithoutTransactions(MAX_BUFFERED_BLOCKS)
+      .filter((blockHash) => {
+        const notDownloadingNow = !blocksDownloadingNow.has(blockHash);
+        const notInBuffer = !bufferedBlocks.has(blockHash);
+        return notDownloadingNow && notInBuffer;
+      });
 
+    const thresholdOfBuffer = MAX_BUFFERED_BLOCKS - bufferedBlocks.size;
     const freePeers = peers.filter((p) => !peersBlocksTasks.has(p));
     const availablePeersForDownloading = freePeers
       .slice()
@@ -474,6 +483,7 @@ Algoritm:
       console.info(`  ${peer.id} will download ${dumpBuf(blockHash)}`);
 
       peersBlocksTasks.set(peer, blockHash);
+      blocksDownloadingNow.add(blockHash);
       peer.send(
         createGetdataMessage([[HashType.MSG_WITNESS_BLOCK, blockHash]])
       );
