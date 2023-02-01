@@ -6,7 +6,7 @@ import { BlockHash, TransactionHash } from "../bitcoin.protocol/messages.types";
 
 export interface BitcoinNodeApi {
   // getTransaction(txId: TransactionHash): BitcoinTransaction;
-  // getBlock(blockHash: BlockHash): BitcoinBlock;
+  getBlock(blockHash: BlockHash): BitcoinBlock;
   // pruneSavedTxes
   destroy(): void;
 

@@ -36,7 +36,7 @@ export function buildMessage(command: string, payload: MessagePayload) {
   return out as BitcoinMessage;
 }
 
-function packVarInt(value: number) {
+export function packVarInt(value: number) {
   if (value < 0xfd) {
     const b = Buffer.alloc(1);
     b[0] = value;

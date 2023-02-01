@@ -7,6 +7,7 @@ const genesisBlockHash = Buffer.from(
 import {
   createGetdataMessage,
   createGetheadersMessage,
+  packVarInt,
 } from "../bitcoin.protocol/messages.create";
 import {
   BitcoinBlock,
@@ -14,6 +15,7 @@ import {
   readBlock,
   readInvPayload,
   readNotFoundPayload,
+  readTx,
   readVarInt,
 } from "../bitcoin.protocol/messages.parse";
 import {
@@ -24,6 +26,7 @@ import {
   TransactionHash,
 } from "../bitcoin.protocol/messages.types";
 import { createPeer, PeerConnection } from "../bitcoin.protocol/peer.outgoing";
+import { joinBuffers } from "../bitcoin.protocol/utils";
 import { BitcoinNodeApi, BitcoinNodePlugin } from "./node.plugin";
 import { createNodeStorage } from "./node.storage";
 
@@ -524,10 +527,29 @@ Algoritm:
 
   connectToBootstapPeers();
 
+  function getBlock(blockHash: BlockHash): BitcoinBlock {
+    const header = storage.getBlockHeader(blockHash);
+
+    const transactionsPayload = storage.getBlockTransactions(blockHash);
+
+    const [block, rest] = readBlock(
+      joinBuffers(
+        header,
+        packVarInt(transactionsPayload.length),
+        ...transactionsPayload
+      ) as BlockPayload
+    );
+    if (rest.length !== 0) {
+      throw new Error(`Db error`);
+    }
+    return block;
+  }
+
   const me: BitcoinNodeApi = {
     destroy() {
       throw new Error(`Not implemented`);
     },
+    getBlock,
   };
   plugins.forEach((plugin) => plugin.onCreate?.(me));
   return me;
