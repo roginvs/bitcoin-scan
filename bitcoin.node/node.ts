@@ -73,7 +73,6 @@ Algoritm:
 
   const peersBlocksTasks = new Map<PeerConnection, BlockHash>();
   const bufferedBlocks = new Map<BlockHash, BitcoinBlock>();
-  let highestBlockWhichWasRequested: BlockHash | null = null;
 
   function connectToPeer(addr: PeerAddr) {
     const currentLastKnownBlockId = storage.getLastKnownBlockId();
@@ -445,8 +444,7 @@ Algoritm:
     }
     const thresholdOfBuffer = MAX_BUFFERED_BLOCKS - bufferedBlocks.size;
     const blocksToDownload = storage.getBlockIdsWithoutTransactions(
-      Math.min(MAX_DOWNLOADING_PEERS, thresholdOfBuffer),
-      highestBlockWhichWasRequested
+      Math.min(MAX_DOWNLOADING_PEERS, thresholdOfBuffer)
     );
 
     const freePeers = peers.filter((p) => !peersBlocksTasks.has(p));
@@ -479,7 +477,6 @@ Algoritm:
       peer.send(
         createGetdataMessage([[HashType.MSG_WITNESS_BLOCK, blockHash]])
       );
-      highestBlockWhichWasRequested = blockHash;
     }
   }
 
