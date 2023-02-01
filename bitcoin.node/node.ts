@@ -263,6 +263,10 @@ Algoritm:
             `${peer.id} Got ipv6 addr, ignoring ${addr.host}:${addr.port}`
           );
         }
+      } else {
+        console.info(
+          `${peer.id} Got addr which is already connected ${addr.host}:${addr.port}`
+        );
       }
 
       addrCount--;
