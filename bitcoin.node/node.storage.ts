@@ -128,7 +128,7 @@ export function createNodeStorage(isMemory = false) {
       .prepare(
         `
       select id, hash from headerschain where id > (
-      select ifnull(max(block_id),0) from block_transactions
+      select ifnull(max(block_numeric_id),0) from block_transactions
       ) order by id limit ?;
     `
       )

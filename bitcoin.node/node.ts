@@ -328,7 +328,7 @@ Algoritm:
 
     const expectingBlockHash = peersBlocksTasks.get(peer);
     if (!expectingBlockHash || !expectingBlockHash.equals(block.hash)) {
-      console.warn(`${peer.id} unknown block ${block.hash}`);
+      console.warn(`${peer.id} unknown block ${dumpBuf(block.hash)}`);
       peer.close();
       return;
     }
@@ -338,13 +338,17 @@ Algoritm:
       .shift();
     if (!storageExpectingBlock) {
       throw new Error(
-        `Storage error: why this block ${block.hash} was fetched if nothing expected there?`
+        `Storage error: why this block ${dumpBuf(
+          block.hash
+        )} was fetched if nothing expected there?`
       );
     }
 
     if (storageExpectingBlock.equals(block.hash)) {
       console.info(
-        `Block download: ${peer.id} downloaded ${block.hash} which is going to database`
+        `Block download: ${peer.id} downloaded ${dumpBuf(
+          block.hash
+        )} which is going to database`
       );
 
       // TODO: Validate block
@@ -365,7 +369,9 @@ Algoritm:
         }
 
         console.info(
-          `Block download: ${nextExpectingBlock} is in buffer so using it`
+          `Block download: ${dumpBuf(
+            nextExpectingBlock
+          )} is in buffer so using it`
         );
 
         // TODO: Validate block
@@ -380,7 +386,9 @@ Algoritm:
       }
     } else {
       console.info(
-        `Block download: ${peer.id} downloaded ${block.hash} which is going to buffer`
+        `Block download: ${peer.id} downloaded ${dumpBuf(
+          block.hash
+        )} which is going to buffer`
       );
       bufferedBlocks.set(block.hash, block);
     }
@@ -393,7 +401,9 @@ Algoritm:
         const blockHash = item[1];
         const expectingBlockHash = peersBlocksTasks.get(peer);
         if (!expectingBlockHash || !expectingBlockHash.equals(blockHash)) {
-          console.warn(`${peer.id} unknown notfound for block ${item[1]}`);
+          console.warn(
+            `${peer.id} unknown notfound for block ${dumpBuf(item[1])}`
+          );
           peer.close();
         } else {
           console.info(`Block download: ${peer.id} do not have ${blockHash}`);
@@ -402,7 +412,9 @@ Algoritm:
           givePeersTasksToDownloadBlocks();
         }
       } else {
-        console.warn(`${peer.id} unknown notfound ${item[0]} ${item[1]}`);
+        console.warn(
+          `${peer.id} unknown notfound ${item[0]} ${dumpBuf(item[1])}`
+        );
         peer.close();
       }
     }
@@ -443,7 +455,7 @@ Algoritm:
       if (!blockHash) {
         throw new Error(`Internal error`);
       }
-      console.info(`  ${peer.id} will download ${blockHash}`);
+      console.info(`  ${peer.id} will download ${dumpBuf(blockHash)}`);
 
       peersBlocksTasks.set(peer, blockHash);
       peer.send(
