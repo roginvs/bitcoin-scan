@@ -402,20 +402,20 @@ export function readInvPayload(payload: MessagePayload) {
 export function readAddr(payload: Buffer) {
   const services = parseServices(payload.subarray(0, 8));
   const ipv4or6 = payload.subarray(8, 8 + 16);
-  let addr;
+  let host;
   let ipFamily;
   if (
     ipv4or6
       .subarray(0, 12)
       .equals(Buffer.from("00000000000000000000FFFF", "hex"))
   ) {
-    addr = [12, 13, 14, 15]
+    host = [12, 13, 14, 15]
       .map((i) => ipv4or6.readUInt8(i).toString())
       .join(".");
 
     ipFamily = 4 as const;
   } else {
-    addr = [0, 2, 4, 6, 8, 10, 12, 14]
+    host = [0, 2, 4, 6, 8, 10, 12, 14]
       .map((i) => ipv4or6.subarray(i, i + 2).toString("hex"))
       .join(":");
 
@@ -425,7 +425,7 @@ export function readAddr(payload: Buffer) {
   return [
     {
       services,
-      addr,
+      host,
       port,
       ipFamily,
     },

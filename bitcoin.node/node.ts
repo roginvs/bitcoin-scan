@@ -228,8 +228,10 @@ Algoritm:
         );
       }
 
-      canFetchBlocks = true;
-      console.info(`TODO: Headers are fetched, start to fetch blocks`);
+      if (!canFetchBlocks) {
+        canFetchBlocks = true;
+        console.info(`TODO: Headers are fetched, start to fetch blocks`);
+      }
     }
   }
 
@@ -241,18 +243,26 @@ Algoritm:
       const [addr, rest] = readAddrWithTime(buf);
       buf = rest;
 
-      if (addr.ipFamily === 4) {
-        if (peers.length > MAX_PEERS) {
-          console.info(
-            `${peer.id} Got ipv4 addr but we have enough peers so ignoring:\n`,
-            addr
-          );
+      const isPeerAlreadyConnected = peers.some(
+        (p) => p.host === addr.host && p.port === addr.port
+      );
+      if (!isPeerAlreadyConnected) {
+        if (addr.ipFamily === 4) {
+          if (peers.length > MAX_PEERS) {
+            console.info(
+              `${peer.id} Got ipv4 addr but we have enough peers so ignoring ${addr.host}:${addr.port}`
+            );
+          } else {
+            console.info(
+              `${peer.id} Got ipv4 addr, adding to the list ${addr.host}:${addr.port}`
+            );
+            connectToPeer([addr.host, addr.port]);
+          }
         } else {
-          console.info(`${peer.id} Got ipv4 addr, adding to the list:\n`, addr);
-          connectToPeer([addr.addr, addr.port]);
+          console.info(
+            `${peer.id} Got ipv6 addr, ignoring ${addr.host}:${addr.port}`
+          );
         }
-      } else {
-        console.info(`${peer.id} Got ipv6 addr, ignoring:\n`, addr);
       }
 
       addrCount--;
