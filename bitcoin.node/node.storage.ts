@@ -1,10 +1,10 @@
 import Database from "better-sqlite3";
-import { packTx } from "../bitcoin.protocol/messages.create";
 import {
-  BitcoinBlock,
-  BitcoinTransaction,
-} from "../bitcoin.protocol/messages.parse";
-import { BlockHash, BlockPayload } from "../bitcoin.protocol/messages.types";
+  BlockHash,
+  BlockPayload,
+  TransactionHash,
+  TransactionPayload,
+} from "../bitcoin.protocol/messages.types";
 import { Nominal } from "../nominal_types/nominaltypes";
 
 function getDbPath(dbFileName: string) {
@@ -99,7 +99,10 @@ export function createNodeStorage(isMemory = false) {
     ) values (?, ?, ?, ?)
   `);
   const saveBlockTransactions = sql.transaction<
-    (blockHash: BlockHash, txes: BitcoinTransaction[]) => void
+    (
+      blockHash: BlockHash,
+      txes: { txid: TransactionHash; payload: TransactionPayload }[]
+    ) => void
   >((blockHash, txes) => {
     const blockNumericId = sql
       .prepare(`select id from headerschain where hash = ?`)
@@ -112,7 +115,7 @@ export function createNodeStorage(isMemory = false) {
         blockNumericId,
         tx.txid,
         index,
-        packTx(tx)
+        tx.payload
       );
     }
   });
