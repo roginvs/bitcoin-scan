@@ -25,14 +25,17 @@ export function createNodeStorage(isMemory = false) {
     CREATE INDEX IF NOT EXISTS block_hash ON blockchain (hash);
 
     CREATE TABLE IF NOT EXISTS block_transactions (
-      block_id INTEGER PRIMARY KEY,
-      txhash CHARACTER(32) NOT NULL,
+      id INTEGER PRIMARY KEY AUTOINCREMENT, 
+      block_id INTEGER,
+      txid CHARACTER(32) NOT NULL,
+      wtxid CHARACTER(32) NOT NULL,
       index_in_the_block INTEGER NOT NULL,
       data BLOB NOT NULL
     );
-    CREATE INDEX IF NOT EXISTS transaction_hash ON block_transactions (txhash);
+    CREATE INDEX IF NOT EXISTS transaction_hash ON block_transactions (txid);
+    CREATE INDEX IF NOT EXISTS transaction_hash ON block_transactions (wtxid);
+    CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_id);
 
-    
 `);
 
   function getLastKnownBlocksHashes(n = 10): BlockHash[] {
