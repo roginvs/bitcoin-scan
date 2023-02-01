@@ -20,12 +20,12 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
   let sendThisMessagesWhenConnected: BitcoinMessage[] | null = [];
 
   client.connect(port, host, () => {
-    console.log(`Connected to ${host}:${port}`);
+    console.log(`${host}:${port} Connected`);
     client.write(createVersionMessage(lastKnownBlock));
   });
 
   client.on("close", function () {
-    console.log("Connection closed");
+    console.log(`${host}:${port} Connection closed`);
 
     if (pingTimerInterval) {
       clearInterval(pingTimerInterval);
@@ -41,7 +41,7 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
   });
 
   client.on("error", (e) => {
-    console.warn(`Connection error: ${e.name} ${e.message}`);
+    console.warn(`${host}:${port} Connection error: ${e.name} ${e.message}`);
     // Nothing here but we should have a listener to prevent crashing
     // We clear everything in the "close" listener
   });
@@ -61,19 +61,21 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
       clearTimeout(existingTimer);
       watchdogTimers.delete(kind);
     } else {
-      console.warn(`Can not clear existing timer ${kind}, no timer`);
+      console.warn(
+        `${host}:${port} Can not clear existing timer ${kind}, no timer`
+      );
     }
   }
   function raiseWatchdog(kind: string, timeout = 30000) {
     const existingTimer = watchdogTimers.get(kind);
     if (existingTimer) {
-      console.warn(`Already have timer for ${kind}`);
+      console.warn(`${host}:${port} Already have timer for ${kind}`);
       clearTimeout(existingTimer);
     }
     watchdogTimers.set(
       kind,
       setTimeout(() => {
-        console.warn(`Watchdog timer ${kind} was not cleared!`);
+        console.warn(`${host}:${port} Watchdog timer ${kind} was not cleared!`);
         client.destroy();
       }, timeout)
     );
@@ -103,7 +105,7 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
       } else if (command === "version") {
         clearWatchdog("initial connection");
         if (pingTimerInterval) {
-          console.warn(`Seeing "version" once again`);
+          console.warn(`${host}:${port} Seeing "version" once again`);
           client.destroy();
           return;
         }
