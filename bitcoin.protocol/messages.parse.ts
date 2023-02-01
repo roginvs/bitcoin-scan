@@ -146,6 +146,7 @@ export function readBlock(buf: BlockPayload) {
     if (!merkleRoot.equals(merkleRootCalculated)) {
       throw new Error(`Wrong Merkle root hash`);
     }
+    // TODO: Check witness hashes
   }
 
   return [

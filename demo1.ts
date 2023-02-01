@@ -35,7 +35,8 @@ peer.onMessage = (command, payload) => {
     if (rest.length !== 0) {
       throw new Error(`LOL something left`);
     }
-    console.dir(block.transactions[23], { depth: null });
+    console.info(block.transactions[23]);
+    console.info(block.transactions[23].txIn);
   } else {
     console.info(command);
   }
