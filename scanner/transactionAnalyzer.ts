@@ -51,9 +51,12 @@ export function createAnalyzer(isMemory: boolean = false) {
         unspentOutput.pub_script
       );
       if (typeof signatureCheck === "string") {
-        debug(`in ${index} signature not verified: ${signatureCheck}`);
-        storage.removeUnspendTx(unspentOutput.id);
-        continue;
+        throw new Error(
+          `Why we have unverified transaction in the blockchain?`
+        );
+        // debug(`in ${index} signature not verified: ${signatureCheck}`);
+        // storage.removeUnspendTx(unspentOutput.id);
+        // continue;
       }
 
       const compressedPubKey = compressPublicKey(signatureCheck.pubKey);
