@@ -167,6 +167,9 @@ Algoritm:
       onBlockMessage(peer, payload as Buffer as BlockPayload);
     } else if (cmd === "notfound") {
       onNotFoundMessage(peer, payload);
+    } else if (cmd === "inv") {
+      // Just ignore for now
+      // TODO: If is a block and we have chain then re-download it?
     } else {
       console.info(`${peer.id} unknown message ${cmd}`);
     }
