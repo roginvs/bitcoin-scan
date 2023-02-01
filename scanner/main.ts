@@ -35,8 +35,17 @@ node.onNewValidatedBlock((block, currentHeight) => {
   }
 });
 
-// Scanner will remove it because it have own database for specific txes
-const keepBlocks = 30;
-node.onNewValidatedBlock(() => {
-  node.pruneSavedTxes(keepBlocks);
-});
+const pruning = process.env.SCANNER_PRUNE
+  ? parseInt("process.env.SCANNER_PRUNE")
+  : 0;
+if (pruning && pruning > 3) {
+  console.info(`
+========================================
+Scanner will prune processed blocks data
+========================================
+`);
+  // Scanner will remove it because it have own database for specific txes
+  node.onNewValidatedBlock(() => {
+    node.pruneSavedTxes(pruning);
+  });
+}
