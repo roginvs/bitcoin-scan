@@ -71,6 +71,7 @@ describe("createAnalyzer", () => {
             outpointIndex: 0,
             script: Buffer.alloc(0) as SignatureScript,
             sequence: 1,
+            witness: undefined,
           },
         ],
         txOut: [
@@ -103,6 +104,7 @@ describe("createAnalyzer", () => {
             outpointIndex,
             script: pkScript as Buffer as SignatureScript,
             sequence: 0xffffffff,
+            witness: undefined,
           },
         ],
         txOut: [],
@@ -166,6 +168,7 @@ describe("createAnalyzer", () => {
             outpointIndex,
             script,
             sequence: 0xffffffff,
+            witness: undefined,
           },
         ],
         txOut: [],

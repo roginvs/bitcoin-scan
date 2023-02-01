@@ -12,6 +12,7 @@ import {
   TransactionHash,
   InventoryItem,
   HashType,
+  WitnessStackItem,
 } from "./messages.types";
 import { joinBuffers } from "./utils";
 
@@ -69,7 +70,7 @@ export function readVarInt(buf: Buffer) {
     }
   }
 
-  return [count, buf.slice(startAt)] as const;
+  return [count, buf.subarray(startAt)] as const;
 }
 
 /** Accepts buf with 8 bytes of services */
@@ -194,6 +195,7 @@ export function readTxIn(buf: Buffer) {
       outpointIndex,
       script,
       sequence,
+      witness: undefined as undefined | WitnessStackItem[],
     },
     buf,
   ] as const;
@@ -203,6 +205,7 @@ export type BitcoinTransactionIn = ReturnType<typeof readTxIn>[0];
 export function readTxOut(buf: Buffer) {
   const value = buf.subarray(0, 8).readBigInt64LE(0);
   buf = buf.subarray(8);
+
   let scriptLen;
   [scriptLen, buf] = readVarInt(buf);
   const script = buf.subarray(0, scriptLen) as PkScript;
@@ -223,7 +226,7 @@ export function readTx(payload: TransactionPayload) {
   const version = buf.readUInt32LE(0);
   const isWitness = buf[4] === 0;
   if (isWitness && buf[5] !== 1) {
-    console.error(buf);
+    console.error(payload);
     throw new Error("Unknown flag");
   }
 
@@ -253,12 +256,21 @@ export function readTx(payload: TransactionPayload) {
   }
 
   if (isWitness) {
-    for (let i = 0; i < txInCount; i++) {
+    for (let i = 0; i < txIn.length; i++) {
+      let witness: WitnessStackItem[] = [];
       let witnessesCount;
       [witnessesCount, buf] = readVarInt(buf);
       for (let ii = 0; ii < witnessesCount; ii++) {
-        //
+        let witnessItemLen;
+        [witnessItemLen, buf] = readVarInt(buf);
+        const witnessItem = buf.subarray(0, witnessItemLen) as WitnessStackItem;
+        buf = buf.subarray(witnessItemLen);
+        witness.push(witnessItem);
       }
+      txIn[i] = {
+        ...txIn[i],
+        witness,
+      };
     }
   }
 
