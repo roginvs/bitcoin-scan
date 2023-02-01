@@ -35,6 +35,8 @@ peer.onMessage = (command, payload) => {
     if (rest.length !== 0) {
       throw new Error(`LOL something left`);
     }
+    console.info(block);
+    /*
     for (const txIndex of [0, 23]) {
       console.info(`~~~${txIndex}~~~`);
       console.info(block.transactions[txIndex]);
@@ -50,7 +52,7 @@ peer.onMessage = (command, payload) => {
           .toString("hex")}`
       );
       console.info("");
-    }
+    }*/
   } else {
     console.info(command);
   }
@@ -65,5 +67,5 @@ peer.send(
   createGetdataMessage([
     [HashType.MSG_WITNESS_BLOCK, someLateBlockHash],
     //[HashType.MSG_BLOCK, someLateBlockHash],
-  ] as any[])
+  ])
 );
