@@ -367,7 +367,7 @@ Algoritm:
 
     const storageExpectingBlock = storage
       .getBlockIdsWithoutTransactions(1)
-      .shift()?.hash;
+      .shift();
     if (!storageExpectingBlock) {
       throw new Error(
         `Storage error: why this block ${dumpBuf(
@@ -376,7 +376,7 @@ Algoritm:
       );
     }
 
-    if (storageExpectingBlock.equals(block.hash)) {
+    if (storageExpectingBlock.hash.equals(block.hash)) {
       console.info(
         `Block download: ${peer.id} downloaded ${dumpBuf(
           block.hash
@@ -384,19 +384,21 @@ Algoritm:
       );
 
       // TODO: Validate block
-      newBlockListeners.forEach((cb) => cb(block));
+      newBlockListeners.forEach((cb) =>
+        cb(block, storageExpectingBlock.id - 1)
+      );
       storage.saveBlockTransactions(block.hash, block.transactions);
 
       // Now flushing buffer
       while (true) {
         const nextExpectingBlock = storage
           .getBlockIdsWithoutTransactions(1)
-          .shift()?.hash;
+          .shift();
         if (!nextExpectingBlock) {
           break;
         }
         const blockInBuffer = bufferedBlocks.get(
-          nextExpectingBlock.toString("hex")
+          nextExpectingBlock.hash.toString("hex")
         );
         if (!blockInBuffer) {
           break;
@@ -404,18 +406,18 @@ Algoritm:
 
         console.info(
           `Block download: ${dumpBuf(
-            nextExpectingBlock
+            nextExpectingBlock.hash
           )} is in buffer so using it`
         );
 
         // TODO: Validate block
-        newBlockListeners.forEach((cb) => cb(block));
+        newBlockListeners.forEach((cb) => cb(block, nextExpectingBlock.id - 1));
 
         storage.saveBlockTransactions(
           blockInBuffer.hash,
           blockInBuffer.transactions
         );
-        bufferedBlocks.delete(nextExpectingBlock.toString("hex"));
+        bufferedBlocks.delete(nextExpectingBlock.hash.toString("hex"));
       }
     } else {
       console.info(

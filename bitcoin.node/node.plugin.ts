@@ -4,7 +4,10 @@ import {
 } from "../bitcoin.protocol/messages.parse";
 import { BlockHash, TransactionHash } from "../bitcoin.protocol/messages.types";
 
-export type NewBlockListener = (block: BitcoinBlock) => void;
+export type NewBlockListener = (
+  block: BitcoinBlock,
+  currentHeight: number
+) => void;
 export type SubscribeEvent<T extends Function> = (cb: T) => () => void;
 export interface BitcoinNodeApi {
   // getTransaction(txId: TransactionHash): BitcoinTransaction;

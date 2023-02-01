@@ -8,5 +8,3 @@ const node = createBitcoinNode([
   ["95.216.47.4", 8333],
   ["95.216.76.224", 8333],
 ]);
-
-node.pruneSavedTxes(3);
