@@ -338,6 +338,8 @@ Algoritm:
       return;
     }
 
+    peersBlocksTasks.delete(peer);
+
     const storageExpectingBlock = storage
       .getBlockIdsWithoutTransactions(1)
       .shift();
@@ -365,10 +367,16 @@ Algoritm:
         const nextExpectingBlock = storage
           .getBlockIdsWithoutTransactions(1)
           .shift();
+        console.info(
+          `DEBUG nextExpectingBlock=${
+            nextExpectingBlock ? dumpBuf(nextExpectingBlock) : "none"
+          }`
+        );
         if (!nextExpectingBlock) {
           break;
         }
         const blockInBuffer = bufferedBlocks.get(nextExpectingBlock);
+        console.info(`DEBUG blockInBuffer=${blockInBuffer ? "yes" : "none"}`);
         if (!blockInBuffer) {
           break;
         }
