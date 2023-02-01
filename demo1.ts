@@ -38,6 +38,7 @@ peer.onMessage = (command, payload) => {
     for (const txIndex of [0, 23]) {
       console.info(`~~~${txIndex}~~~`);
       console.info(block.transactions[txIndex]);
+      console.info(block.transactions[txIndex].txIn);
       console.info(
         `txid  = ${Buffer.from(block.transactions[txIndex].txid)
           .reverse()
@@ -48,7 +49,7 @@ peer.onMessage = (command, payload) => {
           .reverse()
           .toString("hex")}`
       );
-      console.info(block.transactions[txIndex].txIn);
+      console.info("");
     }
   } else {
     console.info(command);
