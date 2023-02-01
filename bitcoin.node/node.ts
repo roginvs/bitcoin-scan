@@ -343,6 +343,7 @@ Algoritm:
 
     peersBlocksTasks.delete(peer);
     blocksDownloadingNow.delete(expectingBlockHash.toString("hex"));
+    peer.clearWatchdog("get-block-" + expectingBlockHash.toString("hex"));
 
     const storageExpectingBlock = storage
       .getBlockIdsWithoutTransactions(1)
@@ -490,6 +491,10 @@ Algoritm:
       blocksDownloadingNow.add(blockHash.toString("hex"));
       peer.send(
         createGetdataMessage([[HashType.MSG_WITNESS_BLOCK, blockHash]])
+      );
+      peer.raiseWatchdog(
+        "get-block-" + blockHash.toString("hex"),
+        10 * 60 * 1000
       );
     }
   }
