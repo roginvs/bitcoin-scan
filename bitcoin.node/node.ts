@@ -70,7 +70,11 @@ Algoritm:
   function connectToPeer(addr: PeerAddr) {
     const currentLastKnownBlockId = storage.getLastKnownBlockId();
     console.info(`Creating new peer ${addr[0]}:${addr[1]}`);
-    const peer = createPeer(addr[0], addr[1], currentLastKnownBlockId - 1);
+    const peer = createPeer(
+      addr[0],
+      addr[1],
+      currentLastKnownBlockId ? currentLastKnownBlockId - 1 : 0
+    );
     peer.onMessage = (cmd, payload) => onMessage(peer, cmd, payload);
     peers.push(peer);
 
@@ -84,8 +88,42 @@ Algoritm:
 
   function performInitialHeadersDownload(peer: PeerConnection) {
     const fewLastKnownBlocks = storage.getLastKnownBlocksHashes();
-    peer.send(createGetheadersMessage(fewLastKnownBlocks));
-    peer.raiseWatchdog("headers");
+    if (fewLastKnownBlocks.length > 0) {
+      peer.send(createGetheadersMessage(fewLastKnownBlocks));
+      peer.raiseWatchdog("headers");
+    } else {
+      // A initial case when no data even for genesis block
+      peer.raiseWatchdog("genesis block data");
+      peer.send(
+        createGetdataMessage([[HashType.MSG_WITNESS_BLOCK, genesisBlockHash]])
+      );
+    }
+  }
+
+  function onPeerDisconnected(peer: PeerConnection) {
+    const idx = peers.indexOf(peer);
+    if (idx < 0) {
+      throw new Error(`Internal error`);
+    }
+    peers.splice(idx, 1);
+
+    if (
+      peersToPerformInitialHeadersChainDownload &&
+      peersToPerformInitialHeadersChainDownload[0] === peer
+    ) {
+      // This peer was in the downloading phase
+      peersToPerformInitialHeadersChainDownload.splice(0, 1);
+      if (peersToPerformInitialHeadersChainDownload.length > 0) {
+        // Switch to another peer
+        performInitialHeadersDownload(
+          peersToPerformInitialHeadersChainDownload[0]
+        );
+      } else {
+        // It means we do not have any peers more. We will not get any new peers
+        // So the best is to terminate
+        throw new Error(`No candidates for initial blockheaders download`);
+      }
+    }
   }
 
   function onMessage(
@@ -94,33 +132,13 @@ Algoritm:
     payload: MessagePayload
   ) {
     if (cmd === "") {
-      const idx = peers.indexOf(peer);
-      if (idx < 0) {
-        throw new Error(`Internal error`);
-      }
-      peers.splice(idx, 1);
-
-      if (
-        peersToPerformInitialHeadersChainDownload &&
-        peersToPerformInitialHeadersChainDownload[0] === peer
-      ) {
-        // This peer was in the downloading phase
-        peersToPerformInitialHeadersChainDownload.splice(0, 1);
-        if (peersToPerformInitialHeadersChainDownload.length > 0) {
-          // Switch to another peer
-          performInitialHeadersDownload(
-            peersToPerformInitialHeadersChainDownload[0]
-          );
-        } else {
-          // It means we do not have any peers more. We will not get any new peers
-          // So the best is to terminate
-          throw new Error(`No candidates for initial blockheaders download`);
-        }
-      }
+      onPeerDisconnected(peer);
     } else if (cmd === "headers") {
       onHeadersMessage(peer, payload);
     } else if (cmd === "addr") {
       onAddrMessage(peer, payload);
+    } else if (cmd === "block") {
+      onBlockMessage(peer, payload as Buffer as BlockPayload);
     }
   }
 
@@ -168,7 +186,7 @@ Algoritm:
             );
           }
 
-          const lastKnownBlockIdInDb = storage.getLastKnownBlockId();
+          const lastKnownBlockIdInDb = storage.getLastKnownBlockId()!;
 
           console.info(
             `${peer.id} Got new block ${dumpBuf(
@@ -232,6 +250,35 @@ Algoritm:
 
       addrCount--;
     }
+  }
+
+  function onBlockMessage(peer: PeerConnection, payload: BlockPayload) {
+    const [block, rest] = readBlock(payload);
+    if (rest.length !== 0) {
+      console.warn(`Got some data after block message ${rest.toString("hex")}`);
+      peer.close();
+      return;
+    }
+
+    if (peersToPerformInitialHeadersChainDownload) {
+      // Special case: fetching genesis header
+      if (!block.hash.equals(genesisBlockHash)) {
+        console.warn(
+          `Got unknown block hash during initial chain download ${dumpBuf(
+            block.hash
+          )}`
+        );
+        peer.close();
+        return;
+      }
+
+      storage.pushNewBlockHeader(block.hash, payload);
+      peer.clearWatchdog("genesis block data");
+      performInitialHeadersDownload(peer);
+      return;
+    }
+
+    throw new Error("TODO");
   }
 
   for (const addr of bootstrapPeers) {

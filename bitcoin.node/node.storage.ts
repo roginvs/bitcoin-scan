@@ -1,6 +1,4 @@
 import Database from "better-sqlite3";
-import { genesisBlockHash } from "../bitcoin.protocol/consts";
-import { BitcoinBlock } from "../bitcoin.protocol/messages.parse";
 import { BlockHash, BlockPayload } from "../bitcoin.protocol/messages.types";
 import { Nominal } from "../nominal_types/nominaltypes";
 
@@ -38,12 +36,11 @@ export function createNodeStorage(isMemory = false) {
     CREATE INDEX IF NOT EXISTS transaction_hash ON block_transactions (txid);
     CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_id);    
     -- CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_id, block_index);
-
-`);
+  `);
 
   function getLastKnownBlocksHashes(n = 10): BlockHash[] {
     const blockHashes = sql
-      .prepare(`select hash from blockchain order by id desc limit ?`)
+      .prepare(`select hash from headerschain order by id desc limit ?`)
       .all(n)
       .map((row) => row.hash);
 
@@ -54,13 +51,14 @@ export function createNodeStorage(isMemory = false) {
     sql
       .prepare(
         `
-      insert into headerschain (hash, header) values ?
+      insert into headerschain (hash, header) values (?, ?)
     `
       )
       .run(hash, blockHeader.subarray(0, 4 + 32 + 32 + 4 + 4 + 4));
   }
 
   function pruneLastNBlocksData(n: number) {
+    // TODO
     const dbId = sql
       .prepare(
         `
@@ -83,7 +81,7 @@ export function createNodeStorage(isMemory = false) {
         `
             select id from blockchain order by id desc limit 1`
       )
-      .get()!.id as BlockId;
+      .get()?.id as BlockId | undefined;
     return dbId;
   }
 
