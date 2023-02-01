@@ -64,6 +64,7 @@ export function isSignatureScriptLooksLikeP2PKH(inputScript: SignatureScript) {
   };
 }
 
+export const VERIFICATION_FAILED_RESULT = "Verification failed";
 export function check_P2PKH_SIGHASH_ALL(
   spending: BitcoinTransaction,
   spendingIndex: number,
@@ -122,7 +123,7 @@ export function check_P2PKH_SIGHASH_ALL(
 
   const verifyResult = verify(undefined, dataToVerify, pub, signatureDer);
   if (!verifyResult) {
-    return "Verification failed";
+    return VERIFICATION_FAILED_RESULT;
   }
 
   let r: Buffer;

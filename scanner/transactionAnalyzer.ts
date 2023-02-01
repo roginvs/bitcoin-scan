@@ -5,6 +5,7 @@ import {
   check_P2PKH_SIGHASH_ALL,
   isSignatureScriptLooksLikeP2PKH,
   isSourceScriptP2PKH,
+  VERIFICATION_FAILED_RESULT,
 } from "../bitcoin.protocol/script";
 import { createTransactionsStorage } from "./database/transactions";
 
@@ -51,16 +52,22 @@ export function createAnalyzer(isMemory: boolean = false) {
         index,
         unspentOutput.pub_script
       );
-      if (typeof signatureCheck === "string") {
-        console.info(`Failed on this transaction`, tx);
-        console.info(packTx(tx).toString("hex"));
 
-        throw new Error(
-          `Why we have unverified transaction in the blockchain?`
-        );
-        // debug(`in ${index} signature not verified: ${signatureCheck}`);
-        // storage.removeUnspendTx(unspentOutput.id);
-        // continue;
+      if (typeof signatureCheck === "string") {
+        debug(`in ${index} signature not verified: ${signatureCheck}`);
+        storage.removeUnspendTx(unspentOutput.id);
+
+        if (signatureCheck === VERIFICATION_FAILED_RESULT) {
+          console.info(`signatureCheck=${signatureCheck}`);
+          console.info(`Failed on this transaction`, tx);
+          console.info(packTx(tx).toString("hex"));
+
+          throw new Error(
+            `Why we have unverified transaction in the blockchain?`
+          );
+        }
+
+        continue;
       }
 
       const compressedPubKey = compressPublicKey(signatureCheck.pubKey);
