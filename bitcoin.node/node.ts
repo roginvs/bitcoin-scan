@@ -5,6 +5,7 @@ import {
 } from "../bitcoin.protocol/messages.create";
 import {
   BitcoinBlock,
+  readAddrWithTime,
   readBlock,
   readVarInt,
 } from "../bitcoin.protocol/messages.parse";
@@ -26,7 +27,6 @@ function dumpBuf(buf: Buffer) {
 }
 export function createBitcoinNode(
   bootstrapPeers: PeerAddr[],
-  saveOnlyLastNBlocks?: number,
   plugins: BitcoinNodePlugin[] = []
 ) {
   const storage = createNodeStorage();
@@ -69,6 +69,7 @@ Algoritm:
 
   function connectToPeer(addr: PeerAddr) {
     const currentLastKnownBlockId = storage.getLastKnownBlockId();
+    console.info(`Creating new peer ${addr[0]}:${addr[1]}`);
     const peer = createPeer(addr[0], addr[1], currentLastKnownBlockId - 1);
     peer.onMessage = (cmd, payload) => onMessage(peer, cmd, payload);
     peers.push(peer);
@@ -208,7 +209,33 @@ Algoritm:
   }
 
   function onAddrMessage(peer: PeerConnection, payload: MessagePayload) {
-    // TODO:
+    let addrCount;
+    let buf: Buffer = payload;
+    [addrCount, buf] = readVarInt(buf);
+    while (addrCount > 0) {
+      const [addr, rest] = readAddrWithTime(buf);
+      buf = rest;
+
+      if (addr.ipFamily === 4) {
+        if (peers.length > MAX_PEERS) {
+          console.info(
+            `Got ipv4 addr but we have enough peers so ignoring:\n`,
+            addr
+          );
+        } else {
+          console.info(`Got ipv4 addr, adding to the list:\n`, addr);
+          connectToPeer([addr.addr, addr.port]);
+        }
+      } else {
+        console.info(`Got ipv6 addr, ignoring:\n`, addr);
+      }
+
+      addrCount--;
+    }
+  }
+
+  for (const addr of bootstrapPeers) {
+    connectToPeer(addr);
   }
 
   return {

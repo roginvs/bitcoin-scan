@@ -75,7 +75,7 @@ export function readVarInt(buf: Buffer) {
 }
 
 /** Accepts buf with 8 bytes of services */
-function parseVersionServices(payload: Buffer) {
+function parseServices(payload: Buffer) {
   const n = payload.readUInt32LE(0);
   const data = [
     [1, "NODE_NETWORK"],
@@ -106,7 +106,7 @@ export function parseVersion(payload: MessagePayload) {
   console.info(
     `Got hello ver=${ver.readUInt32LE(0)} time=${new Date(
       timestamp * 1000
-    ).toISOString()} userAgent=${userAgent} services=${parseVersionServices(
+    ).toISOString()} userAgent=${userAgent} services=${parseServices(
       services
     ).join(",")} startHeight=${startHeight} rest=${rest.toString("hex")}`
   );
@@ -397,4 +397,50 @@ export function readInvPayload(payload: MessagePayload) {
     }
   }
   return inventories;
+}
+
+export function readAddr(payload: Buffer) {
+  const services = parseServices(payload.subarray(0, 8));
+  const ipv4or6 = payload.subarray(8, 8 + 16);
+  let addr;
+  let ipFamily;
+  if (
+    ipv4or6
+      .subarray(0, 12)
+      .equals(Buffer.from("00000000000000000000FFFF", "hex"))
+  ) {
+    addr = [12, 13, 14, 15]
+      .map((i) => ipv4or6.readUInt8(i).toString())
+      .join(".");
+
+    ipFamily = 4 as const;
+  } else {
+    addr = [0, 2, 4, 6, 8, 10, 12, 14]
+      .map((i) => ipv4or6.subarray(i, i + 2).toString("hex"))
+      .join(":");
+
+    ipFamily = 6 as const;
+  }
+  const port = payload.readUInt16LE(8 + 18);
+  return [
+    {
+      services,
+      addr,
+      port,
+      ipFamily,
+    },
+    payload.subarray(8 + 16 + 2),
+  ] as const;
+}
+
+export function readAddrWithTime(buf: Buffer) {
+  const time = new Date(buf.readUint32LE() * 1000);
+  const [addr, rest] = readAddr(buf.subarray(4));
+  return [
+    {
+      ...addr,
+      time,
+    },
+    rest,
+  ] as const;
 }
