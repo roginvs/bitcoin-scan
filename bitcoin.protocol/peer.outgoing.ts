@@ -59,6 +59,7 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
     const existingTimer = watchdogTimers.get(kind);
     if (existingTimer) {
       clearTimeout(existingTimer);
+      watchdogTimers.delete(kind);
     } else {
       console.warn(`Can not clear existing timer ${kind}, no timer`);
     }

@@ -144,11 +144,13 @@ Algoritm:
 
   function onHeadersMessage(peer: PeerConnection, payload: MessagePayload) {
     if (!peersToPerformInitialHeadersChainDownload) {
-      console.warn(`Got headers but we are not in the headers fetching state`);
+      console.warn(
+        `${peer.id} Got headers but we are not in the headers fetching state`
+      );
       return;
     }
     if (peersToPerformInitialHeadersChainDownload[0] !== peer) {
-      console.warn(`Got headers from the wrong peer`);
+      console.warn(`${peer.id} Got headers from the wrong peer`);
       return;
     }
 
@@ -157,6 +159,7 @@ Algoritm:
     let lastKnownBlock = storage.getLastKnownBlocksHashes().slice().shift()!;
 
     let [count, headers] = readVarInt(payload);
+    console.info(`${peer.id} Got headers for ${count} blocks`);
     if (count > 0) {
       while (count > 0) {
         const [block, rest] = readBlock(headers as BlockPayload);
@@ -188,13 +191,13 @@ Algoritm:
 
           const lastKnownBlockIdInDb = storage.getLastKnownBlockId()!;
 
-          console.info(
-            `${peer.id} Got new block ${dumpBuf(
-              lastKnownBlock
-            )} time=${block.timestamp.toISOString()} current height = ${
-              lastKnownBlockIdInDb - 1
-            } `
-          );
+          // console.info(
+          //   `${peer.id} Got new block ${dumpBuf(
+          //     lastKnownBlock
+          //   )} time=${block.timestamp.toISOString()} current height = ${
+          //     lastKnownBlockIdInDb - 1
+          //   } `
+          // );
         } else {
           console.warn(
             `${peer.id} Hmm, got block ${dumpBuf(
@@ -237,15 +240,15 @@ Algoritm:
       if (addr.ipFamily === 4) {
         if (peers.length > MAX_PEERS) {
           console.info(
-            `Got ipv4 addr but we have enough peers so ignoring:\n`,
+            `${peer.id} Got ipv4 addr but we have enough peers so ignoring:\n`,
             addr
           );
         } else {
-          console.info(`Got ipv4 addr, adding to the list:\n`, addr);
+          console.info(`${peer.id} Got ipv4 addr, adding to the list:\n`, addr);
           connectToPeer([addr.addr, addr.port]);
         }
       } else {
-        console.info(`Got ipv6 addr, ignoring:\n`, addr);
+        console.info(`${peer.id} Got ipv6 addr, ignoring:\n`, addr);
       }
 
       addrCount--;
@@ -255,7 +258,9 @@ Algoritm:
   function onBlockMessage(peer: PeerConnection, payload: BlockPayload) {
     const [block, rest] = readBlock(payload);
     if (rest.length !== 0) {
-      console.warn(`Got some data after block message ${rest.toString("hex")}`);
+      console.warn(
+        `${peer.id} Got some data after block message ${rest.toString("hex")}`
+      );
       peer.close();
       return;
     }
@@ -264,7 +269,9 @@ Algoritm:
       // Special case: fetching genesis header
       if (!block.hash.equals(genesisBlockHash)) {
         console.warn(
-          `Got unknown block hash during initial chain download ${dumpBuf(
+          `${
+            peer.id
+          } Got unknown block hash during initial chain download ${dumpBuf(
             block.hash
           )}`
         );
