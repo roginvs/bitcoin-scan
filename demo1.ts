@@ -35,7 +35,7 @@ peer.onMessage = (command, payload) => {
     if (rest.length !== 0) {
       throw new Error(`LOL something left`);
     }
-    console.info(block);
+    console.info(`Len=`, payload.length);
     /*
     for (const txIndex of [0, 23]) {
       console.info(`~~~${txIndex}~~~`);
