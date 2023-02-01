@@ -70,9 +70,7 @@ Algoritm:
   function connectToPeer(addr: PeerAddr) {
     const currentLastKnownBlockId = storage.getLastKnownBlockId();
     console.info(
-      `Creating new peer ${addr[0]}:${addr[1]}, will have ${
-        peers.length + 1
-      } peers`
+      `Creating new peer ${addr[0]}:${addr[1]}, ` + `count=${peers.length + 1}`
     );
     const peer = createPeer(
       addr[0],
