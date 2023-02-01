@@ -5,15 +5,16 @@ import {
 import { BlockHash, TransactionHash } from "../bitcoin.protocol/messages.types";
 
 export interface BitcoinNodeApi {
-  getTransaction(txId: TransactionHash): BitcoinTransaction;
-  getBlock(blockHash: BlockHash): BitcoinBlock;
-  //pruneSavedTxes
+  // getTransaction(txId: TransactionHash): BitcoinTransaction;
+  // getBlock(blockHash: BlockHash): BitcoinBlock;
+  // pruneSavedTxes
+  destroy(): void;
 
   // getSavedBlocks(cursorName: string, onBlock: (block: BitcoinBlock) => void): void
 }
 
 export interface BitcoinNodePlugin {
-  onCreate: (api: BitcoinNodeApi) => void;
+  onCreate?: (api: BitcoinNodeApi) => void;
 
   /**
    * This is called when new block is fetched.

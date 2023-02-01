@@ -24,7 +24,7 @@ import {
   TransactionHash,
 } from "../bitcoin.protocol/messages.types";
 import { createPeer, PeerConnection } from "../bitcoin.protocol/peer.outgoing";
-import { BitcoinNodePlugin } from "./node.plugin";
+import { BitcoinNodeApi, BitcoinNodePlugin } from "./node.plugin";
 import { createNodeStorage } from "./node.storage";
 
 export type PeerAddr = [string, number];
@@ -170,6 +170,8 @@ Algoritm:
     } else if (cmd === "inv") {
       // Just ignore for now
       // TODO: If is a block and we have chain then re-download it?
+    } else if (cmd === "getheaders") {
+      // TODO
     } else {
       console.info(`${peer.id} unknown message ${cmd}`);
     }
@@ -436,8 +438,9 @@ Algoritm:
     const blocksToDownload = storage.getBlockIdsWithoutTransactions(
       Math.min(MAX_DOWNLOADING_PEERS, thresholdOfBuffer)
     );
-    const availablePeersForDownloading = peers
-      .filter((p) => !peersBlocksTasks.has(p))
+
+    const freePeers = peers.filter((p) => !peersBlocksTasks.has(p));
+    const availablePeersForDownloading = freePeers
       .slice()
       .sort(() => Math.random() * 2 - 1)
       .slice(
@@ -451,7 +454,9 @@ Algoritm:
       );
     console.info(
       `Block download: max=${MAX_DOWNLOADING_PEERS} ` +
-        ` bufAvailable=${thresholdOfBuffer} jobs=${availablePeersForDownloading.length}`
+        `bufAvailable=${thresholdOfBuffer} freePeers=${freePeers.length} ` +
+        `blockToDownload=${blocksToDownload.length} ` +
+        `startJobs=${availablePeersForDownloading.length}`
     );
     for (const [i, peer] of availablePeersForDownloading.entries()) {
       const blockHash = blocksToDownload[i];
@@ -475,9 +480,11 @@ Algoritm:
 
   connectToBootstapPeers();
 
-  return {
+  const me: BitcoinNodeApi = {
     destroy() {
       throw new Error(`Not implemented`);
     },
   };
+  plugins.forEach((plugin) => plugin.onCreate?.(me));
+  return me;
 }
