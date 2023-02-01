@@ -147,6 +147,10 @@ Algoritm:
         ) as BlockPayload;
         headers = rest;
 
+        // TODO: if block is in our blockchain then just skip
+        // But if is is not then his prevBlock should be
+        // If so then we should detect branching
+
         if (lastKnownBlock && lastKnownBlock.equals(block.prevBlock)) {
           // TODO:check difficulty for this block
           lastKnownBlock = block.hash;
