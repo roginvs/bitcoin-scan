@@ -146,7 +146,46 @@ export function readBlock(buf: BlockPayload) {
     if (!merkleRoot.equals(merkleRootCalculated)) {
       throw new Error(`Wrong Merkle root hash`);
     }
-    // TODO: Check witness hashes
+
+    const isNeedToCheckCommitment = transactions.some((tx) => tx.isWitness);
+    if (isNeedToCheckCommitment) {
+      const witnessRootHash = calculateMerkleRoot(
+        transactions.map((tx) => tx.wtxid)
+      );
+      const coinbaseTx = transactions[0];
+      if (!coinbaseTx.isWitness) {
+        throw new Error(`No witness for coinbase`);
+      }
+      if (coinbaseTx.txIn.length !== 1) {
+        throw new Error(`Coinbase inputs len is not one`);
+      }
+      if (coinbaseTx.txIn[0].witness?.length !== 1) {
+        throw new Error(`Coinbase witness len is not one`);
+      }
+      const witnessReversedValue = coinbaseTx.txIn[0].witness![0];
+      const commitmentHash = sha256(
+        sha256(joinBuffers(witnessRootHash, witnessReversedValue))
+      );
+
+      let commitmentOutIndex = -1;
+      for (const [index, txOut] of coinbaseTx.txOut.entries()) {
+        if (
+          txOut.script.length >= 38 &&
+          txOut.script.subarray(0, 6).equals(Buffer.from("6a24aa21a9ed", "hex"))
+        ) {
+          commitmentOutIndex = index;
+        }
+      }
+      if (commitmentOutIndex === -1) {
+        throw new Error(`Did not found commitment`);
+      }
+      const expectedCommitmentHash = coinbaseTx.txOut[
+        commitmentOutIndex
+      ].script.subarray(6, 38);
+      if (!expectedCommitmentHash.equals(commitmentHash)) {
+        throw new Error(`Commitment verification failed`);
+      }
+    }
   }
 
   return [
@@ -284,6 +323,7 @@ export function readTx(payload: TransactionPayload) {
     txIn,
     txOut,
     lockTime,
+    isWitness,
   } as const;
 
   const fullTransactionBuf = payload.subarray(0, payload.length - buf.length);
@@ -291,14 +331,12 @@ export function readTx(payload: TransactionPayload) {
   if (!isWitness) {
     txid = sha256(sha256(fullTransactionBuf)) as TransactionHash;
   } else {
-    const packedWithNoWitness = packTx(
-      {
-        ...txNoHashes,
-        txid: Buffer.alloc(0) as TransactionHash,
-        wtxid: Buffer.alloc(0) as TransactionHash,
-      },
-      false
-    );
+    const packedWithNoWitness = packTx({
+      ...txNoHashes,
+      isWitness: false,
+      txid: Buffer.alloc(0) as TransactionHash,
+      wtxid: Buffer.alloc(0) as TransactionHash,
+    });
     txid = sha256(sha256(packedWithNoWitness)) as TransactionHash;
   }
 
@@ -308,10 +346,28 @@ export function readTx(payload: TransactionPayload) {
   );
 
   if (isWitness && !isAllTxInAreNoWitness) {
-    wtxid = sha256(sha256(fullTransactionBuf)) as TransactionHash;
+    if (
+      txIn.length === 1 &&
+      txIn[0].outpointHash.equals(Buffer.alloc(32, 0)) &&
+      txIn[0].outpointIndex === 0xffffffff
+    ) {
+      // Looks like coinbase
+      wtxid = Buffer.alloc(32, 0) as TransactionHash;
+    } else {
+      wtxid = sha256(sha256(fullTransactionBuf)) as TransactionHash;
+    }
   } else {
     wtxid = txid;
   }
+
+  console.info(
+    `txid = ` +
+      Buffer.from(txid).reverse().toString("hex") +
+      " wtxid = " +
+      (txid.equals(wtxid)
+        ? "same"
+        : Buffer.from(wtxid).reverse().toString("hex"))
+  );
 
   const rest = buf;
   return [
