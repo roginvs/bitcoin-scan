@@ -1,4 +1,9 @@
 import Database from "better-sqlite3";
+import { packTx } from "../bitcoin.protocol/messages.create";
+import {
+  BitcoinBlock,
+  BitcoinTransaction,
+} from "../bitcoin.protocol/messages.parse";
 import { BlockHash, BlockPayload } from "../bitcoin.protocol/messages.types";
 import { Nominal } from "../nominal_types/nominaltypes";
 
@@ -28,13 +33,13 @@ export function createNodeStorage(isMemory = false) {
 
     CREATE TABLE IF NOT EXISTS block_transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT, 
+      block_numeric_id INTEGER,      
       txid CHARACTER(32) NOT NULL,      
-      block_id INTEGER,
-      block_index INTEGER NOT NULL,
+      transaction_index_in_block INTEGER NOT NULL,
       data BLOB NOT NULL
     );
     CREATE INDEX IF NOT EXISTS transaction_hash ON block_transactions (txid);
-    CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_id);    
+    CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_numeric_id);    
     -- CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_id, block_index);
   `);
 
@@ -85,10 +90,52 @@ export function createNodeStorage(isMemory = false) {
     return dbId;
   }
 
+  const insertIntoBlockTransactionsSql = sql.prepare(`    
+    insert into block_transactions (
+      block_numeric_id,
+      txid,
+      transaction_index_in_block,
+      data
+    ) values (?, ?, ?, ?)
+  `);
+  const saveBlockTransactions = sql.transaction<
+    (blockHash: BlockHash, txes: BitcoinTransaction[]) => void
+  >((blockHash, txes) => {
+    const blockNumericId = sql
+      .prepare(`select id from headerschain where hash = ?`)
+      .get(blockHash)?.id;
+    if (!blockNumericId) {
+      throw new Error(`No such block in the saved transactions`);
+    }
+    for (const [index, tx] of txes.entries()) {
+      insertIntoBlockTransactionsSql.run(
+        blockNumericId,
+        tx.txid,
+        index,
+        packTx(tx)
+      );
+    }
+  });
+
+  function getBlockIdsWithoutTransactions(n = 10) {
+    return sql
+      .prepare(
+        `
+      select id, hash from headerschain where id > (
+      select ifnull(max(block_id),0) from block_transactions
+      ) order by id limit ?;
+    `
+      )
+      .all(n)
+      .map((row) => row.hash as BlockHash);
+  }
+
   return {
     getLastKnownBlocksHashes,
     pushNewBlockHeader,
     pruneLastNBlocksData,
     getLastKnownBlockId,
+    getBlockIdsWithoutTransactions,
+    saveBlockTransactions,
   };
 }

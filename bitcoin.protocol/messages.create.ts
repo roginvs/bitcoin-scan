@@ -146,7 +146,9 @@ export function packTxOut(txout: BitcoinTransactionOut) {
 export function packTx(tx: BitcoinTransaction) {
   const version = Buffer.alloc(4);
   version.writeUInt32LE(tx.version);
-  // No flag yet
+  if (tx.isWitness) {
+    throw new Error(`Not implemented yet!`);
+  }
   const txInCount = packVarInt(tx.txIn.length);
   const txInList = tx.txIn.map((txIn) => packTxIn(txIn));
 
