@@ -35,8 +35,19 @@ peer.onMessage = (command, payload) => {
     if (rest.length !== 0) {
       throw new Error(`LOL something left`);
     }
-    console.info(block.transactions[23]);
-    console.info(block.transactions[23].txIn);
+    const txIndex = 23;
+    console.info(block.transactions[txIndex]);
+    console.info(
+      `txid  = ${Buffer.from(block.transactions[txIndex].txid)
+        .reverse()
+        .toString("hex")}`
+    );
+    console.info(
+      `wtxid = ${Buffer.from(block.transactions[txIndex].txid)
+        .reverse()
+        .toString("hex")}`
+    );
+    console.info(block.transactions[txIndex].txIn);
   } else {
     console.info(command);
   }
