@@ -69,7 +69,11 @@ Algoritm:
 
   function connectToPeer(addr: PeerAddr) {
     const currentLastKnownBlockId = storage.getLastKnownBlockId();
-    console.info(`Creating new peer ${addr[0]}:${addr[1]}`);
+    console.info(
+      `Creating new peer ${addr[0]}:${addr[1]}, will have ${
+        peers.length + 1
+      } peers`
+    );
     const peer = createPeer(
       addr[0],
       addr[1],
@@ -104,7 +108,7 @@ Algoritm:
       throw new Error(`Internal error`);
     }
     peers.splice(idx, 1);
-    console.info(`${peer.id} disconnected`);
+    console.info(`${peer.id} disconnected, now have ${peers.length} peers`);
 
     if (peersToFetchHeaders[0] === peer) {
       // This peer was in the downloading phase
