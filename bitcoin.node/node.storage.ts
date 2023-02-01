@@ -133,7 +133,7 @@ export function createNodeStorage(isMemory = false) {
     `
       )
       .all(n)
-      .map((row) => row.hash as BlockHash);
+      .map((row) => ({ id: row.id as BlockId, hash: row.hash as BlockHash }));
   }
 
   return {

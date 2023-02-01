@@ -361,7 +361,7 @@ Algoritm:
 
     const storageExpectingBlock = storage
       .getBlockIdsWithoutTransactions(1)
-      .shift();
+      .shift()?.hash;
     if (!storageExpectingBlock) {
       throw new Error(
         `Storage error: why this block ${dumpBuf(
@@ -385,7 +385,7 @@ Algoritm:
       while (true) {
         const nextExpectingBlock = storage
           .getBlockIdsWithoutTransactions(1)
-          .shift();
+          .shift()?.hash;
         if (!nextExpectingBlock) {
           break;
         }
@@ -462,11 +462,11 @@ Algoritm:
     }
     const blocksToDownload = storage
       .getBlockIdsWithoutTransactions(MAX_BUFFERED_BLOCKS)
-      .filter((blockHash) => {
+      .filter((blockInfo) => {
         const notDownloadingNow = !blocksDownloadingNowStartedAt.has(
-          blockHash.toString("hex")
+          blockInfo.hash.toString("hex")
         );
-        const notInBuffer = !bufferedBlocks.has(blockHash.toString("hex"));
+        const notInBuffer = !bufferedBlocks.has(blockInfo.hash.toString("hex"));
         return notDownloadingNow && notInBuffer;
       });
 
@@ -491,19 +491,26 @@ Algoritm:
         `startJobs=${availablePeersForDownloading.length}`
     );
     for (const [i, peer] of availablePeersForDownloading.entries()) {
-      const blockHash = blocksToDownload[i];
-      if (!blockHash) {
+      const blockInfo = blocksToDownload[i];
+      if (!blockInfo) {
         throw new Error(`Internal error`);
       }
-      console.info(`  - ${peer.id} will download ${dumpBuf(blockHash)}`);
+      console.info(
+        `  - ${peer.id} will download ${dumpBuf(blockInfo.hash)} h=${
+          blockInfo.id - 1
+        }`
+      );
 
-      peersBlocksTasks.set(peer, blockHash);
-      blocksDownloadingNowStartedAt.set(blockHash.toString("hex"), new Date());
+      peersBlocksTasks.set(peer, blockInfo.hash);
+      blocksDownloadingNowStartedAt.set(
+        blockInfo.hash.toString("hex"),
+        new Date()
+      );
       peer.send(
-        createGetdataMessage([[HashType.MSG_WITNESS_BLOCK, blockHash]])
+        createGetdataMessage([[HashType.MSG_WITNESS_BLOCK, blockInfo.hash]])
       );
       peer.raiseWatchdog(
-        "get-block-" + blockHash.toString("hex"),
+        "get-block-" + blockInfo.hash.toString("hex"),
         10 * 60 * 1000
       );
     }
