@@ -349,6 +349,12 @@ Algoritm:
     )!;
     const durationSeconds =
       (new Date().getTime() - downloadStartedAt.getTime()) / 1000;
+    const speedMbs = (
+      (payload.length * 8) /
+      1000 /
+      1000 /
+      durationSeconds
+    ).toFixed(2);
     blocksDownloadingNowStartedAt.delete(expectingBlockHash.toString("hex"));
     peer.clearWatchdog("get-block-" + expectingBlockHash.toString("hex"));
 
@@ -367,7 +373,7 @@ Algoritm:
       console.info(
         `Block download: ${peer.id} downloaded ${dumpBuf(
           block.hash
-        )} in ${durationSeconds}s, block is going to database`
+        )} in ${durationSeconds}s ${speedMbs}mb/s, block is going to database`
       );
 
       // TODO: Validate block
@@ -415,7 +421,7 @@ Algoritm:
       console.info(
         `Block download: ${peer.id} downloaded ${dumpBuf(
           block.hash
-        )} in ${durationSeconds}s, keeping data in buffer`
+        )} in ${durationSeconds}s ${speedMbs}mb/s, keeping data in buffer`
       );
       bufferedBlocks.set(block.hash.toString("hex"), block);
     }
