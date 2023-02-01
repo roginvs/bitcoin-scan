@@ -35,4 +35,6 @@ export enum HashType {
 
 export type InventoryItem =
   | [type: HashType.MSG_TX, value: TransactionHash]
-  | [type: HashType.MSG_BLOCK, value: BlockHash];
+  | [type: HashType.MSG_BLOCK, value: BlockHash]
+  | [type: HashType.MSG_WITNESS_TX, value: TransactionHash]
+  | [type: HashType.MSG_WITNESS_BLOCK, value: BlockHash];
