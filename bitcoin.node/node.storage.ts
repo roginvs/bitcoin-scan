@@ -123,16 +123,21 @@ export function createNodeStorage(isMemory = false) {
     }
   });
 
-  function getBlockIdsWithoutTransactions(n = 10) {
+  function getBlockIdsWithoutTransactions(
+    n = 10,
+    notEarlierThanThisBlockHash: BlockHash | null = null
+  ) {
     return sql
       .prepare(
         `
-      select id, hash from headerschain where id > (
-      select ifnull(max(block_numeric_id),0) from block_transactions
-      ) order by id limit ?;
+      select id, hash from headerschain where 
+       id > (select ifnull(max(block_numeric_id),0) from block_transactions) 
+       and
+       id > ifnull((select id from headerschain where hash = ?), 0)
+      order by id limit ?;
     `
       )
-      .all(n)
+      .all(notEarlierThanThisBlockHash, n)
       .map((row) => row.hash as BlockHash);
   }
 
