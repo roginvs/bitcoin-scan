@@ -1,4 +1,9 @@
 import { genesisBlockHash } from "../bitcoin.protocol/consts";
+const genesisBlockHashOther = Buffer.from(
+  "00000000000000000005f883a624ff0896bdfaa2020630b5e98d400fba5d0972",
+  "hex"
+).reverse() as BlockHash;
+
 import {
   createGetdataMessage,
   createGetheadersMessage,
@@ -106,23 +111,30 @@ Algoritm:
       throw new Error(`Internal error`);
     }
     peers.splice(idx, 1);
-
-    if (
-      peersToPerformInitialHeadersChainDownload &&
-      peersToPerformInitialHeadersChainDownload[0] === peer
-    ) {
-      // This peer was in the downloading phase
-      peersToPerformInitialHeadersChainDownload.splice(0, 1);
-      if (peersToPerformInitialHeadersChainDownload.length > 0) {
-        // Switch to another peer
-        performInitialHeadersDownload(
-          peersToPerformInitialHeadersChainDownload[0]
-        );
+    console.info(`${peer.id} disconnected`);
+    if (peersToPerformInitialHeadersChainDownload) {
+      if (peersToPerformInitialHeadersChainDownload[0] === peer) {
+        // This peer was in the downloading phase
+        peersToPerformInitialHeadersChainDownload.splice(0, 1);
+        if (peersToPerformInitialHeadersChainDownload.length > 0) {
+          // Switch to another peer
+          performInitialHeadersDownload(
+            peersToPerformInitialHeadersChainDownload[0]
+          );
+        } else {
+          // It means we do not have any peers more. We will not get any new peers
+          // So the best is to terminate
+          throw new Error(`No candidates for initial blockheaders download`);
+        }
       } else {
-        // It means we do not have any peers more. We will not get any new peers
-        // So the best is to terminate
-        throw new Error(`No candidates for initial blockheaders download`);
+        // Remove peer from waiting queue
+        const idx = peersToPerformInitialHeadersChainDownload.indexOf(peer);
+        if (idx > -1) {
+          peersToPerformInitialHeadersChainDownload.splice(idx, 1);
+        }
       }
+    } else {
+      // TODO: If this peer was fetching block then ask other peer
     }
   }
 

@@ -149,7 +149,7 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
     close() {
       client.destroy();
     },
-    id: "<unknown yet>",
+    id: `<${host}:${port}>`,
   };
 
   return me;
