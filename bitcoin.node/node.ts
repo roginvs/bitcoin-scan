@@ -39,30 +39,17 @@ export function createBitcoinNode(
   /*
 
 Algoritm:
-- On startup push genenis block if blockchain is empty
-- state = "headers chain download"
-  - Array of peerConnections (peer.onMessage = (command, payload) => onMessage(peer, command, payload))
-- Connect to bootstrap peers
-  - Listen to "addr" message, if peers count < PEERS_COUNT then connect there too
-  - Listen to "inv" message too
-- Use "blocksInvReceivedDuruingHeadersChainDownload" = Map<PeerConnection, BlockHash[]>
-  - remove map item when peer disconnects
-  - push "inv" blockhash to this array if state = "headers chain download"
+  - On startup fetch genenis block if blockchain is empty
+  - Fetch headers chain from the first peer
+    - When it is done start to download blocks data
+  - On each new peer fetch headers chain
+    - But only one peer at time
 
-- Use as array of peersToPerformInitialHeadersChainDownload
-   - If this array is empty (or null) then initial headers chain download is done
-   - check is it done when:
-     - peer have no blockchain in headers message
-     - anywhere else ?
-     
-- When peer is handshaked do:
-  - push peer to all objects
-  - If state is "headers chain download":
-    - If peer is first in the currenlyInitialHeadersDownloadingPeer list then start headers process
-- If peer is disconnected:
-    - remove it from peersToPerformInitialHeadersChainDownload
-    - if it was first there then start for the next peer
 
+  - TODO:
+    - If "inv" with blocks were received during request for headers
+      then re-request headers when all headers are done
+  
   
 */
 
@@ -72,7 +59,8 @@ Algoritm:
 
   /**
    * This is a queue of peers to fetch headers chain.
-   * We fetching chain only from one peer at time
+   * We fetching chain only from one peer at time so first item in this array
+   * is peer from which we are fetching
    */
   const peersToFetchHeaders: PeerConnection[] = [];
 
@@ -126,7 +114,7 @@ Algoritm:
         performInitialHeadersDownload(peersToFetchHeaders[0]);
       } else {
         if (canFetchBlocks) {
-          // Do nothing, we will get new peers for headers later
+          // Do nothing, we will get new peers from headers later
         } else {
           // It means we do not have any peers more. We will not get any new peers
           // So the best is to terminate
