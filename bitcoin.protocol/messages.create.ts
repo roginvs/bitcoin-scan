@@ -146,22 +146,41 @@ export function packTxOut(txout: BitcoinTransactionOut) {
 export function packTx(tx: BitcoinTransaction) {
   const version = Buffer.alloc(4);
   version.writeUInt32LE(tx.version);
-  if (tx.isWitness) {
-    throw new Error(`Not implemented yet!`);
-  }
+
+  const witnessFlag = tx.isWitness
+    ? Buffer.from("0001", "hex")
+    : Buffer.alloc(0);
   const txInCount = packVarInt(tx.txIn.length);
   const txInList = tx.txIn.map((txIn) => packTxIn(txIn));
 
   const txOutCount = packVarInt(tx.txOut.length);
   const txOutList = tx.txOut.map((txOut) => packTxOut(txOut));
+
+  const witness: Buffer[] = [];
+  if (tx.isWitness) {
+    for (const txIn of tx.txIn) {
+      const count = txIn.witness ? txIn.witness.length : 0;
+      witness.push(packVarInt(count));
+      if (txIn.witness) {
+        for (const witnessItem of txIn.witness) {
+          witness.push(packVarInt(witnessItem.length));
+          witness.push(witnessItem);
+        }
+      }
+    }
+  }
+
   const lockTime = Buffer.alloc(4);
   lockTime.writeUInt32LE(tx.lockTime);
+
   return joinBuffers(
     version,
+    witnessFlag,
     txInCount,
     ...txInList,
     txOutCount,
     ...txOutList,
+    ...witness,
     lockTime
   ) as TransactionPayload;
 }

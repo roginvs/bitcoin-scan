@@ -89,6 +89,7 @@ export function check_P2PKH_SIGHASH_ALL(
 
   const txNew: BitcoinTransaction = {
     ...spending,
+    isWitness: false,
     txIn: spending.txIn.map((txIn, index) => {
       if (index !== spendingIndex) {
         return {
