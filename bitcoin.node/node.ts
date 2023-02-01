@@ -15,165 +15,194 @@ import {
   MessagePayload,
   TransactionHash,
 } from "../bitcoin.protocol/messages.types";
-import { createPeer } from "../bitcoin.protocol/peer.outgoing";
+import { createPeer, PeerConnection } from "../bitcoin.protocol/peer.outgoing";
+import { BitcoinNodePlugin } from "./node.plugin";
 import { createNodeStorage } from "./node.storage";
 
 export type PeerAddr = [string, number];
+
+function dumpBuf(buf: Buffer) {
+  return Buffer.from(buf).reverse().toString("hex");
+}
 export function createBitcoinNode(
   bootstrapPeers: PeerAddr[],
   saveOnlyLastNBlocks?: number,
-  /**
-   * This is called when new block is fetched.
-   * Starting from the bottom of the blockchain.
-   * When callback returns then state is saved into database
-   *
-   */
-  onNewValidatedBlock?: (block: BitcoinBlock) => void
+  plugins: BitcoinNodePlugin[] = []
 ) {
   const storage = createNodeStorage();
 
-  let currentPeerIndex = 0;
-  function createPeerFromList() {
-    const lastKnownBlock = storage.getLastKnownBlockId() || 0;
-    const peerCreated = createPeer(
-      bootstrapPeers[currentPeerIndex][0],
-      bootstrapPeers[currentPeerIndex][1],
-      lastKnownBlock
-    );
-    peerCreated.onMessage = onMessage;
-    return peerCreated;
-  }
+  /*
 
-  let peer = createPeerFromList();
+Algoritm:
+- On startup push genenis block if blockchain is empty
+- state = "headers chain download"
+  - Array of peerConnections (peer.onMessage = (command, payload) => onMessage(peer, command, payload))
+- Connect to bootstrap peers
+  - Listen to "addr" message, if peers count < PEERS_COUNT then connect there too
+  - Listen to "inv" message too
+- Use "blocksInvReceivedDuruingHeadersChainDownload" = Map<PeerConnection, BlockHash[]>
+  - remove map item when peer disconnects
+  - push "inv" blockhash to this array if state = "headers chain download"
 
-  function onMessage(command: string, payload: MessagePayload) {
-    if (command === "") {
-      // disconnected
-      // TODO: drop all waiters
-      peer = createPeerFromList();
-    } else if (command === "headers") {
-      onHeadersMessage(payload);
-    } else if (command === "block") {
-      onBlockMessage(payload as Buffer as BlockPayload);
-    } else {
-      console.info("msg:", command, payload);
-    }
-  }
+- Use as array of peersToPerformInitialHeadersChainDownload
+   - If this array is empty (or null) then initial headers chain download is done
+   - check is it done when:
+     - peer have no blockchain in headers message
+     - anywhere else ?
+     
+- When peer is handshaked do:
+  - push peer to all objects
+  - If state is "headers chain download":
+    - If peer is first in the currenlyInitialHeadersDownloadingPeer list then start headers process
+- If peer is disconnected:
+    - remove it from peersToPerformInitialHeadersChainDownload
+    - if it was first there then start for the next peer
 
-  const blocksWeWantToFetch: BlockHash[] = [];
+  
+*/
 
-  function onBlockMessage(payload: BlockPayload) {
-    const [block, rest] = readBlock(payload);
-    if (rest.length !== 0) {
-      console.error(
-        `Got some data after block message ${rest.toString("hex")}`
-      );
-      peer.close();
-    }
+  const MAX_PEERS = 10;
 
-    // TODO: Ensure that we receiving blocks in correct order
-    // TODO: Throw if we receive "notfound"
-    const index = blocksWeWantToFetch.findIndex((x) =>
-      x.hash.equals(block.hash)
-    );
-    if (index < 0) {
-      console.warn(`Got unexpected block ${block.hash}`);
-      return;
-    }
-    const blockData = blocksWeWantToFetch[index];
-    blocksWeWantToFetch.splice(index, 1);
+  const peers: PeerConnection[] = [];
 
-    processBlock(block, blockData.id);
+  let peersToPerformInitialHeadersChainDownload: PeerConnection[] | null = [];
 
-    if (blocksWeWantToFetch.length === 0) {
-      if (!USE_DEMO_BLOCKS) {
-        fetchPackOfUnprocessedBlocks();
-      } else {
-        console.info(`Not fetching next blocks due to demo mode`);
+  function connectToPeer(addr: PeerAddr) {
+    const currentLastKnownBlockId = storage.getLastKnownBlockId();
+    const peer = createPeer(addr[0], addr[1], currentLastKnownBlockId - 1);
+    peer.onMessage = (cmd, payload) => onMessage(peer, cmd, payload);
+    peers.push(peer);
+
+    if (peersToPerformInitialHeadersChainDownload) {
+      peersToPerformInitialHeadersChainDownload.push(peer);
+      if (peersToPerformInitialHeadersChainDownload.length === 1) {
+        performInitialHeadersDownload(peer);
       }
     }
   }
 
-  function onHeadersMessage(payload: MessagePayload) {
-    let lastKnownBlock = storage.getLastKnownBlocksHashes().slice().shift();
+  function performInitialHeadersDownload(peer: PeerConnection) {
+    const fewLastKnownBlocks = storage.getLastKnownBlocksHashes();
+    peer.send(createGetheadersMessage(fewLastKnownBlocks));
+    peer.raiseWatchdog("headers");
+  }
 
-    if (blocksWeWantToFetch.length > 0) {
-      console.error(`Got unexpected headers`);
+  function onMessage(
+    peer: PeerConnection,
+    cmd: string,
+    payload: MessagePayload
+  ) {
+    if (cmd === "") {
+      const idx = peers.indexOf(peer);
+      if (idx < 0) {
+        throw new Error(`Internal error`);
+      }
+      peers.splice(idx, 1);
+
+      if (
+        peersToPerformInitialHeadersChainDownload &&
+        peersToPerformInitialHeadersChainDownload[0] === peer
+      ) {
+        // This peer was in the downloading phase
+        peersToPerformInitialHeadersChainDownload.splice(0, 1);
+        if (peersToPerformInitialHeadersChainDownload.length > 0) {
+          // Switch to another peer
+          performInitialHeadersDownload(
+            peersToPerformInitialHeadersChainDownload[0]
+          );
+        } else {
+          // It means we do not have any peers more. We will not get any new peers
+          // So the best is to terminate
+          throw new Error(`No candidates for initial blockheaders download`);
+        }
+      }
+    } else if (cmd === "headers") {
+      onHeadersMessage(peer, payload);
+    }
+  }
+
+  function onHeadersMessage(peer: PeerConnection, payload: MessagePayload) {
+    if (!peersToPerformInitialHeadersChainDownload) {
+      console.warn(`Got headers but we are not in the headers fetching state`);
       return;
     }
+    if (peersToPerformInitialHeadersChainDownload[0] !== peer) {
+      console.warn(`Got headers from the wrong peer`);
+      return;
+    }
+
+    peer.clearWatchdog("headers");
+
+    let lastKnownBlock = storage.getLastKnownBlocksHashes().slice().shift()!;
 
     let [count, headers] = readVarInt(payload);
     if (count > 0) {
       while (count > 0) {
         const [block, rest] = readBlock(headers as BlockPayload);
+        const headersRaw = headers.subarray(
+          0,
+          headers.length - rest.length
+        ) as BlockPayload;
         headers = rest;
 
-        if (
-          lastKnownBlock
-            ? lastKnownBlock.equals(block.prevBlock)
-            : block.hash.equals(genesisBlockHash)
-        ) {
-          // It might be good to check difficulty for this block
+        if (lastKnownBlock && lastKnownBlock.equals(block.prevBlock)) {
+          // TODO:check difficulty for this block
           lastKnownBlock = block.hash;
-          blocksWeWantToFetch.push(block.hash);
+          storage.pushNewBlockHeader(block.hash, headersRaw);
+
+          // Health-check
+          const lastKnownBlockHashFromDb = storage
+            .getLastKnownBlocksHashes()
+            .slice()
+            .shift()!;
+          if (!lastKnownBlockHashFromDb.equals(block.hash)) {
+            throw new Error(
+              `Internal error: database must have last block the one we pushed!`
+            );
+          }
+
+          const lastKnownBlockIdInDb = storage.getLastKnownBlockId();
 
           console.info(
-            `Got new block ${Buffer.from(block.hash)
-              .reverse()
-              .toString("hex")} time=${block.timestamp.toISOString()}`
+            `${peer.id} Got new block ${dumpBuf(
+              lastKnownBlock
+            )} time=${block.timestamp.toISOString()} current height = ${
+              lastKnownBlockIdInDb - 1
+            } `
           );
         } else {
           console.warn(
-            `Hmm, got block ${Buffer.from(block.hash)
-              .reverse()
-              .toString(
-                "hex"
-              )} time=${block.timestamp.toISOString()} but not understand where it is. Maybe good to save it`
+            `${peer.id} Hmm, got block ${dumpBuf(
+              lastKnownBlock
+            )} time=${block.timestamp.toISOString()} but not understand where it is. Maybe good to save it`
           );
         }
 
         count--;
       }
-
-      // Fetch blocks data
-      peer.send(
-        createGetdataMessage(
-          blocksWeWantToFetch.map((blockHash) => [
-            HashType.MSG_BLOCK,
-            blockHash,
-          ])
-        )
-      );
+      performInitialHeadersDownload(peer);
     } else {
-      // This peer do not know more blocks, let's wait for "inv" packet
+      // Ok, this peer have no idea about more blocks
+      peersToPerformInitialHeadersChainDownload.splice(0, 1);
+      if (peersToPerformInitialHeadersChainDownload.length > 0) {
+        const nextPeerToFetchBlockheadersChain =
+          peersToPerformInitialHeadersChainDownload[0];
+        console.info(
+          `${peer.id} No more headers from this peer, picking new one ${nextPeerToFetchBlockheadersChain.id}`
+        );
+        performInitialHeadersDownload(nextPeerToFetchBlockheadersChain);
+      } else {
+        console.info(
+          `${peer.id} No more headers from this peer, no more peers in queue, starting to fetch blocks data`
+        );
+        peersToPerformInitialHeadersChainDownload = null;
+        console.info(`TODO: Headers are fetched, start to fetch blocks`);
+      }
     }
   }
-
-  // We start from this one
-  function getHeadersToFetchBlockchain() {
-    const fewLastKnownBlocks = storage.getLastKnownBlocksHashes();
-    if (fewLastKnownBlocks.length === 0) {
-      fewLastKnownBlocks.push(genesisBlockHash);
-    }
-
-    peer.send(createGetheadersMessage(fewLastKnownBlocks));
-  }
-
-  getHeadersToFetchBlockchain();
 
   return {
-    getSavedBlocks(cursorName: string, onBlock: (block: BitcoinBlock) => void) {
-      // Maybe return only when all saved blocks are pushed
-    },
     destroy() {
-      throw new Error(`Not implemented`);
-    },
-    getTransaction(txId: TransactionHash) {
-      // Via table with "txId","blockN","blockOffset"
-      throw new Error(`Not implemented`);
-    },
-    getBlock(blockHash: BlockHash) {
-      // If we implement this then we need index on the block hash
       throw new Error(`Not implemented`);
     },
   };

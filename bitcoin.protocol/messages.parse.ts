@@ -95,7 +95,7 @@ export function parseVersion(payload: MessagePayload) {
   // Timestamp is 64bit but for now I do not care
   const timestamp = payload.readUInt32LE(4 + 8);
   // Skip addresses for now
-  // Skip nonce for now too
+  const nonce = payload.subarray(4 + 8 + 8 + 26 + 26, 4 + 8 + 8 + 26 + 26 + 8);
   const [userAgentLen, fromUserAgent] = readVarInt(
     payload.subarray(4 + 8 + 8 + 26 + 26 + 8)
   );
@@ -110,6 +110,10 @@ export function parseVersion(payload: MessagePayload) {
       services
     ).join(",")} startHeight=${startHeight} rest=${rest.toString("hex")}`
   );
+  return {
+    userAgent: userAgent.toString(),
+    nonce: nonce.toString("hex"),
+  };
 }
 
 export function readBlock(buf: BlockPayload) {

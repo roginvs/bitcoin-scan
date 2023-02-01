@@ -1,3 +1,9 @@
+import Database from "better-sqlite3";
+import { genesisBlockHash } from "../bitcoin.protocol/consts";
+import { BitcoinBlock } from "../bitcoin.protocol/messages.parse";
+import { BlockHash, BlockPayload } from "../bitcoin.protocol/messages.types";
+import { Nominal } from "../nominal_types/nominaltypes";
+
 function getDbPath(dbFileName: string) {
   const dataFolder = process.env.NODE_STORAGE_DIR;
   if (!dataFolder) {
@@ -6,10 +12,8 @@ function getDbPath(dbFileName: string) {
   return dataFolder + "/" + dbFileName;
 }
 
-import Database from "better-sqlite3";
-import { genesisBlockHash } from "../bitcoin.protocol/consts";
-import { BitcoinBlock } from "../bitcoin.protocol/messages.parse";
-import { BlockHash, BlockPayload } from "../bitcoin.protocol/messages.types";
+export type BlockId = Nominal<"block numeric id", number>;
+
 export function createNodeStorage(isMemory = false) {
   const sql = new Database(isMemory ? ":memory:" : getDbPath("blockchain.db"));
 
@@ -17,12 +21,12 @@ export function createNodeStorage(isMemory = false) {
   sql.pragma("auto_vacuum = FULL");
 
   sql.exec(`
-    CREATE TABLE IF NOT EXISTS blockchain (
-      block_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    CREATE TABLE IF NOT EXISTS headerschain (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, 
       hash CHARACTER(32) NOT NULL,
       header CHARACTER(80) NOT NULL
     );
-    CREATE INDEX IF NOT EXISTS block_hash ON blockchain (hash);
+    CREATE INDEX IF NOT EXISTS block_hash ON headerschain (hash);
 
     CREATE TABLE IF NOT EXISTS block_transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -46,22 +50,14 @@ export function createNodeStorage(isMemory = false) {
     return blockHashes;
   }
 
-  function pushNewKnownBlock(block: BitcoinBlock, rawData: BlockPayload) {
+  function pushNewBlockHeader(hash: BlockHash, blockHeader: BlockPayload) {
     sql
       .prepare(
         `
-      insert into blockchain (hash) values ?
+      insert into headerschain (hash, header) values ?
     `
       )
-      .run(block.hash);
-    const dbId = sql.prepare("select last_insert_rowid() as id").get().id;
-    sql
-      .prepare(
-        `
-      insert into blocks (id, data) values (?, ?)
-    `
-      )
-      .run(dbId, rawData);
+      .run(hash, blockHeader.subarray(0, 4 + 32 + 32 + 4 + 4 + 4));
   }
 
   function pruneLastNBlocksData(n: number) {
@@ -87,13 +83,13 @@ export function createNodeStorage(isMemory = false) {
         `
             select id from blockchain order by id desc limit 1`
       )
-      .get()?.id as number | undefined;
+      .get()!.id as BlockId;
     return dbId;
   }
 
   return {
     getLastKnownBlocksHashes,
-    pushNewKnownBlock,
+    pushNewBlockHeader,
     pruneLastNBlocksData,
     getLastKnownBlockId,
   };

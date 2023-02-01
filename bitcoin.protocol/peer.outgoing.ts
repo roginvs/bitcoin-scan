@@ -8,6 +8,7 @@ import {
 import { BitcoinMessage, MessagePayload } from "./messages.types";
 import { joinBuffers } from "./utils";
 
+export type PeerConnection = ReturnType<typeof createPeer>;
 /**
  * This is simple wrapper of Socket
  * - It buffers Bitcoin messages and calls callback when full message is ready
@@ -114,7 +115,8 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
           raiseWatchdog("pong" + pingPayload.toString("hex"));
         }, 120 * 1000);
 
-        parseVersion(payload);
+        const version = parseVersion(payload);
+        me.id = `${version.userAgent} ${version.nonce}`;
         client.write(createVerackMessage());
 
         if (sendThisMessagesWhenConnected) {
@@ -144,6 +146,7 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
     close() {
       client.destroy();
     },
+    id: "<unknown yet>",
   };
 
   return me;
