@@ -26,15 +26,14 @@ export function createNodeStorage(isMemory = false) {
 
     CREATE TABLE IF NOT EXISTS block_transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT, 
+      txid CHARACTER(32) NOT NULL,      
       block_id INTEGER,
-      txid CHARACTER(32) NOT NULL,
-      wtxid CHARACTER(32) NOT NULL,
-      index_in_the_block INTEGER NOT NULL,
+      block_index INTEGER NOT NULL,
       data BLOB NOT NULL
     );
     CREATE INDEX IF NOT EXISTS transaction_hash ON block_transactions (txid);
-    CREATE INDEX IF NOT EXISTS transaction_hash ON block_transactions (wtxid);
-    CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_id);
+    CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_id);    
+    -- CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_id, block_index);
 
 `);
 
