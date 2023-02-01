@@ -421,7 +421,7 @@ export function readAddr(payload: Buffer) {
 
     ipFamily = 6 as const;
   }
-  const port = payload.readUInt16LE(8 + 16);
+  const port = payload.readUInt16BE(8 + 16);
   return [
     {
       services,
