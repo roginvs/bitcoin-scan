@@ -115,18 +115,14 @@ export function parseVersion(payload: MessagePayload) {
     }
   }
 
-  console.info(
-    `Got hello ver=${version} time=${new Date(
-      timestamp * 1000
-    ).toISOString()} userAgent=${userAgent} services=${parseServices(
-      services
-    ).join(",")} startHeight=${startHeight} `
-  );
   return {
     version,
+    services: parseServices(services),
+    startHeight,
     userAgent: userAgent.toString(),
     nonce: nonce.toString("hex"),
     relay,
+    timestamp,
   };
 }
 

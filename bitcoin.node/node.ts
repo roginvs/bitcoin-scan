@@ -30,7 +30,8 @@ import { createNodeStorage } from "./node.storage";
 export type PeerAddr = [string, number];
 
 function dumpBuf(buf: Buffer) {
-  return Buffer.from(buf).reverse().toString("hex");
+  const str = Buffer.from(buf).reverse().toString("hex");
+  return str.slice(0, 8) + "-" + str.slice(-8);
 }
 export function createBitcoinNode(
   bootstrapPeers: PeerAddr[],

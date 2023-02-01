@@ -119,7 +119,12 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
         }, 120 * 1000);
 
         const version = parseVersion(payload);
-        me.id = `${version.userAgent} ${host}:${port} ${version.nonce}`;
+        me.id = `${host}:${port}`;
+        console.info(
+          `${me.id} version=${version.version} startHeight=${version.startHeight} `
+        );
+        console.info(`  userAgent=${version.userAgent}`);
+        console.info(`  services=${version.services.join(", ")}`);
         client.write(createVerackMessage());
 
         if (sendThisMessagesWhenConnected) {
