@@ -70,7 +70,14 @@ Algoritm:
 
   const peers: PeerConnection[] = [];
 
-  let peersToPerformInitialHeadersChainDownload: PeerConnection[] | null = [];
+  /**
+   * This is a queue of peers to fetch headers chain.
+   * We fetching chain only from one peer at time
+   */
+  const peersToFetchHeaders: PeerConnection[] = [];
+
+  /** We can fetch blocks when we have updated blockchain from at least one peer */
+  let canFetchBlocks = false;
 
   function connectToPeer(addr: PeerAddr) {
     const currentLastKnownBlockId = storage.getLastKnownBlockId();
@@ -83,11 +90,9 @@ Algoritm:
     peer.onMessage = (cmd, payload) => onMessage(peer, cmd, payload);
     peers.push(peer);
 
-    if (peersToPerformInitialHeadersChainDownload) {
-      peersToPerformInitialHeadersChainDownload.push(peer);
-      if (peersToPerformInitialHeadersChainDownload.length === 1) {
-        performInitialHeadersDownload(peer);
-      }
+    peersToFetchHeaders.push(peer);
+    if (peersToFetchHeaders.length === 1) {
+      performInitialHeadersDownload(peer);
     }
   }
 
@@ -112,29 +117,28 @@ Algoritm:
     }
     peers.splice(idx, 1);
     console.info(`${peer.id} disconnected`);
-    if (peersToPerformInitialHeadersChainDownload) {
-      if (peersToPerformInitialHeadersChainDownload[0] === peer) {
-        // This peer was in the downloading phase
-        peersToPerformInitialHeadersChainDownload.splice(0, 1);
-        if (peersToPerformInitialHeadersChainDownload.length > 0) {
-          // Switch to another peer
-          performInitialHeadersDownload(
-            peersToPerformInitialHeadersChainDownload[0]
-          );
+
+    if (peersToFetchHeaders[0] === peer) {
+      // This peer was in the downloading phase
+      peersToFetchHeaders.splice(0, 1);
+      if (peersToFetchHeaders.length > 0) {
+        // Switch to another peer
+        performInitialHeadersDownload(peersToFetchHeaders[0]);
+      } else {
+        if (canFetchBlocks) {
+          // Do nothing, we will get new peers for headers later
         } else {
           // It means we do not have any peers more. We will not get any new peers
           // So the best is to terminate
           throw new Error(`No candidates for initial blockheaders download`);
         }
-      } else {
-        // Remove peer from waiting queue
-        const idx = peersToPerformInitialHeadersChainDownload.indexOf(peer);
-        if (idx > -1) {
-          peersToPerformInitialHeadersChainDownload.splice(idx, 1);
-        }
       }
     } else {
-      // TODO: If this peer was fetching block then ask other peer
+      // Remove peer from waiting queue if it was there
+      const idx = peersToFetchHeaders.indexOf(peer);
+      if (idx > -1) {
+        peersToFetchHeaders.splice(idx, 1);
+      }
     }
   }
 
@@ -155,13 +159,7 @@ Algoritm:
   }
 
   function onHeadersMessage(peer: PeerConnection, payload: MessagePayload) {
-    if (!peersToPerformInitialHeadersChainDownload) {
-      console.warn(
-        `${peer.id} Got headers but we are not in the headers fetching state`
-      );
-      return;
-    }
-    if (peersToPerformInitialHeadersChainDownload[0] !== peer) {
+    if (peersToFetchHeaders[0] !== peer) {
       console.warn(`${peer.id} Got headers from the wrong peer`);
       return;
     }
@@ -223,21 +221,22 @@ Algoritm:
       performInitialHeadersDownload(peer);
     } else {
       // Ok, this peer have no idea about more blocks
-      peersToPerformInitialHeadersChainDownload.splice(0, 1);
-      if (peersToPerformInitialHeadersChainDownload.length > 0) {
-        const nextPeerToFetchBlockheadersChain =
-          peersToPerformInitialHeadersChainDownload[0];
+      peersToFetchHeaders.splice(0, 1);
+
+      if (peersToFetchHeaders.length > 0) {
+        const nextPeerToFetchBlockheadersChain = peersToFetchHeaders[0];
         console.info(
           `${peer.id} No more headers from this peer, picking new one ${nextPeerToFetchBlockheadersChain.id}`
         );
         performInitialHeadersDownload(nextPeerToFetchBlockheadersChain);
       } else {
         console.info(
-          `${peer.id} No more headers from this peer, no more peers in queue, starting to fetch blocks data`
+          `${peer.id} No more headers from this peer, no more peers in queue`
         );
-        peersToPerformInitialHeadersChainDownload = null;
-        console.info(`TODO: Headers are fetched, start to fetch blocks`);
       }
+
+      canFetchBlocks = true;
+      console.info(`TODO: Headers are fetched, start to fetch blocks`);
     }
   }
 
@@ -277,7 +276,7 @@ Algoritm:
       return;
     }
 
-    if (peersToPerformInitialHeadersChainDownload) {
+    if (!canFetchBlocks) {
       // Special case: fetching genesis header
       if (!block.hash.equals(genesisBlockHash)) {
         console.warn(
