@@ -235,7 +235,7 @@ Algoritm:
       }
     }
     console.info(
-      `$${peer.id} Current height = ${(storage.getLastKnownBlockId() || 0) - 1}`
+      `${peer.id} Current height = ${(storage.getLastKnownBlockId() || 0) - 1}`
     );
   }
 
