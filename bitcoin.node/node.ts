@@ -1,5 +1,5 @@
-import { genesisBlockHash } from "../bitcoin.protocol/consts";
-const genesisBlockHashOther = Buffer.from(
+//import { genesisBlockHash } from "../bitcoin.protocol/consts";
+const genesisBlockHash = Buffer.from(
   "00000000000000000005f883a624ff0896bdfaa2020630b5e98d400fba5d0972",
   "hex"
 ).reverse() as BlockHash;
@@ -139,6 +139,11 @@ Algoritm:
       if (idx > -1) {
         peersToFetchHeaders.splice(idx, 1);
       }
+    }
+
+    if (peers.length === 0) {
+      console.info(`We are out of peers, starting from the beginning`);
+      connectToBootstapPeers();
     }
   }
 
@@ -299,9 +304,13 @@ Algoritm:
     throw new Error("TODO");
   }
 
-  for (const addr of bootstrapPeers) {
-    connectToPeer(addr);
+  function connectToBootstapPeers() {
+    for (const addr of bootstrapPeers) {
+      connectToPeer(addr);
+    }
   }
+
+  connectToBootstapPeers();
 
   return {
     destroy() {
