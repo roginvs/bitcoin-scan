@@ -52,7 +52,7 @@ export function createNodeStorage(isMemory = false) {
     return blockHashes;
   }
 
-  function pushNewBlockHeader(hash: BlockHash, blockHeader: BlockPayload) {
+  function pushNewBlockHeader(hash: BlockHash, blockHeader: Buffer) {
     if (blockHeader.length !== 80) {
       throw new Error(`We expect block header here!`);
     }

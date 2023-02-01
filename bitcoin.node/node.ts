@@ -200,7 +200,7 @@ Algoritm:
         if (lastKnownBlock && lastKnownBlock.equals(block.prevBlock)) {
           // TODO:check difficulty for this block
           lastKnownBlock = block.hash;
-          storage.pushNewBlockHeader(block.hash, headersRaw);
+          storage.pushNewBlockHeader(block.hash, block.headerPayload);
 
           // Health-check
           const lastKnownBlockHashFromDb = storage
@@ -320,7 +320,7 @@ Algoritm:
         return;
       }
 
-      storage.pushNewBlockHeader(block.hash, payload);
+      storage.pushNewBlockHeader(block.hash, block.headerPayload);
       peer.clearWatchdog("genesis block data");
       performInitialHeadersDownload(peer);
       return;
@@ -341,10 +341,34 @@ Algoritm:
         `Storage error: why this block ${block.hash} was fetched if nothing expected there?`
       );
     }
+
     if (storageExpectingBlock.equals(block.hash)) {
-      // todo: call plugings
-      // todo: save into database raw transaction data
-      // todo: Flush buffered blocks
+      // TODO: Validate block
+      plugins.forEach((plugin) => plugin.onNewValidatedBlock?.(block));
+      storage.saveBlockTransactions(block.hash, block.transactions);
+
+      // Now flushing buffer
+      while (true) {
+        const nextExpectingBlock = storage
+          .getBlockIdsWithoutTransactions(1)
+          .shift();
+        if (!nextExpectingBlock) {
+          break;
+        }
+        const blockInBuffer = bufferedBlocks.get(nextExpectingBlock);
+        if (!blockInBuffer) {
+          break;
+        }
+        // TODO: Validate block
+        plugins.forEach((plugin) =>
+          plugin.onNewValidatedBlock?.(blockInBuffer)
+        );
+        storage.saveBlockTransactions(
+          blockInBuffer.hash,
+          blockInBuffer.transactions
+        );
+        bufferedBlocks.delete(nextExpectingBlock);
+      }
     } else {
       bufferedBlocks.set(block.hash, block);
     }

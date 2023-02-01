@@ -144,8 +144,8 @@ export function readBlock(buf: BlockPayload) {
   const [txCount, transactionsBuf] = readVarInt(
     buf.subarray(4 + 32 + 32 + 4 + 4 + 4)
   );
-  const blockHeader = buf.subarray(0, 4 + 32 + 32 + 4 + 4 + 4);
-  const hash = sha256(sha256(blockHeader)) as BlockHash;
+  const headerPayload = buf.subarray(0, 4 + 32 + 32 + 4 + 4 + 4);
+  const hash = sha256(sha256(headerPayload)) as BlockHash;
 
   // If data is block header then txCount is zero so it is fine
   const transactions: BitcoinTransaction[] = [];
@@ -217,7 +217,7 @@ export function readBlock(buf: BlockPayload) {
       txCount,
       hash,
       transactions,
-      blockHeader,
+      headerPayload,
     },
     rest,
   ] as const;
