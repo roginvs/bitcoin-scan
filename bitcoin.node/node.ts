@@ -250,7 +250,7 @@ Algoritm:
 
       if (!canFetchBlocks) {
         canFetchBlocks = true;
-        console.info(`TODO: Headers are fetched, start to fetch blocks`);
+        givePeersTasksToDownloadBlocks();
       }
     }
     console.info(
@@ -343,6 +343,10 @@ Algoritm:
     }
 
     if (storageExpectingBlock.equals(block.hash)) {
+      console.info(
+        `Block download: ${peer.id} downloaded ${block.hash} which is going to database`
+      );
+
       // TODO: Validate block
       plugins.forEach((plugin) => plugin.onNewValidatedBlock?.(block));
       storage.saveBlockTransactions(block.hash, block.transactions);
@@ -359,6 +363,11 @@ Algoritm:
         if (!blockInBuffer) {
           break;
         }
+
+        console.info(
+          `Block download: ${nextExpectingBlock} is in buffer so using it`
+        );
+
         // TODO: Validate block
         plugins.forEach((plugin) =>
           plugin.onNewValidatedBlock?.(blockInBuffer)
@@ -370,10 +379,14 @@ Algoritm:
         bufferedBlocks.delete(nextExpectingBlock);
       }
     } else {
+      console.info(
+        `Block download: ${peer.id} downloaded ${block.hash} which is going to buffer`
+      );
       bufferedBlocks.set(block.hash, block);
     }
     givePeersTasksToDownloadBlocks();
   }
+
   function onNotFoundMessage(peer: PeerConnection, payload: MessagePayload) {
     for (const item of readNotFoundPayload(payload)) {
       if (item[0] === HashType.MSG_WITNESS_BLOCK) {
@@ -383,6 +396,7 @@ Algoritm:
           console.warn(`${peer.id} unknown notfound for block ${item[1]}`);
           peer.close();
         } else {
+          console.info(`Block download: ${peer.id} do not have ${blockHash}`);
           // Sad that this peer do not have this block. Let's hope others will have it
           peersBlocksTasks.delete(peer);
           givePeersTasksToDownloadBlocks();
@@ -395,7 +409,11 @@ Algoritm:
   }
 
   function givePeersTasksToDownloadBlocks() {
+    if (!canFetchBlocks) {
+      throw new Error(`Internal error: this should never be called`);
+    }
     if (bufferedBlocks.size >= MAX_BUFFERED_BLOCKS) {
+      console.info(`Block download: buffer is full!`);
       // We already have a lot data which is unprocessed yet
       return;
     }
@@ -416,11 +434,16 @@ Algoritm:
           blocksToDownload.length
         )
       );
+    console.info(
+      `Block download: max=${MAX_DOWNLOADING_PEERS} ` +
+        ` bufAvailable=${thresholdOfBuffer} jobs=${availablePeersForDownloading.length}`
+    );
     for (const [i, peer] of availablePeersForDownloading.entries()) {
       const blockHash = blocksToDownload[i];
       if (!blockHash) {
         throw new Error(`Internal error`);
       }
+      console.info(`  ${peer.id} will download ${blockHash}`);
 
       peersBlocksTasks.set(peer, blockHash);
       peer.send(
