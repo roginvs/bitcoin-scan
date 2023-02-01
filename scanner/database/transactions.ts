@@ -5,7 +5,14 @@ import {
 } from "../../bitcoin.protocol/messages.types";
 import { derivePrivateKeyFromPair } from "../../crypto/keyDerive";
 import { Nominal } from "../../nominal_types/nominaltypes";
-import { getDbPath } from "./config";
+
+function getDbPath(dbFileName: string) {
+  const dataFolder = process.env.SCANNER_STORAGE_DIR;
+  if (!dataFolder) {
+    throw new Error(`Env variable SCANNER_STORAGE_DIR is not defined`);
+  }
+  return dataFolder + "/" + dbFileName;
+}
 
 export type UnspentTxId = Nominal<"unspent tx id", number>;
 
