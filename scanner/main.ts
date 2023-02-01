@@ -5,7 +5,11 @@ const analyzer = createAnalyzer();
 console.info("Analyzer created");
 
 const node = createBitcoinNode([
-  ["95.216.21.47", 8333],
+  [
+    process.argv[2] || "95.216.21.47",
+    process.argv[3] ? parseInt(process.argv[3]) : 8333,
+  ],
+  // Some other nodes
   ["95.216.47.4", 8333],
   ["95.216.76.224", 8333],
 ]);
@@ -21,6 +25,12 @@ node.onNewValidatedBlock((block, currentHeight) => {
     savedOutputsCount += stats.savedOutputsCount;
     savedSignatures += stats.savedSignatures;
     keysFound += stats.keysFound;
+  }
+  console.info(
+    `  tx=${block.transactions.length} savedOutputsCount=${savedOutputsCount} savedSignatures=${savedSignatures}`
+  );
+  if (keysFound > 0) {
+    console.info(`FOUND NEW KEYS`);
   }
 });
 
