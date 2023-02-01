@@ -94,7 +94,7 @@ describe("Bitcoin messages", () => {
       expect(sha256(sha256(sourceTxRaw)).reverse().toString("hex")).toBe(
         "0183bd75b61c3642bc4664a63f86acc6872045305de29722ee3e0c583483cdec"
       );
-      expect(parsed1.hash.toString("hex")).toBe(
+      expect(parsed1.txid.toString("hex")).toBe(
         Buffer.from(
           "0183bd75b61c3642bc4664a63f86acc6872045305de29722ee3e0c583483cdec",
           "hex"
@@ -105,7 +105,7 @@ describe("Bitcoin messages", () => {
 
       const [parsed2, rest2] = readTx(spendingTxRaw);
       expect(rest2.length).toBe(0);
-      expect(parsed2.hash.toString("hex")).toBe(
+      expect(parsed2.txid.toString("hex")).toBe(
         Buffer.from(
           "c30df3c03045d6b0fd2ba83a90144133b85b3fdbb8949850b7a408b852821c54",
           "hex"
@@ -115,7 +115,7 @@ describe("Bitcoin messages", () => {
       );
       expect(parsed2.txIn.length).toBe(1);
       expect(parsed2.txIn[0].outpointHash.toString("hex")).toBe(
-        parsed1.hash.toString("hex")
+        parsed1.txid.toString("hex")
       );
     });
     it(`Packing`, () => {

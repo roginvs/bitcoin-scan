@@ -140,7 +140,7 @@ export function readBlock(buf: BlockPayload) {
 
   if (txCount > 0) {
     const merkleRootCalculated = calculateMerkleRoot(
-      transactions.map((tx) => tx.hash)
+      transactions.map((tx) => tx.txid)
     );
     if (!merkleRoot.equals(merkleRootCalculated)) {
       throw new Error(`Wrong Merkle root hash`);
@@ -278,7 +278,7 @@ export function readTx(payload: TransactionPayload) {
   buf = buf.subarray(4);
 
   const hashingSource = payload.subarray(0, payload.length - buf.length);
-  const hash = sha256(sha256(hashingSource)) as TransactionHash;
+  const txid = sha256(sha256(hashingSource)) as TransactionHash;
   const rest = buf;
   return [
     {
@@ -286,7 +286,7 @@ export function readTx(payload: TransactionPayload) {
       txIn,
       txOut,
       lockTime,
-      hash,
+      txid,
     },
     rest,
   ] as const;

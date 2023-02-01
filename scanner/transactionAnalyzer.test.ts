@@ -62,7 +62,7 @@ describe("createAnalyzer", () => {
     const txOut = readTx(
       packTx({
         // This will be updated after packing and unpacking
-        hash: Buffer.alloc(0) as TransactionHash,
+        txid: Buffer.alloc(0) as TransactionHash,
         lockTime: 0,
         version: 1,
         txIn: [
@@ -95,12 +95,12 @@ describe("createAnalyzer", () => {
     for (const outpointIndex of [0, 1]) {
       const txInForSig = packTx({
         // This will be updated after packing and unpacking
-        hash: Buffer.alloc(0) as TransactionHash,
+        txid: Buffer.alloc(0) as TransactionHash,
         lockTime: 0,
         version: 1,
         txIn: [
           {
-            outpointHash: txOut.hash,
+            outpointHash: txOut.txid,
             outpointIndex,
             script: pkScript as Buffer as SignatureScript,
             sequence: 0xffffffff,
@@ -159,12 +159,12 @@ describe("createAnalyzer", () => {
       ) as SignatureScript;
       const txIn = {
         // This will be updated after packing and unpacking
-        hash: Buffer.alloc(0) as TransactionHash,
+        txid: Buffer.alloc(0) as TransactionHash,
         lockTime: 0,
         version: 1,
         txIn: [
           {
-            outpointHash: txOut.hash,
+            outpointHash: txOut.txid,
             outpointIndex,
             script,
             sequence: 0xffffffff,

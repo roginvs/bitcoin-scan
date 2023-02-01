@@ -23,7 +23,7 @@ export function createAnalyzer(isMemory: boolean = false) {
         continue;
       }
       debug(`out ${index} added to unspent`);
-      storage.addUnspentTxOutput(tx.hash, index, outTx.script);
+      storage.addUnspentTxOutput(tx.txid, index, outTx.script);
       savedOutputsCount++;
     }
 
