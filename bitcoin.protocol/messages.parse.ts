@@ -90,7 +90,7 @@ function parseServices(payload: Buffer) {
 }
 
 export function parseVersion(payload: MessagePayload) {
-  const ver = payload.subarray(0, 4);
+  const version = payload.subarray(0, 4).readUInt32LE(0);
   const services = payload.subarray(4, 4 + 8);
   // Timestamp is 64bit but for now I do not care
   const timestamp = payload.readUInt32LE(4 + 8);
@@ -102,17 +102,31 @@ export function parseVersion(payload: MessagePayload) {
   const userAgent = fromUserAgent.subarray(0, userAgentLen);
   const startHeight = fromUserAgent.readUInt32LE(userAgentLen);
 
+  let relay = false;
   const rest = fromUserAgent.subarray(userAgentLen + 4);
+  if (version >= 70001) {
+    if (rest.length !== 1) {
+      throw new Error(`No data for relay flag`);
+    }
+    relay = !!rest[0];
+  } else {
+    if (rest.length > 0) {
+      throw new Error(`Some data is left`);
+    }
+  }
+
   console.info(
-    `Got hello ver=${ver.readUInt32LE(0)} time=${new Date(
+    `Got hello ver=${version} time=${new Date(
       timestamp * 1000
     ).toISOString()} userAgent=${userAgent} services=${parseServices(
       services
-    ).join(",")} startHeight=${startHeight} rest=${rest.toString("hex")}`
+    ).join(",")} startHeight=${startHeight} `
   );
   return {
+    version,
     userAgent: userAgent.toString(),
     nonce: nonce.toString("hex"),
+    relay,
   };
 }
 
