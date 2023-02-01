@@ -143,7 +143,7 @@ export function packTxOut(txout: BitcoinTransactionOut) {
   const pkScriptLen = packVarInt(txout.script.length);
   return joinBuffers(value, pkScriptLen, txout.script);
 }
-export function packTx(tx: BitcoinTransaction) {
+export function packTx(tx: BitcoinTransaction, includeWitness = false) {
   const version = Buffer.alloc(4);
   version.writeUInt32LE(tx.version);
   // No flag yet

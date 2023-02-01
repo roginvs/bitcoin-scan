@@ -1,5 +1,6 @@
 import { bitcoinMessageMagic, protocolVersion } from "./consts";
 import { sha256 } from "./hashes";
+import { packTx } from "./messages.create";
 import {
   BitcoinMessage,
   BlockHash,
@@ -277,15 +278,33 @@ export function readTx(payload: TransactionPayload) {
   const lockTime = buf.readUInt32LE(0);
   buf = buf.subarray(4);
 
-  const hashingSource = payload.subarray(0, payload.length - buf.length);
-  const txid = sha256(sha256(hashingSource)) as TransactionHash;
+  const txNoHashes = {
+    version,
+    txIn,
+    txOut,
+    lockTime,
+  } as const;
+
+  const fullTransactionBuf = payload.subarray(0, payload.length - buf.length);
+  let txid: TransactionHash;
+  if (!isWitness) {
+    const txIdHashingSource = fullTransactionBuf;
+    txid = sha256(sha256(txIdHashingSource)) as TransactionHash;
+  } else {
+    const packedWithNoWitness = packTx(
+      {
+        ...txNoHashes,
+        txid: Buffer.alloc(0) as TransactionHash,
+      },
+      true
+    );
+    txid = sha256(sha256(packedWithNoWitness)) as TransactionHash;
+  }
+
   const rest = buf;
   return [
     {
-      version,
-      txIn,
-      txOut,
-      lockTime,
+      ...txNoHashes,
       txid,
     },
     rest,
