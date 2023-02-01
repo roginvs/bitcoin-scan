@@ -1,6 +1,8 @@
+import { genesisBlockHash } from "./bitcoin.protocol/consts";
 import { createGetdataMessage } from "./bitcoin.protocol/messages.create";
 import { readBlock, readInvPayload } from "./bitcoin.protocol/messages.parse";
 import {
+  BlockHash,
   BlockPayload,
   HashType,
   InventoryItem,
@@ -29,21 +31,24 @@ peer.onMessage = (command, payload) => {
     }
   } else if (command === "block") {
     console.info(`Got block:`);
-    const block = readBlock(payload as Buffer as BlockPayload);
-    console.info(block);
+    const [block, rest] = readBlock(payload as Buffer as BlockPayload);
+    if (rest.length !== 0) {
+      throw new Error(`LOL something left`);
+    }
+    console.info(block.transactions[23]);
   } else {
     console.info(command);
   }
 };
 
+const someLateBlockHash = Buffer.from(
+  "00000000000000000005f883a624ff0896bdfaa2020630b5e98d400fba5d0972",
+  "hex"
+).reverse() as BlockHash;
+
 peer.send(
   createGetdataMessage([
-    [
-      HashType.MSG_WITNESS_BLOCK,
-      Buffer.from(
-        "00000000000000000005f883a624ff0896bdfaa2020630b5e98d400fba5d0972",
-        "hex"
-      ).reverse(),
-    ],
+    [HashType.MSG_WITNESS_BLOCK, someLateBlockHash],
+    //[HashType.MSG_BLOCK, someLateBlockHash],
   ] as any[])
 );

@@ -12,6 +12,7 @@ export type TransactionPayload = Nominal<"transaction payload", Buffer>;
 
 export type PkScript = Nominal<"public key script of tx_out", Buffer>;
 export type SignatureScript = Nominal<"signature script of tx_in", Buffer>;
+export type WitnessStackItem = Nominal<"witness stack item", Buffer>;
 
 export enum HashType {
   /** Any data of with this number may be ignored */

@@ -221,13 +221,13 @@ export function readTx(payload: TransactionPayload) {
   let buf: Buffer = payload;
 
   const version = buf.readUInt32LE(0);
-  const isFlag = buf[4] === 0;
-  if (isFlag && buf[5] !== 1) {
+  const isWitness = buf[4] === 0;
+  if (isWitness && buf[5] !== 1) {
     console.error(buf);
     throw new Error("Unknown flag");
   }
 
-  buf = isFlag ? buf.subarray(6) : buf.subarray(4);
+  buf = isWitness ? buf.subarray(6) : buf.subarray(4);
 
   let txInCount;
   [txInCount, buf] = readVarInt(buf);
@@ -252,8 +252,14 @@ export function readTx(payload: TransactionPayload) {
     txOutCount--;
   }
 
-  if (isFlag) {
-    throw new Error("Not implemented yet");
+  if (isWitness) {
+    for (let i = 0; i < txInCount; i++) {
+      let witnessesCount;
+      [witnessesCount, buf] = readVarInt(buf);
+      for (let ii = 0; ii < witnessesCount; ii++) {
+        //
+      }
+    }
   }
 
   const lockTime = buf.readUInt32LE(0);
