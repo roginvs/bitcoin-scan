@@ -360,15 +360,6 @@ export function readTx(payload: TransactionPayload) {
     wtxid = txid;
   }
 
-  console.info(
-    `txid = ` +
-      Buffer.from(txid).reverse().toString("hex") +
-      " wtxid = " +
-      (txid.equals(wtxid)
-        ? "same"
-        : Buffer.from(wtxid).reverse().toString("hex"))
-  );
-
   const rest = buf;
   return [
     {

@@ -63,6 +63,8 @@ describe("createAnalyzer", () => {
       packTx({
         // This will be updated after packing and unpacking
         txid: Buffer.alloc(0) as TransactionHash,
+        wtxid: Buffer.alloc(0) as TransactionHash,
+        isWitness: false,
         lockTime: 0,
         version: 1,
         txIn: [
@@ -96,6 +98,8 @@ describe("createAnalyzer", () => {
       const txInForSig = packTx({
         // This will be updated after packing and unpacking
         txid: Buffer.alloc(0) as TransactionHash,
+        wtxid: Buffer.alloc(0) as TransactionHash,
+        isWitness: false,
         lockTime: 0,
         version: 1,
         txIn: [
@@ -160,6 +164,8 @@ describe("createAnalyzer", () => {
       const txIn = {
         // This will be updated after packing and unpacking
         txid: Buffer.alloc(0) as TransactionHash,
+        wtxid: Buffer.alloc(0) as TransactionHash,
+        isWitness: false,
         lockTime: 0,
         version: 1,
         txIn: [
