@@ -164,7 +164,6 @@ Algoritm:
     let lastKnownBlock = storage.getLastKnownBlocksHashes().slice().shift()!;
 
     let [count, headers] = readVarInt(payload);
-    console.info(`${peer.id} Got headers for ${count} blocks`);
     if (count > 0) {
       while (count > 0) {
         const [block, rest] = readBlock(headers as BlockPayload);
@@ -194,8 +193,7 @@ Algoritm:
             );
           }
 
-          const lastKnownBlockIdInDb = storage.getLastKnownBlockId()!;
-
+          // const lastKnownBlockIdInDb = storage.getLastKnownBlockId()!;
           // console.info(
           //   `${peer.id} Got new block ${dumpBuf(
           //     lastKnownBlock
@@ -235,6 +233,11 @@ Algoritm:
         console.info(`TODO: Headers are fetched, start to fetch blocks`);
       }
     }
+    console.info(
+      `${peer.id} Got headers for ${count} blocks, current height = ${
+        (storage.getLastKnownBlockId() || 0) - 1
+      }`
+    );
   }
 
   function onAddrMessage(peer: PeerConnection, payload: MessagePayload) {
