@@ -27,7 +27,11 @@ import {
 } from "../bitcoin.protocol/messages.types";
 import { createPeer, PeerConnection } from "../bitcoin.protocol/peer.outgoing";
 import { joinBuffers } from "../bitcoin.protocol/utils";
-import { BitcoinNodeApi, BitcoinNodePlugin } from "./node.plugin";
+import {
+  BitcoinNodeApi,
+  NewBlockListener,
+  SubscribeEvent,
+} from "./node.plugin";
 import { createNodeStorage } from "./node.storage";
 
 export type PeerAddr = [string, number];
@@ -36,10 +40,7 @@ function dumpBuf(buf: Buffer) {
   const str = Buffer.from(buf).reverse().toString("hex");
   return str.slice(0, 8) + "-" + str.slice(-8);
 }
-export function createBitcoinNode(
-  bootstrapPeers: PeerAddr[],
-  plugins: BitcoinNodePlugin[] = []
-) {
+export function createBitcoinNode(bootstrapPeers: PeerAddr[]) {
   const storage = createNodeStorage();
 
   /*
@@ -58,6 +59,8 @@ Algoritm:
   
   
 */
+
+  const newBlockListeners: NewBlockListener[] = [];
 
   const MAX_PEERS = 10;
   const MAX_DOWNLOADING_PEERS = 5;
@@ -381,7 +384,7 @@ Algoritm:
       );
 
       // TODO: Validate block
-      plugins.forEach((plugin) => plugin.onNewValidatedBlock?.(block));
+      newBlockListeners.forEach((cb) => cb(block));
       storage.saveBlockTransactions(block.hash, block.transactions);
 
       // Now flushing buffer
@@ -406,9 +409,8 @@ Algoritm:
         );
 
         // TODO: Validate block
-        plugins.forEach((plugin) =>
-          plugin.onNewValidatedBlock?.(blockInBuffer)
-        );
+        newBlockListeners.forEach((cb) => cb(block));
+
         storage.saveBlockTransactions(
           blockInBuffer.hash,
           blockInBuffer.transactions
@@ -555,7 +557,22 @@ Algoritm:
     },
     getBlock,
     pruneSavedTxes,
+    onNewValidatedBlock: buildSubscriber(newBlockListeners),
   };
-  plugins.forEach((plugin) => plugin.onCreate?.(me));
   return me;
+}
+
+function buildSubscriber<T extends Function>(
+  listeners: T[]
+): SubscribeEvent<T> {
+  return (cb) => {
+    listeners.push(cb);
+    return () => {
+      const idx = listeners.indexOf(cb);
+      if (idx < 0) {
+        throw new Error(`Unable to unsubscribe`);
+      }
+      listeners.splice(idx, 1);
+    };
+  };
 }
