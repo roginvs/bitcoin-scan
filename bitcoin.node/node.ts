@@ -386,18 +386,12 @@ Algoritm:
         const nextExpectingBlock = storage
           .getBlockIdsWithoutTransactions(1)
           .shift();
-        console.info(
-          `DEBUG nextExpectingBlock=${
-            nextExpectingBlock ? dumpBuf(nextExpectingBlock) : "none"
-          }`
-        );
         if (!nextExpectingBlock) {
           break;
         }
         const blockInBuffer = bufferedBlocks.get(
           nextExpectingBlock.toString("hex")
         );
-        console.info(`DEBUG blockInBuffer=${blockInBuffer ? "yes" : "none"}`);
         if (!blockInBuffer) {
           break;
         }
@@ -501,7 +495,7 @@ Algoritm:
       if (!blockHash) {
         throw new Error(`Internal error`);
       }
-      console.info(`  ${peer.id} will download ${dumpBuf(blockHash)}`);
+      console.info(`  - ${peer.id} will download ${dumpBuf(blockHash)}`);
 
       peersBlocksTasks.set(peer, blockHash);
       blocksDownloadingNowStartedAt.set(blockHash.toString("hex"), new Date());
