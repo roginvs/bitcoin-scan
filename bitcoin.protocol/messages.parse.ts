@@ -289,17 +289,28 @@ export function readTx(payload: TransactionPayload) {
   const fullTransactionBuf = payload.subarray(0, payload.length - buf.length);
   let txid: TransactionHash;
   if (!isWitness) {
-    const txIdHashingSource = fullTransactionBuf;
-    txid = sha256(sha256(txIdHashingSource)) as TransactionHash;
+    txid = sha256(sha256(fullTransactionBuf)) as TransactionHash;
   } else {
     const packedWithNoWitness = packTx(
       {
         ...txNoHashes,
         txid: Buffer.alloc(0) as TransactionHash,
+        wtxid: Buffer.alloc(0) as TransactionHash,
       },
-      true
+      false
     );
     txid = sha256(sha256(packedWithNoWitness)) as TransactionHash;
+  }
+
+  let wtxid: TransactionHash;
+  const isAllTxInAreNoWitness = txIn.every(
+    (tx) => !tx.witness || tx.witness.length === 0
+  );
+
+  if (isWitness && !isAllTxInAreNoWitness) {
+    wtxid = sha256(sha256(fullTransactionBuf)) as TransactionHash;
+  } else {
+    wtxid = txid;
   }
 
   const rest = buf;
@@ -307,6 +318,7 @@ export function readTx(payload: TransactionPayload) {
     {
       ...txNoHashes,
       txid,
+      wtxid,
     },
     rest,
   ] as const;
