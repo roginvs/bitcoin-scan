@@ -389,6 +389,9 @@ export function readTx(payload: TransactionPayload) {
       ...txNoHashes,
       txid,
       wtxid,
+      // We might want to clone buffer here to prevent memory leak.
+      // If we read big block and keep reference to one tx then
+      // subarray of the buffer will still point into block raw data
       payload: fullTransactionBuf,
     },
     rest,
