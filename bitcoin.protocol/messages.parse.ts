@@ -412,7 +412,9 @@ export function readInvPayload(payload: MessagePayload) {
   }
   return inventories;
 }
-
+export function readNotFoundPayload(payload: MessagePayload) {
+  return readInvPayload(payload);
+}
 export function readAddr(payload: Buffer) {
   const services = parseServices(payload.subarray(0, 8));
   const ipv4or6 = payload.subarray(8, 8 + 16);

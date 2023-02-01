@@ -12,6 +12,8 @@ import {
   BitcoinBlock,
   readAddrWithTime,
   readBlock,
+  readInvPayload,
+  readNotFoundPayload,
   readVarInt,
 } from "../bitcoin.protocol/messages.parse";
 import {
@@ -54,6 +56,8 @@ Algoritm:
 */
 
   const MAX_PEERS = 10;
+  const MAX_DOWNLOADING_PEERS = 5;
+  const MAX_BUFFERED_BLOCKS = 15;
 
   const peers: PeerConnection[] = [];
 
@@ -66,6 +70,9 @@ Algoritm:
 
   /** We can fetch blocks when we have updated blockchain from at least one peer */
   let canFetchBlocks = false;
+
+  const peersBlocksTasks = new Map<PeerConnection, BlockHash>();
+  const bufferedBlocks = new Map<BlockHash, BitcoinBlock>();
 
   function connectToPeer(addr: PeerAddr) {
     const currentLastKnownBlockId = storage.getLastKnownBlockId();
@@ -83,6 +90,9 @@ Algoritm:
     peersToFetchHeaders.push(peer);
     if (peersToFetchHeaders.length === 1) {
       performInitialHeadersDownload(peer);
+    }
+    if (canFetchBlocks) {
+      givePeersTasksToDownloadBlocks();
     }
   }
 
@@ -131,6 +141,11 @@ Algoritm:
       }
     }
 
+    if (peersBlocksTasks.has(peer)) {
+      peersBlocksTasks.delete(peer);
+      givePeersTasksToDownloadBlocks();
+    }
+
     if (peers.length === 0) {
       console.info(`We are out of peers, starting from the beginning`);
       connectToBootstapPeers();
@@ -150,6 +165,10 @@ Algoritm:
       onAddrMessage(peer, payload);
     } else if (cmd === "block") {
       onBlockMessage(peer, payload as Buffer as BlockPayload);
+    } else if (cmd === "notfound") {
+      onNotFoundMessage(peer, payload);
+    } else {
+      console.info(`${peer.id} unknown message ${cmd}`);
     }
   }
 
@@ -307,7 +326,83 @@ Algoritm:
       return;
     }
 
-    throw new Error("TODO");
+    const expectingBlockHash = peersBlocksTasks.get(peer);
+    if (!expectingBlockHash || !expectingBlockHash.equals(block.hash)) {
+      console.warn(`${peer.id} unknown block ${block.hash}`);
+      peer.close();
+      return;
+    }
+
+    const storageExpectingBlock = storage
+      .getBlockIdsWithoutTransactions(1)
+      .shift();
+    if (!storageExpectingBlock) {
+      throw new Error(
+        `Storage error: why this block ${block.hash} was fetched if nothing expected there?`
+      );
+    }
+    if (storageExpectingBlock.equals(block.hash)) {
+      // todo: call plugings
+      // todo: save into database raw transaction data
+      // todo: Flush buffered blocks
+    } else {
+      bufferedBlocks.set(block.hash, block);
+    }
+    givePeersTasksToDownloadBlocks();
+  }
+  function onNotFoundMessage(peer: PeerConnection, payload: MessagePayload) {
+    for (const item of readNotFoundPayload(payload)) {
+      if (item[0] === HashType.MSG_WITNESS_BLOCK) {
+        const blockHash = item[1];
+        const expectingBlockHash = peersBlocksTasks.get(peer);
+        if (!expectingBlockHash || !expectingBlockHash.equals(blockHash)) {
+          console.warn(`${peer.id} unknown notfound for block ${item[1]}`);
+          peer.close();
+        } else {
+          // Sad that this peer do not have this block. Let's hope others will have it
+          peersBlocksTasks.delete(peer);
+          givePeersTasksToDownloadBlocks();
+        }
+      } else {
+        console.warn(`${peer.id} unknown notfound ${item[0]} ${item[1]}`);
+        peer.close();
+      }
+    }
+  }
+
+  function givePeersTasksToDownloadBlocks() {
+    if (bufferedBlocks.size >= MAX_BUFFERED_BLOCKS) {
+      // We already have a lot data which is unprocessed yet
+      return;
+    }
+    const thresholdOfBuffer = MAX_BUFFERED_BLOCKS - bufferedBlocks.size;
+    const blocksToDownload = storage.getBlockIdsWithoutTransactions(
+      Math.min(MAX_DOWNLOADING_PEERS, thresholdOfBuffer)
+    );
+    const availablePeersForDownloading = peers
+      .filter((p) => !peersBlocksTasks.has(p))
+      .slice()
+      .sort(() => Math.random() * 2 - 1)
+      .slice(
+        0,
+
+        Math.min(
+          thresholdOfBuffer,
+          MAX_DOWNLOADING_PEERS,
+          blocksToDownload.length
+        )
+      );
+    for (const [i, peer] of availablePeersForDownloading.entries()) {
+      const blockHash = blocksToDownload[i];
+      if (!blockHash) {
+        throw new Error(`Internal error`);
+      }
+
+      peersBlocksTasks.set(peer, blockHash);
+      peer.send(
+        createGetdataMessage([[HashType.MSG_WITNESS_BLOCK, blockHash]])
+      );
+    }
   }
 
   function connectToBootstapPeers() {
