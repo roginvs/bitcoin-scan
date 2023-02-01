@@ -79,7 +79,7 @@ export function createNodeStorage(isMemory = false) {
     const dbId = sql
       .prepare(
         `
-            select id from blockchain order by id desc limit 1`
+            select id from headerschain order by id desc limit 1`
       )
       .get()?.id as BlockId | undefined;
     return dbId;
