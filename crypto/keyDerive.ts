@@ -60,7 +60,7 @@ export function derivePrivateKeyFromPair(a: SignatureInfo, b: SignatureInfo) {
   );
 
   const walletStringUncomp = bitcoinAddressFromP2PKH(
-    ripemd160(sha256(a.compressed_public_key))
+    ripemd160(sha256(getUncompressedPublicKeyFromPrivateKey(privateKeyBuf)))
   );
 
   return {
