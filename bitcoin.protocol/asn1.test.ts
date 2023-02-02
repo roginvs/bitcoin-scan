@@ -1,4 +1,8 @@
-import { asn1parse, create_spki_der_from_pubkey } from "./asn1";
+import {
+  asn1parse,
+  create_spki_der_from_pubkey,
+  packAsn1PairOfIntegers,
+} from "./asn1";
 
 describe(`Asn tools`, () => {
   for (const b of [
@@ -12,4 +16,13 @@ describe(`Asn tools`, () => {
       expect(rest.length).toBe(0);
     });
   }
+
+  it(`Packs 2 integers`, () => {
+    const packed = packAsn1PairOfIntegers(
+      Buffer.from("03bb", "hex"),
+      Buffer.from("ffff", "hex")
+    );
+    expect(packed.toString("hex")).toBe("3009020203bb020300ffff");
+    expect(asn1parse(packed)[1].length).toBe(0);
+  });
 });

@@ -1,5 +1,32 @@
 import { joinBuffers } from "./utils";
 
+export function packIntForAsn(b: Buffer) {
+  if (b[0] & 0b10000000) {
+    return joinBuffers(Buffer.from([0]), b);
+  } else {
+    return b;
+  }
+}
+
+export function packAsn1PairOfIntegers(r: Buffer, s: Buffer) {
+  const rPrefixed = packIntForAsn(r);
+  const sPrefixed = packIntForAsn(s);
+  if (r.length & 0b10000000) {
+    throw new Error(`TODO: Longer integers`);
+  }
+  if (s.length & 0b10000000) {
+    throw new Error(`TODO: Longer integers`);
+  }
+
+  return joinBuffers(
+    Buffer.from([0x30, rPrefixed.length + sPrefixed.length + 2 + 2]),
+    Buffer.from([0x02, rPrefixed.length]),
+    rPrefixed,
+    Buffer.from([0x02, sPrefixed.length]),
+    sPrefixed
+  );
+}
+
 type Asn1 = any;
 /**
  * Very simple asn1 parsing, just for validation purposes
