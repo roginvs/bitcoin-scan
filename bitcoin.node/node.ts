@@ -213,14 +213,16 @@ Algoritm:
         if (!peersToFetchHeaders.includes(peer)) {
           // If no then add this peer into fetching headers queue
           peersToFetchHeaders.push(peer);
-          console.info(
-            `${peer.id} got blocks inv, added to queue of headers fetching`
-          );
+
           if (peersToFetchHeaders.length === 1) {
             console.info(`${peer.id} got blocks inv, let's see what it have`);
             // This flag should be already dropped, just in case
             currentlyFetchingHeadersPeerSentInvWithSomeBlock = false;
             performInitialHeadersDownload(peer);
+          } else {
+            console.info(
+              `${peer.id} got blocks inv, added to queue of headers fetching`
+            );
           }
         }
       }
