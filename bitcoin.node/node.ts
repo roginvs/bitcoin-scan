@@ -75,6 +75,7 @@ Algoritm:
    * is peer from which we are fetching
    */
   const peersToFetchHeaders: PeerConnection[] = [];
+  let currentlyFetchingHeadersPeerSentInvWithSomeBlock = false;
 
   /** We can fetch blocks when we have updated blockchain from at least one peer */
   let canFetchBlocks = false;
@@ -98,6 +99,8 @@ Algoritm:
 
     peersToFetchHeaders.push(peer);
     if (peersToFetchHeaders.length === 1) {
+      // This flag should be already dropped, just in case
+      currentlyFetchingHeadersPeerSentInvWithSomeBlock = false;
       performInitialHeadersDownload(peer);
     }
     if (canFetchBlocks) {
@@ -130,6 +133,7 @@ Algoritm:
     if (peersToFetchHeaders[0] === peer) {
       // This peer was in the downloading phase
       peersToFetchHeaders.splice(0, 1);
+      currentlyFetchingHeadersPeerSentInvWithSomeBlock = false;
       if (peersToFetchHeaders.length > 0) {
         // Switch to another peer
         performInitialHeadersDownload(peersToFetchHeaders[0]);
@@ -181,12 +185,36 @@ Algoritm:
     } else if (cmd === "notfound") {
       onNotFoundMessage(peer, payload);
     } else if (cmd === "inv") {
-      // Just ignore for now
-      // TODO: If is a block and we have chain then re-download it?
+      onInvMessage(peer, payload);
     } else if (cmd === "getheaders") {
       // TODO
     } else {
       console.info(`${peer.id} unknown message ${cmd}`);
+    }
+  }
+
+  function onInvMessage(peer: PeerConnection, payload: MessagePayload) {
+    const data = readInvPayload(payload);
+    const isHaveBlockInv = data.some(
+      (inv) =>
+        inv[0] === HashType.MSG_BLOCK || inv[0] === HashType.MSG_WITNESS_BLOCK
+    );
+    if (isHaveBlockInv) {
+      if (peersToFetchHeaders[0] === peer) {
+        // If we are fetching headers now then raise flag that inv was received
+        //  and we need to ask for headers even when we done
+        currentlyFetchingHeadersPeerSentInvWithSomeBlock = true;
+      } else {
+        if (!peersToFetchHeaders.includes(peer)) {
+          // If no then add this peer into fetching headers queue
+          peersToFetchHeaders.push(peer);
+          if (peersToFetchHeaders.length === 1) {
+            // This flag should be already dropped, just in case
+            currentlyFetchingHeadersPeerSentInvWithSomeBlock = false;
+            performInitialHeadersDownload(peer);
+          }
+        }
+      }
     }
   }
 
@@ -251,24 +279,31 @@ Algoritm:
       }
       performInitialHeadersDownload(peer);
     } else {
-      // Ok, this peer have no idea about more blocks
-      peersToFetchHeaders.splice(0, 1);
-
-      if (peersToFetchHeaders.length > 0) {
-        const nextPeerToFetchBlockheadersChain = peersToFetchHeaders[0];
-        console.info(
-          `${peer.id} No more headers from this peer, picking new one ${nextPeerToFetchBlockheadersChain.id}`
-        );
-        performInitialHeadersDownload(nextPeerToFetchBlockheadersChain);
+      if (currentlyFetchingHeadersPeerSentInvWithSomeBlock) {
+        // Maybe something appeared during last headers transfer. Let's re-check
+        currentlyFetchingHeadersPeerSentInvWithSomeBlock = false;
+        performInitialHeadersDownload(peer);
       } else {
-        console.info(
-          `${peer.id} No more headers from this peer, no more peers in queue`
-        );
-      }
+        // Ok, this peer have no idea about more blocks
 
-      if (!canFetchBlocks) {
-        canFetchBlocks = true;
-        givePeersTasksToDownloadBlocks();
+        peersToFetchHeaders.splice(0, 1);
+
+        if (peersToFetchHeaders.length > 0) {
+          const nextPeerToFetchBlockheadersChain = peersToFetchHeaders[0];
+          console.info(
+            `${peer.id} No more headers from this peer, picking new one ${nextPeerToFetchBlockheadersChain.id}`
+          );
+          performInitialHeadersDownload(nextPeerToFetchBlockheadersChain);
+        } else {
+          console.info(
+            `${peer.id} No more headers from this peer, no more peers in queue`
+          );
+        }
+
+        if (!canFetchBlocks) {
+          canFetchBlocks = true;
+          givePeersTasksToDownloadBlocks();
+        }
       }
     }
     console.info(
