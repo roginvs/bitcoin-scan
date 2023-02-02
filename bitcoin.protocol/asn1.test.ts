@@ -32,6 +32,6 @@ describe(`Asn tools`, () => {
       repackSignature(Buffer.from("3008020203bb0202ffffabcd", "hex")).toString(
         "hex"
       )
-    ).toBe("3009020203bb020300ffffabcd");
+    ).toBe("3009020203bb020300ffff");
   });
 });

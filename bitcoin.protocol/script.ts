@@ -145,7 +145,8 @@ export function check_P2PKH_SIGHASH_ALL(
   try {
     const [asn1, rest] = asn1parse(signatureDer);
     if (rest.length > 0) {
-      throw new Error(`Some data is left in asn`);
+      // Well, some transactions have signatures with data after asn1
+      // throw new Error(`Some data is left in asn`);
     }
     if (!Array.isArray(asn1)) {
       throw new Error(`Not an array in the asn`);
