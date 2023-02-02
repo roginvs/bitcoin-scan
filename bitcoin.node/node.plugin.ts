@@ -3,6 +3,7 @@ import {
   BitcoinTransaction,
 } from "../bitcoin.protocol/messages.parse";
 import { BlockHash, TransactionHash } from "../bitcoin.protocol/messages.types";
+import { BlockId } from "./node.storage";
 
 export type NewBlockListener = (
   block: BitcoinBlock,
@@ -11,7 +12,7 @@ export type NewBlockListener = (
 export type SubscribeEvent<T extends Function> = (cb: T) => () => void;
 export interface BitcoinNodeApi {
   // getTransaction(txId: TransactionHash): BitcoinTransaction;
-  getBlock(blockHash: BlockHash): BitcoinBlock;
+  getSavedBlock(blockHash: BlockHash | BlockId): BitcoinBlock | null;
   pruneSavedTxes(keepLastNBlocks: number): void;
   destroy(): void;
   onNewDownloadedBlock: SubscribeEvent<NewBlockListener>;

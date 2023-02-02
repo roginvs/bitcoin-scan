@@ -132,28 +132,33 @@ export function createNodeStorage(isMemory = false) {
       .map((row) => ({ id: row.id as BlockId, hash: row.hash as BlockHash }));
   }
 
-  function getBlockHeader(hash: BlockHash): BlockPayload {
+  function getBlockHeader(hashOrId: BlockHash | BlockId):
+    | {
+        id: BlockId;
+        hash: BlockHash;
+        header: BlockPayload;
+      }
+    | undefined {
     return sql
       .prepare(
-        `
-      select header from headerschain where hash = ?
-    `
+        typeof hashOrId === "number"
+          ? `select id, hash, header from headerschain where id = ?`
+          : `select id, hash, header from headerschain where hash = ?`
       )
-      .get(hash).header;
+      .get(hashOrId);
   }
-  function getBlockTransactions(hash: BlockHash): TransactionPayload[] {
+  function getBlockTransactions(blockId: BlockId): TransactionPayload[] {
     return sql
       .prepare(
         `
         select data from block_transactions 
-        where block_numeric_id = 
-          (select id from headerschain where hash = ?)
+        where block_numeric_id = ?
         order by transaction_index_in_block
 
       
       `
       )
-      .all(hash)
+      .all(blockId)
       .map((row) => row.data);
   }
 

@@ -33,7 +33,7 @@ import {
   NewBlockListener,
   SubscribeEvent,
 } from "./node.plugin";
-import { createNodeStorage } from "./node.storage";
+import { BlockId, createNodeStorage } from "./node.storage";
 
 export type PeerAddr = [string, number];
 
@@ -589,14 +589,19 @@ Algoritm:
 
   connectToBootstapPeers();
 
-  function getBlock(blockHash: BlockHash): BitcoinBlock {
-    const header = storage.getBlockHeader(blockHash);
+  function getSavedBlock(
+    blockLocator: BlockHash | BlockId
+  ): BitcoinBlock | null {
+    const blockMeta = storage.getBlockHeader(blockLocator);
 
-    const transactionsPayload = storage.getBlockTransactions(blockHash);
+    if (!blockMeta) {
+      return null;
+    }
+    const transactionsPayload = storage.getBlockTransactions(blockMeta.id);
 
     const [block, rest] = readBlock(
       joinBuffers(
-        header,
+        blockMeta.header,
         packVarInt(transactionsPayload.length),
         ...transactionsPayload
       ) as BlockPayload
@@ -615,7 +620,7 @@ Algoritm:
     destroy() {
       throw new Error(`Not implemented`);
     },
-    getBlock,
+    getSavedBlock: getSavedBlock,
     pruneSavedTxes,
     onNewDownloadedBlock: buildSubscriber(newBlockListeners),
   };
