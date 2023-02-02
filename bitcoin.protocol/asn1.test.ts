@@ -2,6 +2,7 @@ import {
   asn1parse,
   create_spki_der_from_pubkey,
   packAsn1PairOfIntegers,
+  repackSignature,
 } from "./asn1";
 
 describe(`Asn tools`, () => {
@@ -24,5 +25,13 @@ describe(`Asn tools`, () => {
     );
     expect(packed.toString("hex")).toBe("3009020203bb020300ffff");
     expect(asn1parse(packed)[1].length).toBe(0);
+  });
+
+  it(`Repacks signature`, () => {
+    expect(
+      repackSignature(Buffer.from("3008020203bb0202ffffabcd", "hex")).toString(
+        "hex"
+      )
+    ).toBe("3009020203bb020300ffffabcd");
   });
 });

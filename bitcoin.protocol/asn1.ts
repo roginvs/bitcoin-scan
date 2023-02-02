@@ -85,6 +85,20 @@ export function asn1parse(buf: Buffer): [Asn1, Buffer] {
   return [result, rest];
 }
 
+export function repackSignature(rspair: Buffer) {
+  const [pair, rest] = asn1parse(rspair);
+  if (pair.length !== 2) {
+    throw new Error(`Not a pair`);
+  }
+  if (pair[0].type !== "integer" || pair[1].type !== "integer") {
+    throw new Error("Not an integer");
+  }
+  return joinBuffers(
+    packAsn1PairOfIntegers(pair[0].value, pair[1].value),
+    rest
+  );
+}
+
 export function create_spki_der_from_pubkey(pub: Buffer) {
   /*
       asn1 is TLV
