@@ -379,9 +379,12 @@ Algoritm:
 
     if (storageExpectingBlock.hash.equals(block.hash)) {
       console.info(
-        `Block download: ${peer.id} downloaded ${dumpBuf(
-          block.hash
-        )} in ${durationSeconds}s ${speedMbs}mb/s, block is going to database`
+        `Block download: ${peer.id} downloaded ${dumpBuf(block.hash)} ${(
+          payload.length /
+          1000 /
+          1000
+        ).toFixed(2)}mb ` +
+          `in ${durationSeconds}s ${speedMbs}mb/s, block is going to database`
       );
 
       // TODO: Validate block
@@ -422,9 +425,12 @@ Algoritm:
       }
     } else {
       console.info(
-        `Block download: ${peer.id} downloaded ${dumpBuf(
-          block.hash
-        )} in ${durationSeconds}s ${speedMbs}mb/s, keeping data in buffer`
+        `Block download: ${peer.id} downloaded ${dumpBuf(block.hash)} ${(
+          payload.length /
+          1000 /
+          1000
+        ).toFixed(2)}mb ` +
+          `in ${durationSeconds}s ${speedMbs}mb/s, keeping data in buffer`
       );
       bufferedBlocks.set(block.hash.toString("hex"), block);
     }
