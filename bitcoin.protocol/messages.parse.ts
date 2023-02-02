@@ -105,12 +105,17 @@ export function parseVersion(payload: MessagePayload) {
   let relay = false;
   const rest = fromUserAgent.subarray(userAgentLen + 4);
   if (version >= 70001) {
-    if (rest.length !== 1) {
+    if (rest.length > 1) {
       throw new Error(
-        `No data or too many data for relay flag data=${rest.toString("hex")}`
+        `No data or too many data for relay flag v=${version} data=${rest.toString(
+          "hex"
+        )}`
       );
+    } else if (rest.length < 1) {
+      // /btcwire:0.5.0/btcd:0.23.1/ sends such messages
+    } else {
+      relay = !!rest[0];
     }
-    relay = !!rest[0];
   } else {
     if (rest.length > 0) {
       throw new Error(`Some data is left`);
