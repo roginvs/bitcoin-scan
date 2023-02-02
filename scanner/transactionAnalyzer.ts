@@ -58,8 +58,11 @@ export function createAnalyzer(isMemory: boolean = false) {
         storage.removeUnspendTx(unspentOutput.id);
 
         if (signatureCheck === VERIFICATION_FAILED_RESULT) {
-          console.info(`signatureCheck=${signatureCheck}`);
+          console.info(`signatureCheck=${signatureCheck} index=${index}`);
           console.info(`Failed on this transaction`, tx);
+          console.info(
+            `Txid=${Buffer.from(tx.txid).reverse().toString("hex")}`
+          );
           console.info(packTx(tx).toString("hex"));
 
           throw new Error(
