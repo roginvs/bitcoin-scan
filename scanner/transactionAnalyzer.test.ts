@@ -1,5 +1,9 @@
 import { createPrivateKey, createPublicKey, generateKeyPairSync } from "crypto";
-import { asn1parse } from "../bitcoin.protocol/asn1";
+import {
+  asn1parse,
+  packAsn1PairOfIntegers,
+  packIntForAsn,
+} from "../bitcoin.protocol/asn1";
 import { compressPublicKey } from "../bitcoin.protocol/compressPublicKey";
 import { ripemd160, sha256 } from "../bitcoin.protocol/hashes";
 import { packTx } from "../bitcoin.protocol/messages.create";
@@ -139,21 +143,9 @@ describe("createAnalyzer", () => {
         }
         return Buffer.from(s, "hex");
       }
-      function packIntForAsn(b: Buffer) {
-        if (b[0] & 0b10000000) {
-          return joinBuffers(Buffer.from([0]), b);
-        } else {
-          return b;
-        }
-      }
-      const r = packIntForAsn(bigintToBuf(sig.r));
-      const s = packIntForAsn(bigintToBuf(sig.s));
+
       const signatureAndHashType = joinBuffers(
-        Buffer.from([0x30, r.length + s.length + 2 + 2]),
-        Buffer.from([0x02, r.length]),
-        r,
-        Buffer.from([0x02, s.length]),
-        s,
+        packAsn1PairOfIntegers(bigintToBuf(sig.r), bigintToBuf(sig.s)),
         Buffer.from([1])
       );
       expect(asn1parse(signatureAndHashType)[1].length).toBe(1);
