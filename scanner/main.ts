@@ -1,5 +1,7 @@
 import "dotenv-defaults/config";
+import { Block } from "typescript";
 import { createBitcoinNode } from "../bitcoin.node/node";
+import { BitcoinBlock } from "../bitcoin.protocol/messages.parse";
 import { createAnalyzer } from "./transactionAnalyzer";
 
 const analyzer = createAnalyzer();
@@ -15,9 +17,9 @@ const node = createBitcoinNode([
   ["95.216.76.224", 8333],
 ]);
 
-node.onNewDownloadedBlock((block, currentHeight) => {
+function processBlock(block: BitcoinBlock, currentHeight: number) {
   const blockInformation = Buffer.from(block.hash).reverse().toString("hex");
-  console.info(`Processing block ${blockInformation}`);
+  console.info(`Processing block ${blockInformation} h=${currentHeight}`);
   let savedOutputsCount = 0;
   let savedSignatures = 0;
   let keysFound = 0;
@@ -33,7 +35,9 @@ node.onNewDownloadedBlock((block, currentHeight) => {
   if (keysFound > 0) {
     console.info(`FOUND NEW KEYS`);
   }
-});
+}
+
+node.onNewDownloadedBlock(processBlock);
 
 const pruning = process.env.SCANNER_PRUNE
   ? parseInt("process.env.SCANNER_PRUNE")
