@@ -116,7 +116,7 @@ describe("ECDSA with NIST P-256", () => {
     }
   });
 
-  it(`Signature is valid if r is negative r`, () => {
+  it(`Signature is valid if s is negative s`, () => {
     const sig = signature({
       curve,
       privateKey,
