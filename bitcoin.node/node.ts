@@ -614,7 +614,11 @@ Algoritm:
     }
   }
 
-  connectToBootstapPeers();
+  // Connect to peers after small delay so if someone wants
+  // to do syncronous stuff on startup connections will not be blocked
+  setTimeout(() => {
+    connectToBootstapPeers();
+  }, 1);
 
   const me: BitcoinNodeApi = {
     destroy() {
