@@ -3,10 +3,8 @@ import { asn1parse } from "../bitcoin.protocol/asn1";
 import { bitcoinAddressFromP2PKH } from "../bitcoin.protocol/base58";
 import { compressPublicKey } from "../bitcoin.protocol/compressPublicKey";
 import { ripemd160, sha256 } from "../bitcoin.protocol/hashes";
-import { modulo_power_point } from "../my-elliptic-curves/curves";
 import { Secp256k1 } from "../my-elliptic-curves/curves.named";
 import { get_private_key_if_k_is_the_same } from "../my-elliptic-curves/ecdsa";
-import { uncompressPublicKey } from "../my-elliptic-curves/uncompressPublicKey";
 
 export interface SignatureInfo {
   compressed_public_key: Buffer;
@@ -61,8 +59,6 @@ export function derivePrivateKeyFromPair(a: SignatureInfo, b: SignatureInfo) {
     ripemd160(sha256(a.compressed_public_key))
   );
 
-  //const uncompressedPublicKey = uncompressPublicKey(Secp256k1, );
-
   const walletStringUncomp = bitcoinAddressFromP2PKH(
     ripemd160(sha256(a.compressed_public_key))
   );
@@ -96,6 +92,11 @@ function getUncompressedPublicKeyFromPrivateKey(privateKey: Buffer) {
   const asnParsed = asn1parse(myPublicKeySpki);
   // .subarray(20 + 2 + 1, 20 + 2 + 1 + 66);
   const myPublicKeyUncompressed = asnParsed[0][1].value;
+  if (myPublicKeyUncompressed[0] !== 0x04) {
+    throw new Error(
+      `Something wrong or crypto module decided to compress public key`
+    );
+  }
   return myPublicKeyUncompressed;
 }
 
