@@ -107,7 +107,7 @@ export function parseVersion(payload: MessagePayload) {
   if (version >= 70001) {
     if (rest.length !== 1) {
       throw new Error(
-        `No data or too many data for relay flag: len=${rest.length}`
+        `No data or too many data for relay flag data=${rest.toString("hex")}`
       );
     }
     relay = !!rest[0];
