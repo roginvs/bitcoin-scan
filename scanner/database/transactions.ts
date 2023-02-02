@@ -57,7 +57,8 @@ export function createTransactionsStorage(isMemory = false) {
   CREATE TABLE IF NOT EXISTS found_keys (
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
     compressed_public_key CHARACTER(33) NOT NULL, 
-    bitcoin_wallet CHARACTER(40), -- Have no idea about hard limit
+    bitcoin_wallet_comp CHARACTER(40), -- Have no idea about hard limit
+    bitcoin_wallet_uncomp CHARACTER(40), -- Have no idea about hard limit
     private_key CHARACTER(32) NOT NULL,
     info TEXT NOT NULL
   )
@@ -180,10 +181,11 @@ export function createTransactionsStorage(isMemory = false) {
   const insertNewKey = sql.prepare(`
   insert into found_keys (
     compressed_public_key,
-    bitcoin_wallet,
+    bitcoin_wallet_comp,
+    bitcoin_wallet_uncomp,
     private_key,
     info
-  ) values (?, ?, ?, ?)
+  ) values (?, ?, ?, ?, ?)
 `);
   function derivePrivateKey(data: TransactionRow[], blockInfo: string) {
     let foundKey = false;
@@ -199,7 +201,8 @@ export function createTransactionsStorage(isMemory = false) {
         const key = derivePrivateKeyFromPair(data[i], data[j]);
         insertNewKey.run(
           key.compressed_public_key,
-          key.walletString,
+          key.walletStringComp,
+          key.walletStringUncomp,
           key.privateKeyBuf,
           blockInfo
         );

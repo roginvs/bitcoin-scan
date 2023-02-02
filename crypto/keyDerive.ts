@@ -1,9 +1,12 @@
 import { createPrivateKey, createPublicKey } from "crypto";
+import { asn1parse } from "../bitcoin.protocol/asn1";
 import { bitcoinAddressFromP2PKH } from "../bitcoin.protocol/base58";
 import { compressPublicKey } from "../bitcoin.protocol/compressPublicKey";
 import { ripemd160, sha256 } from "../bitcoin.protocol/hashes";
+import { modulo_power_point } from "../my-elliptic-curves/curves";
 import { Secp256k1 } from "../my-elliptic-curves/curves.named";
 import { get_private_key_if_k_is_the_same } from "../my-elliptic-curves/ecdsa";
+import { uncompressPublicKey } from "../my-elliptic-curves/uncompressPublicKey";
 
 export interface SignatureInfo {
   compressed_public_key: Buffer;
@@ -54,20 +57,25 @@ export function derivePrivateKeyFromPair(a: SignatureInfo, b: SignatureInfo) {
     throw new Error(`Internal error, LOL WHAT, why my key is not recovered`);
   }
 
-  const walletString = bitcoinAddressFromP2PKH(
+  const walletStringComp = bitcoinAddressFromP2PKH(
     ripemd160(sha256(a.compressed_public_key))
   );
+
+  //const uncompressedPublicKey = uncompressPublicKey(Secp256k1, );
+
+  const walletStringUncomp = bitcoinAddressFromP2PKH(
+    ripemd160(sha256(a.compressed_public_key))
+  );
+
   return {
     compressed_public_key: a.compressed_public_key,
-    walletString,
+    walletStringComp,
+    walletStringUncomp,
     privateKeyBuf,
   };
 }
 
-export function checkThatThisPrivateKeyForThisPublicKey(
-  privateKey: Buffer,
-  publicKeyExpected: Buffer
-) {
+function getUncompressedPublicKeyFromPrivateKey(privateKey: Buffer) {
   const privKeySec1 = Buffer.from(
     "300E0201010400" + privateKey.toString("hex") + "a00706052b8104000a",
     "hex"
@@ -83,9 +91,20 @@ export function checkThatThisPrivateKeyForThisPublicKey(
     type: "sec1",
   });
   const myPublicKey = createPublicKey(myPrivKey);
-  const myPublicKeyUncompressed = myPublicKey
-    .export({ format: "der", type: "spki" })
-    .subarray(20 + 2 + 1, 20 + 2 + 1 + 66);
+  const myPublicKeySpki = myPublicKey.export({ format: "der", type: "spki" });
+
+  const asnParsed = asn1parse(myPublicKeySpki);
+  // .subarray(20 + 2 + 1, 20 + 2 + 1 + 66);
+  const myPublicKeyUncompressed = asnParsed[0][1].value;
+  return myPublicKeyUncompressed;
+}
+
+export function checkThatThisPrivateKeyForThisPublicKey(
+  privateKey: Buffer,
+  publicKeyExpected: Buffer
+) {
+  const myPublicKeyUncompressed =
+    getUncompressedPublicKeyFromPrivateKey(privateKey);
   const myPublicKeyCompressed = compressPublicKey(myPublicKeyUncompressed)!;
   return publicKeyExpected.equals(myPublicKeyCompressed);
 }
