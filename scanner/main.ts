@@ -19,6 +19,7 @@ const node = createBitcoinNode([
 ]);
 
 function processBlock(block: BitcoinBlock, currentHeight: number) {
+  const started = new Date();
   const blockInformation = Buffer.from(block.hash).reverse().toString("hex");
   console.info(`Processing block ${blockInformation} h=${currentHeight}`);
   let savedOutputsCount = 0;
@@ -31,7 +32,8 @@ function processBlock(block: BitcoinBlock, currentHeight: number) {
     keysFound += stats.keysFound;
   }
   console.info(
-    `  tx=${block.transactions.length} savedOutputsCount=${savedOutputsCount} savedSignatures=${savedSignatures}`
+    `  tx_count=${block.transactions.length} savedOutputsCount=${savedOutputsCount} savedSignatures=${savedSignatures}` +
+      ` in ${new Date().getTime() - started.getTime()}ms`
   );
   if (keysFound > 0) {
     console.info(`FOUND NEW KEYS`);
