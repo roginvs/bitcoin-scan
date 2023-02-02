@@ -459,7 +459,9 @@ Algoritm:
         );
 
         // TODO: Validate block
-        newBlockListeners.forEach((cb) => cb(block, nextExpectingBlock.id - 1));
+        newBlockListeners.forEach((cb) =>
+          cb(blockInBuffer, nextExpectingBlock.id - 1)
+        );
 
         storage.saveBlockTransactions(
           blockInBuffer.hash,
