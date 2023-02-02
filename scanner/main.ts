@@ -1,6 +1,7 @@
 import "dotenv-defaults/config";
 import { Block } from "typescript";
 import { createBitcoinNode } from "../bitcoin.node/node";
+import { BlockId } from "../bitcoin.node/node.storage";
 import { BitcoinBlock } from "../bitcoin.protocol/messages.parse";
 import { createAnalyzer } from "./transactionAnalyzer";
 
@@ -34,6 +35,20 @@ function processBlock(block: BitcoinBlock, currentHeight: number) {
   );
   if (keysFound > 0) {
     console.info(`FOUND NEW KEYS`);
+  }
+}
+
+const RESCAN_EVERYTHING_FROM_THE_BEGINNING = false;
+if (RESCAN_EVERYTHING_FROM_THE_BEGINNING) {
+  let i = 1;
+  while (true) {
+    const block = node.getSavedBlock(i as BlockId);
+    if (!block) {
+      break;
+    }
+    processBlock(block, i - 1);
+
+    i++;
   }
 }
 
