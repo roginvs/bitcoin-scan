@@ -437,38 +437,7 @@ Algoritm:
       );
       storage.saveBlockTransactions(block.hash, block.transactions);
 
-      // Now flushing buffer
-      while (true) {
-        const nextExpectingBlock = storage
-          .getBlockIdsWithoutTransactions(1)
-          .shift();
-        if (!nextExpectingBlock) {
-          break;
-        }
-        const blockInBuffer = bufferedBlocks.get(
-          nextExpectingBlock.hash.toString("hex")
-        );
-        if (!blockInBuffer) {
-          break;
-        }
-
-        console.info(
-          `Block download: ${dumpBuf(
-            nextExpectingBlock.hash
-          )} is in buffer so using it`
-        );
-
-        // TODO: Validate block
-        newBlockListeners.forEach((cb) =>
-          cb(blockInBuffer, nextExpectingBlock.id - 1)
-        );
-
-        storage.saveBlockTransactions(
-          blockInBuffer.hash,
-          blockInBuffer.transactions
-        );
-        bufferedBlocks.delete(nextExpectingBlock.hash.toString("hex"));
-      }
+      flushBlockBufferIfPossible();
     } else {
       console.info(
         `Block download: ${peer.id} downloaded ${dumpBuf(block.hash)} ${(
@@ -481,6 +450,40 @@ Algoritm:
       bufferedBlocks.set(block.hash.toString("hex"), block);
     }
     givePeersTasksToDownloadBlocks();
+  }
+
+  function flushBlockBufferIfPossible() {
+    while (true) {
+      const nextExpectingBlock = storage
+        .getBlockIdsWithoutTransactions(1)
+        .shift();
+      if (!nextExpectingBlock) {
+        break;
+      }
+      const blockInBuffer = bufferedBlocks.get(
+        nextExpectingBlock.hash.toString("hex")
+      );
+      if (!blockInBuffer) {
+        break;
+      }
+
+      console.info(
+        `Block download: ${dumpBuf(
+          nextExpectingBlock.hash
+        )} is in buffer so using it`
+      );
+
+      // TODO: Validate block
+      newBlockListeners.forEach((cb) =>
+        cb(blockInBuffer, nextExpectingBlock.id - 1)
+      );
+      storage.saveBlockTransactions(
+        blockInBuffer.hash,
+        blockInBuffer.transactions
+      );
+
+      bufferedBlocks.delete(nextExpectingBlock.hash.toString("hex"));
+    }
   }
 
   function onNotFoundMessage(peer: PeerConnection, payload: MessagePayload) {
