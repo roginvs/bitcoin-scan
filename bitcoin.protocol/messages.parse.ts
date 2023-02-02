@@ -106,7 +106,9 @@ export function parseVersion(payload: MessagePayload) {
   const rest = fromUserAgent.subarray(userAgentLen + 4);
   if (version >= 70001) {
     if (rest.length !== 1) {
-      throw new Error(`No data for relay flag`);
+      throw new Error(
+        `No data or too many data for relay flag: len=${rest.length}`
+      );
     }
     relay = !!rest[0];
   } else {

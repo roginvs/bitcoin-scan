@@ -74,6 +74,7 @@ function packUint32(val: number) {
 }
 
 export function createVersionMessage(lastKnownBlock: number) {
+  // TODO: Change!
   const services = Buffer.from("0100000000000000", "hex");
   const date = Buffer.alloc(8).fill(0);
   date.writeInt32LE(new Date().getTime() / 1000);
