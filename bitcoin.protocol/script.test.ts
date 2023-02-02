@@ -229,7 +229,7 @@ describe(`Scripting`, () => {
 
     const [tx, rest] = readTx(spendingRaw);
     expect(rest.length).toBe(0);
-    const result = check_P2PKH_SIGHASH_ALL(tx, 0, pkScript);
+    const result = check_P2PKH_SIGHASH_ALL(tx, 1, pkScript);
 
     if (typeof result === "string") {
       throw new Error(result);
