@@ -15,7 +15,7 @@ const node = createBitcoinNode([
   ["95.216.76.224", 8333],
 ]);
 
-node.onNewValidatedBlock((block, currentHeight) => {
+node.onNewDownloadedBlock((block, currentHeight) => {
   const blockInformation = Buffer.from(block.hash).reverse().toString("hex");
   console.info(`Processing block ${blockInformation}`);
   let savedOutputsCount = 0;
@@ -45,7 +45,7 @@ Scanner will prune processed blocks data
 ========================================
 `);
   // Scanner will remove it because it have own database for specific txes
-  node.onNewValidatedBlock(() => {
+  node.onNewDownloadedBlock(() => {
     node.pruneSavedTxes(pruning);
   });
 }

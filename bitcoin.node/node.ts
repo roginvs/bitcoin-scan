@@ -617,7 +617,7 @@ Algoritm:
     },
     getBlock,
     pruneSavedTxes,
-    onNewValidatedBlock: buildSubscriber(newBlockListeners),
+    onNewDownloadedBlock: buildSubscriber(newBlockListeners),
   };
   return me;
 }

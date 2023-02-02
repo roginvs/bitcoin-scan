@@ -14,7 +14,10 @@ export interface BitcoinNodeApi {
   getBlock(blockHash: BlockHash): BitcoinBlock;
   pruneSavedTxes(keepLastNBlocks: number): void;
   destroy(): void;
-  onNewValidatedBlock: SubscribeEvent<NewBlockListener>;
+  onNewDownloadedBlock: SubscribeEvent<NewBlockListener>;
 
-  // getSavedBlocks(cursorName: string, onBlock: (block: BitcoinBlock) => void): void
+  //  getSavedBlocks(
+  //    cursorName: string,
+  //    onBlock: (block: BitcoinBlock, isFromDatabase: boolean) => void
+  //  ): void;
 }
