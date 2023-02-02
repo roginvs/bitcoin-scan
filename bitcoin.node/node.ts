@@ -581,14 +581,6 @@ Algoritm:
     }
   }
 
-  function connectToBootstapPeers() {
-    for (const addr of bootstrapPeers) {
-      connectToPeer(addr);
-    }
-  }
-
-  connectToBootstapPeers();
-
   function getSavedBlock(
     blockLocator: BlockHash | BlockId
   ): BitcoinBlock | null {
@@ -615,6 +607,14 @@ Algoritm:
   function pruneSavedTxes(keepLastNBlocks: number) {
     storage.pruneSavedTxes(keepLastNBlocks);
   }
+
+  function connectToBootstapPeers() {
+    for (const addr of bootstrapPeers) {
+      connectToPeer(addr);
+    }
+  }
+
+  connectToBootstapPeers();
 
   const me: BitcoinNodeApi = {
     destroy() {
