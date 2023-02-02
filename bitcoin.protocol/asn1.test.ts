@@ -2,6 +2,7 @@ import {
   asn1parse,
   create_spki_der_from_pubkey,
   packAsn1PairOfIntegers,
+  packIntForAsn,
   repackSignature,
 } from "./asn1";
 
@@ -33,5 +34,22 @@ describe(`Asn tools`, () => {
         "hex"
       )
     ).toBe("3009020203bb020300ffff");
+  });
+
+  describe(`packIntForAsn`, () => {
+    const data = {
+      "000000": "00",
+      FF: "00FF",
+      "00CE": "00CE",
+      "1234": "1234",
+      "0000001234": "1234",
+      "000000FA": "00FA",
+    } as const;
+    for (const [src, expected] of Object.entries(data)) {
+      it(`Packs ${src} -> ${expected}`, () =>
+        expect(
+          packIntForAsn(Buffer.from(src, "hex")).toString("hex").toUpperCase()
+        ).toBe(expected));
+    }
   });
 });

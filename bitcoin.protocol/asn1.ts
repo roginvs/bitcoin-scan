@@ -1,10 +1,28 @@
 import { joinBuffers } from "./utils";
 
 export function packIntForAsn(b: Buffer) {
-  if (b[0] & 0b10000000) {
-    return joinBuffers(Buffer.from([0]), b);
-  } else {
+  if (b[0] !== 0 && !(b[0] & 0b10000000)) {
+    // Valid case - not a zero and not negative
     return b;
+  }
+  if (b[0] === 0 && b[1] & 0b10000000) {
+    // Ok, correct case, not negative because have leading zero
+    return b;
+  }
+
+  let i = 0;
+  while (i < b.length - 1 && b[i] === 0) {
+    // Stop at previous to keep one
+    i++;
+  }
+
+  const noLeadingZeros = b.subarray(i);
+  if (noLeadingZeros[0] & 0b10000000) {
+    // Still negative, so need to add zero
+    return joinBuffers(Buffer.from([0]), noLeadingZeros);
+  } else {
+    // Ok, looks fine
+    return noLeadingZeros;
   }
 }
 
