@@ -1,5 +1,9 @@
 import { createPublicKey, verify } from "crypto";
-import { asn1parse, create_spki_der_from_pubkey } from "./asn1";
+import {
+  asn1parse,
+  create_spki_der_from_pubkey,
+  repackSignature,
+} from "./asn1";
 import { ripemd160, sha256 } from "./hashes";
 import { packTx } from "./messages.create";
 import { BitcoinTransaction } from "./messages.parse";
@@ -123,7 +127,17 @@ export function check_P2PKH_SIGHASH_ALL(
 
   const verifyResult = verify(undefined, dataToVerify, pub, signatureDer);
   if (!verifyResult) {
-    return VERIFICATION_FAILED_RESULT;
+    const verifyResultIfSignatureRepacked = verify(
+      undefined,
+      dataToVerify,
+      pub,
+      repackSignature(signatureDer)
+    );
+    if (verifyResultIfSignatureRepacked) {
+      // ok, just an issue with DER encoding
+    } else {
+      return VERIFICATION_FAILED_RESULT;
+    }
   }
 
   let r: Buffer;

@@ -9,6 +9,7 @@ import {
   check_P2PKH_SIGHASH_ALL,
   isSignatureScriptLooksLikeP2PKH,
   isSourceScriptP2PKH,
+  VERIFICATION_FAILED_RESULT,
 } from "./script";
 import { sourceTxRaw, spendingTxRaw } from "./testdata";
 
@@ -107,17 +108,18 @@ describe(`Scripting`, () => {
     }
   });
 
-  it.only(`Verifies weird tx`, () => {
-    const spendingRaw = Buffer.from([
-      '0100000001d679773ff5c2feabc0e285509624a8afc52880f1ac3b72c4d7b942',
-      '2bb751c393010000008a47304402208a2fc6d15e01f42098559914f7dcf79c12',
-      '1839dacd2fe2eea4c3ea1624c8a06c022019ffa4b4d00a20bff88ef8d606d5e3',
-      '773b4d74fe2190bed00efa0625cbc77d76014104cf6521219983c70844859e49',
-      'ccbd687bf68a0bcd92bfe599e354d3750d0578b345179081572e12f54b30f25d',
-      '56fc1b1e83715a625d6a21d6ffabdbf439b53a27ffffffff01d0ee1201000000',
-      '001976a9147874d09fd0b25d8b688bd9b2488b94266055434f88ac00000000'
-    
-    ].join(''),'hex'
+  it(`Verifies weird tx`, () => {
+    const spendingRaw = Buffer.from(
+      [
+        "0100000001d679773ff5c2feabc0e285509624a8afc52880f1ac3b72c4d7b942",
+        "2bb751c393010000008a47304402208a2fc6d15e01f42098559914f7dcf79c12",
+        "1839dacd2fe2eea4c3ea1624c8a06c022019ffa4b4d00a20bff88ef8d606d5e3",
+        "773b4d74fe2190bed00efa0625cbc77d76014104cf6521219983c70844859e49",
+        "ccbd687bf68a0bcd92bfe599e354d3750d0578b345179081572e12f54b30f25d",
+        "56fc1b1e83715a625d6a21d6ffabdbf439b53a27ffffffff01d0ee1201000000",
+        "001976a9147874d09fd0b25d8b688bd9b2488b94266055434f88ac00000000",
+      ].join(""),
+      "hex"
     ) as TransactionPayload;
 
     const pkScript = Buffer.from(
@@ -132,5 +134,31 @@ describe(`Scripting`, () => {
     if (typeof result === "string") {
       throw new Error(result);
     }
-  })
+  });
+
+  it(`Incorrect signature also catched`, () => {
+    const spendingRaw = Buffer.from(
+      [
+        "0100000001d679773ff5c2feabc0e285509624a8afc52880f1ac3b72c4d7b942",
+        "2bb751c393010000008a47304402208a2fc6d15e01f42098559914f7dcf79c12",
+        "1839dacd2fe2eea4c3ea1624c8a06c022019ffa4b4d00a20bff88ef8d606d5e3",
+        "773b4d74fe2190bed00efa0625cbc77d76014104cf6521219983c70844859e49",
+        "ccbd687bf68a0bcd92bfe599e354d3750d0578b345179081572e12f54b30f25d",
+        "56fc1b1e83715a625d6a21d6ffabdbf439b53a27ffffffff01d0ee1201000000",
+        "001976a9147874d09fd0b25d8b688bd9b2488b94266055434f88ad00000000",
+      ].join(""),
+      "hex"
+    ) as TransactionPayload;
+
+    const pkScript = Buffer.from(
+      "76a914de433e567820f062194a8ca86b487b16dbcb560e88ac",
+      "hex"
+    ) as PkScript;
+
+    const [tx, rest] = readTx(spendingRaw);
+    expect(rest.length).toBe(0);
+    const result = check_P2PKH_SIGHASH_ALL(tx, 0, pkScript);
+
+    expect(result).toBe(VERIFICATION_FAILED_RESULT);
+  });
 });
