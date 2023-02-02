@@ -162,7 +162,7 @@ describe(`Scripting`, () => {
     expect(result).toBe(VERIFICATION_FAILED_RESULT);
   });
 
-  it.only(`Verifies one more weird tx`, () => {
+  it(`Verifies one more weird tx`, () => {
     const spendingRaw = Buffer.from(
       [
         "0100000009e4fe9f7073eae8af1d67489c34d7625be9fb3a058629f073360dae",
