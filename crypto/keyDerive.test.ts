@@ -3,6 +3,10 @@ import {
   create_spki_der_from_pubkey,
   packAsn1PairOfIntegers,
 } from "../bitcoin.protocol/asn1";
+import { sha256 } from "../bitcoin.protocol/hashes";
+import { Secp256k1 } from "../my-elliptic-curves/curves.named";
+import { check_signature } from "../my-elliptic-curves/ecdsa";
+import { uncompressPublicKey } from "../my-elliptic-curves/uncompressPublicKey";
 import { createTransactionsStorage } from "../scanner/database/transactions";
 import {
   checkThatThisPrivateKeyForThisPublicKey,
@@ -109,6 +113,17 @@ describe(`Key derive`, () => {
     );
     if (!verifyResult) {
       throw new Error(`Provided data is not valid signature`);
+    }
+
+    const myImpVerifyResult = check_signature({
+      curve: Secp256k1,
+      msgHash: BigInt("0x" + sha256(info.msg).toString("hex")),
+      publicKey: uncompressPublicKey(Secp256k1, info.compressed_public_key),
+      r: BigInt("0x" + info.r.toString("hex")),
+      s: BigInt("0x" + info.s.toString("hex")),
+    });
+    if (!myImpVerifyResult) {
+      throw new Error(`Something wrong with my signatures check!`);
     }
   }
   it.only(`derivePrivateKeyFromPair`, () => {
