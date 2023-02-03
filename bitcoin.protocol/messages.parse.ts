@@ -135,7 +135,7 @@ export function parseVersion(payload: MessagePayload) {
 
 export function readBlock(buf: BlockPayload) {
   const version = buf.subarray(0, 4);
-  const prevBlock = buf.subarray(4, 4 + 32);
+  const prevBlock = buf.subarray(4, 4 + 32) as BlockHash;
   const merkleRoot = buf.subarray(4 + 32, 4 + 32 + 32) as MerkleRootHash;
   const timestamp = new Date(
     buf.subarray(4 + 32 + 32, 4 + 32 + 32 + 4).readUInt32LE() * 1000
