@@ -18,7 +18,7 @@
       "request": "launch",
       "name": "Jest: current file",
       "runtimeArgs": [
-        "--inspect-brk",
+        // "--inspect-brk",
         "${workspaceRoot}/node_modules/.bin/jest",
         "--runInBand",
         "--coverage",
