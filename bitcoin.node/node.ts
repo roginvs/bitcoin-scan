@@ -275,10 +275,6 @@ Algoritm:
     if (headersCount > 0) {
       for (let i = 0; i < headersCount; i++) {
         const [block, rest] = readBlock(headersBuf as BlockPayload);
-        const headersRaw = headersBuf.subarray(
-          0,
-          headersBuf.length - rest.length
-        ) as BlockPayload;
         headersBuf = rest;
 
         // TODO: if block is in our blockchain then just skip
