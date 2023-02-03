@@ -107,9 +107,8 @@ describe(`Key derive`, () => {
       pub,
       packAsn1PairOfIntegers(info.r, info.s)
     );
-    console.info(`verifyResult=${verifyResult}`);
     if (!verifyResult) {
-      throw new Error("LOL KEK");
+      throw new Error(`Provided data is not valid signature`);
     }
   }
   it.only(`derivePrivateKeyFromPair`, () => {
