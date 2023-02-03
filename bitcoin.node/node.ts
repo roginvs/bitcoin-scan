@@ -28,7 +28,7 @@ import {
   MessagePayload,
   TransactionHash,
 } from "../bitcoin.protocol/messages.types";
-import { createPeer, PeerConnection } from "../bitcoin.protocol/peer.outgoing";
+import { createOutgoingPeer, PeerConnection } from "../bitcoin.protocol/peer";
 import { joinBuffers } from "../bitcoin.protocol/utils";
 import {
   BitcoinNodeApi,
@@ -118,7 +118,7 @@ Algoritm:
     info(
       `Creating new peer ${addr[0]}:${addr[1]}, ` + `count=${peers.length + 1}`
     );
-    const peer = createPeer(
+    const peer = createOutgoingPeer(
       addr[0],
       addr[1],
       currentLastKnownBlockId ? currentLastKnownBlockId - 1 : 0

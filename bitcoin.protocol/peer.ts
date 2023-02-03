@@ -18,7 +18,15 @@ export type PeerConnection = ReturnType<typeof createPeer>;
  * - It buffers Bitcoin messages and calls callback when full message is ready
  * - It answers on ping/pong messages
  */
-export function createPeer(host: string, port: number, lastKnownBlock: number) {
+export function createOutgoingPeer(
+  host: string,
+  port: number,
+  lastKnownBlock: number
+) {
+  return createPeer(host, port, lastKnownBlock);
+}
+
+function createPeer(host: string, port: number, lastKnownBlock: number) {
   let client = new Socket();
 
   let sendThisMessagesWhenConnected: BitcoinMessage[] | null = [];
