@@ -1,5 +1,4 @@
 import "dotenv-defaults/config";
-import { Block } from "typescript";
 import { createBitcoinNode } from "../bitcoin.node/node";
 import { BlockId } from "../bitcoin.node/node.storage";
 import { BitcoinBlock } from "../bitcoin.protocol/messages.parse";
