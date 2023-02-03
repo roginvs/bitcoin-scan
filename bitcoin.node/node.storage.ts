@@ -119,7 +119,7 @@ export function createNodeStorage(isMemory = false) {
     }
   });
 
-  function getBlockIdsWithoutTransactions(n = 10) {
+  function getBlockWithoutTransactionsInfo(n = 10) {
     return sql
       .prepare(
         `
@@ -167,7 +167,7 @@ export function createNodeStorage(isMemory = false) {
     pushNewBlockHeader,
     getLastKnownBlockId,
     pruneSavedTxes,
-    getBlockIdsWithoutTransactions,
+    getBlockWithoutTransactionsInfo,
     saveBlockTransactions,
     getBlockHeader,
     getBlockTransactions,

@@ -452,7 +452,7 @@ Algoritm:
     peer.clearWatchdog("get-block-" + expectingBlockHash.toString("hex"));
 
     const storageExpectingBlock = storage
-      .getBlockIdsWithoutTransactions(1)
+      .getBlockWithoutTransactionsInfo(1)
       .shift();
     if (!storageExpectingBlock) {
       throw new Error(
@@ -496,7 +496,7 @@ Algoritm:
   function flushBlockBufferIfPossible() {
     while (true) {
       const nextExpectingBlock = storage
-        .getBlockIdsWithoutTransactions(1)
+        .getBlockWithoutTransactionsInfo(1)
         .shift();
       if (!nextExpectingBlock) {
         break;
@@ -561,15 +561,18 @@ Algoritm:
       // We already have a lot data which is unprocessed yet
       return;
     }
-    const blocksToDownload = storage
-      .getBlockIdsWithoutTransactions(MAX_BUFFERED_BLOCKS)
-      .filter((blockInfo) => {
+    const blocksWithoutTransactionsData =
+      storage.getBlockWithoutTransactionsInfo(MAX_BUFFERED_BLOCKS);
+
+    const blocksToDownload = blocksWithoutTransactionsData.filter(
+      (blockInfo) => {
         const notDownloadingNow = !blocksDownloadingNowStartedAt.has(
           blockInfo.hash.toString("hex")
         );
         const notInBuffer = !bufferedBlocks.has(blockInfo.hash.toString("hex"));
         return notDownloadingNow && notInBuffer;
-      });
+      }
+    );
 
     const thresholdOfBuffer = MAX_BUFFERED_BLOCKS - bufferedBlocks.size;
     const freePeers = peers.filter((p) => !peersBlocksTasks.has(p));
