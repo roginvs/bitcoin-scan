@@ -487,6 +487,9 @@ Algoritm:
         peer.id,
       ]);
     }
+    if (!storage.getBlockWithoutTransactionsInfo(1)) {
+      info(`Blocks: all blocks downloaded`);
+    }
     givePeersTasksToDownloadBlocks();
   }
 
