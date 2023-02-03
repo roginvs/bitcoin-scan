@@ -76,9 +76,12 @@ export function createAnalyzer(isMemory: boolean = false) {
 
       const compressedPubKey = compressPublicKey(signatureCheck.pubKey);
       if (!compressedPubKey) {
-        debug(`in ${index} problems to compress key`);
-        storage.removeUnspendTx(unspentOutput.id);
-        continue;
+        warn(
+          `Problems with public key: ${signatureCheck.pubKey.toString("hex")}`
+        );
+        throw new Error(`Failed to compress key for some reasons`);
+        // storage.removeUnspendTx(unspentOutput.id);
+        // continue;
       }
       const isTheSameR = storage.saveSignatureDetails(
         compressedPubKey,
