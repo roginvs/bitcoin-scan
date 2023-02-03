@@ -1,7 +1,13 @@
+import { createPublicKey, verify } from "crypto";
+import {
+  create_spki_der_from_pubkey,
+  packAsn1PairOfIntegers,
+} from "../bitcoin.protocol/asn1";
 import { createTransactionsStorage } from "../scanner/database/transactions";
 import {
   checkThatThisPrivateKeyForThisPublicKey,
   derivePrivateKeyFromPair,
+  SignatureInfo,
 } from "./keyDerive";
 
 describe(`Key derive`, () => {
@@ -88,7 +94,25 @@ describe(`Key derive`, () => {
     expect(pubKeys).toStrictEqual(1);
   });
 
-  it(`derivePrivateKeyFromPair`, () => {
+  function checkThatSignatureInfoIsCorrect(info: SignatureInfo) {
+    const pub = createPublicKey({
+      key: create_spki_der_from_pubkey(info.compressed_public_key),
+      type: "spki",
+      format: "der",
+    });
+
+    const verifyResult = verify(
+      undefined,
+      info.msg,
+      pub,
+      packAsn1PairOfIntegers(info.r, info.s)
+    );
+    console.info(`verifyResult=${verifyResult}`);
+    if (!verifyResult) {
+      throw new Error("LOL KEK");
+    }
+  }
+  it.only(`derivePrivateKeyFromPair`, () => {
     const a = {
       compressed_public_key: Buffer.from(
         "034903acabebcd2185bd64afa44632af51813c4ef25d34b3310d0018271c73f122",
@@ -107,6 +131,7 @@ describe(`Key derive`, () => {
         "hex"
       ),
     };
+    checkThatSignatureInfoIsCorrect(a);
     const b = {
       compressed_public_key: a.compressed_public_key,
       msg: Buffer.from(
@@ -119,6 +144,7 @@ describe(`Key derive`, () => {
         "hex"
       ),
     };
+    checkThatSignatureInfoIsCorrect(b);
 
     const derived = derivePrivateKeyFromPair(a, b);
     expect(derived.compressed_public_key.toString("hex")).toBe(
