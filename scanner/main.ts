@@ -11,6 +11,7 @@ debug("Analyzer created");
 
 const node = createBitcoinNode();
 
+let totalKeysFound = 0;
 function processBlock(block: BitcoinBlock, currentHeight: number) {
   const started = new Date();
   const blockInformation = Buffer.from(block.hash).reverse().toString("hex");
@@ -24,10 +25,13 @@ function processBlock(block: BitcoinBlock, currentHeight: number) {
     savedSignatures += stats.savedSignatures;
     keysFound += stats.keysFound;
   }
+  totalKeysFound += keysFound;
   info(
-    `  tx_count=${block.transactions.length} savedOutputsCount=${savedOutputsCount} savedSignatures=${savedSignatures}` +
+    `  tx_count=${block.transactions.length} savedOutputsCount=${savedOutputsCount} ` +
+      `savedSignatures=${savedSignatures} keysFound=${keysFound} totalKeysFound=${totalKeysFound}` +
       ` in ${new Date().getTime() - started.getTime()}ms`
   );
+
   if (keysFound > 0) {
     warn(`FOUND NEW KEYS`);
   }
