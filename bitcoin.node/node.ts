@@ -106,7 +106,10 @@ Algoritm:
 
   const peersBlocksTasks = new Map<PeerConnection, BlockHash>();
   const blocksDownloadingNowStartedAt = new Map<string, Date>(); // We can not compare buffers directly!
-  const bufferedBlocks = new Map<string, [BitcoinBlock, string]>();
+  const bufferedBlocks = new Map<
+    string,
+    [block: BitcoinBlock, downloadInfo: string, peerId: string]
+  >();
 
   function connectToPeer(addr: PeerAddr) {
     const currentLastKnownBlockId = storage.getLastKnownBlockId();
@@ -465,9 +468,8 @@ Algoritm:
 
     if (storageExpectingBlock.hash.equals(block.hash)) {
       info(
-        `Blocks: ${peer.id} downloaded ${dumpBuf(
-          block.hash
-        )} ${downloadInfo}, ` + `block is going to database`
+        `Blocks: ${peer.id} downloaded ${dumpBuf(block.hash)} ` +
+          `${block.timestamp.toISOString()} ${downloadInfo}`
       );
 
       // TODO: Validate block
@@ -482,7 +484,11 @@ Algoritm:
         `Blocks: ${peer.id} downloaded ${dumpBuf(block.hash)} ` +
           `${downloadInfo}, keeping data in buffer`
       );
-      bufferedBlocks.set(block.hash.toString("hex"), [block, downloadInfo]);
+      bufferedBlocks.set(block.hash.toString("hex"), [
+        block,
+        downloadInfo,
+        peer.id,
+      ]);
     }
     givePeersTasksToDownloadBlocks();
   }
@@ -503,9 +509,10 @@ Algoritm:
       }
 
       info(
-        `Blocks: ${dumpBuf(nextExpectingBlock.hash)} ${
-          blockInBuffer[1]
-        } from buffer ${blockInBuffer[0].timestamp.toISOString()}`
+        `Blocks: ${blockInBuffer[2]} downloaded ` +
+          `${dumpBuf(nextExpectingBlock.hash)} ` +
+          `${blockInBuffer[0].timestamp.toISOString()}` +
+          `${blockInBuffer[1]} (buf)`
       );
 
       // TODO: Validate block
