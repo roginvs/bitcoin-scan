@@ -6,7 +6,7 @@
 
 type LogFilter = null | string[];
 function createFilterFromString(s?: string): LogFilter {
-  return !s ? null : s.split(",").map((x) => x.trim());
+  return !s || s === "*" ? null : s.split(",").map((x) => x.trim());
 }
 const debugFilter = createFilterFromString(process.env.LOGGER_DEBUG);
 const infoFilter = createFilterFromString(process.env.LOGGER_INFO);
@@ -58,8 +58,9 @@ function coloredPrint(
   args: any[]
 ) {
   const colorPrefix = color ?? colors.reset;
-  const idPrefix = id ? id + " " : "";
-  const consoleString = colorPrefix + idPrefix + msg;
+  const idPrefix = id ? "[" + id + "] " : "";
+  const timePrefix = new Date().toLocaleTimeString() + " ";
+  const consoleString = colorPrefix + timePrefix + idPrefix + msg;
 
   if (args.length === 0) {
     return [consoleString + (color ? colors.reset : "")];

@@ -649,6 +649,8 @@ Algoritm:
     connectToBootstapPeers();
   }, 1);
 
+  info(`Bitcoin node created`);
+
   const me: BitcoinNodeApi = {
     destroy() {
       throw new Error(`Not implemented`);
