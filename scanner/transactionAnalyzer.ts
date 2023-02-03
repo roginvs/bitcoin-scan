@@ -10,6 +10,7 @@ import {
 } from "../bitcoin.protocol/script";
 import { createTransactionsStorage } from "./database/transactions";
 import { createLogger } from "../logger/logger";
+import { derivePrivateKeyFromPair } from "../crypto/keyDerive";
 const { info, warn, debug } = createLogger("SCANNER");
 
 export function createAnalyzer(isMemory: boolean = false) {
@@ -83,18 +84,50 @@ export function createAnalyzer(isMemory: boolean = false) {
         // storage.removeUnspendTx(unspentOutput.id);
         // continue;
       }
-      const isTheSameR = storage.saveSignatureDetails(
+
+      const signaturesWithSameR = storage.getSignatures(
+        compressedPubKey,
+        signatureCheck.r
+      );
+      if (
+        signaturesWithSameR.some((valuesInDb) =>
+          valuesInDb.s.equals(signatureCheck.s)
+        )
+      ) {
+        // Ok, we already have data with such compressed_public_key,r,s
+        // Probably because we check the same transaction once again, for example after restart
+        continue;
+      }
+
+      if (
+        signaturesWithSameR.length > 0 &&
+        !storage.doWeHavePrivateKeyForThisPubKey(compressedPubKey)
+      ) {
+        // It definitely will be another r because we checked it above
+        const anotherSig = signaturesWithSameR[0];
+
+        const key = derivePrivateKeyFromPair(anotherSig, {
+          compressed_public_key: compressedPubKey,
+          msg: signatureCheck.msg,
+          r: signatureCheck.r,
+          s: signatureCheck.s,
+        });
+        storage.savePrivateKey(
+          compressedPubKey,
+          key.walletStringComp,
+          key.walletStringUncomp,
+          key.privateKeyBuf,
+          Buffer.from(tx.txid).reverse()
+        );
+        keysFound++;
+      }
+
+      storage.saveSignature(
         compressedPubKey,
         signatureCheck.msg,
         signatureCheck.r,
-        signatureCheck.s,
-        blockInformation
-        // tx.hash,
-        // index
+        signatureCheck.s
       );
-      if (isTheSameR) {
-        keysFound++;
-      }
       savedSignatures++;
 
       storage.removeUnspendTx(unspentOutput.id);

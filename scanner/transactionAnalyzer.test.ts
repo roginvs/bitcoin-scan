@@ -91,16 +91,20 @@ describe("createAnalyzer", () => {
             script: pkScript,
             value: BigInt(20),
           },
+          {
+            script: pkScript,
+            value: BigInt(30),
+          },
         ],
       })
     )[0];
 
     const analyzer = createAnalyzer(true);
 
-    const statsIn = analyzer.transaction(txOut, "some infoo");
-    expect(statsIn.savedOutputsCount).toBe(2);
+    const statsIn = analyzer.transaction(txOut, "some info");
+    expect(statsIn.savedOutputsCount).toBe(3);
 
-    for (const outpointIndex of [0, 1]) {
+    for (const outpointIndex of [0, 1, 2]) {
       const txInForSig = packTx({
         // This will be updated after packing and unpacking
         txid: Buffer.alloc(0) as TransactionHash,
@@ -156,7 +160,7 @@ describe("createAnalyzer", () => {
         Buffer.from([myPublicKeyCompressed.length]),
         myPublicKeyCompressed
       ) as SignatureScript;
-      const txIn = {
+      const txSpending = {
         // This will be updated after packing and unpacking
         txid: Buffer.alloc(0) as TransactionHash,
         wtxid: Buffer.alloc(0) as TransactionHash,
@@ -176,10 +180,17 @@ describe("createAnalyzer", () => {
         txOut: [],
       };
 
-      const stats = analyzer.transaction(txIn, "some info");
-      expect(stats.savedSignatures).toBe(1);
-      if (outpointIndex === 1) {
-        expect(stats.keysFound).toBe(1);
+      {
+        const stats1 = analyzer.transaction(txSpending, "some info");
+        expect(stats1.savedSignatures).toBe(1);
+        if (outpointIndex === 1) {
+          expect(stats1.keysFound).toBe(1);
+        }
+      }
+      {
+        const stats2 = analyzer.transaction(txSpending, "some info");
+        expect(stats2.savedSignatures).toBe(0);
+        expect(stats2.keysFound).toBe(0);
       }
     }
   });

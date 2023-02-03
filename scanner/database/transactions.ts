@@ -3,7 +3,6 @@ import {
   PkScript,
   TransactionHash,
 } from "../../bitcoin.protocol/messages.types";
-import { derivePrivateKeyFromPair } from "../../crypto/keyDerive";
 import { Nominal } from "../../nominal_types/nominaltypes";
 
 function getDbPath(dbFileName: string) {
@@ -60,8 +59,10 @@ export function createTransactionsStorage(isMemory = false) {
     bitcoin_wallet_comp CHARACTER(40), -- Have no idea about hard limit
     bitcoin_wallet_uncomp CHARACTER(40), -- Have no idea about hard limit
     private_key CHARACTER(32) NOT NULL,
-    info TEXT NOT NULL
-  )
+    tx_hash_reversed CHARACTER(32) NOT NULL
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS found_keys_pub_key ON found_keys
+    (compressed_public_key);
 `);
 
   // Use
@@ -109,7 +110,7 @@ export function createTransactionsStorage(isMemory = false) {
     removeUnpendTx.run(id);
   }
 
-  const saveSignatureDetailsSql = sql.prepare(`
+  const saveSignatureSql = sql.prepare(`
     insert into signatures (        
         compressed_public_key,
         msg,
@@ -120,7 +121,7 @@ export function createTransactionsStorage(isMemory = false) {
       ) values (?, ?, ?, ?)
   `);
 
-  const checkDuplicatesSql = sql.prepare(`
+  const getSignaturesSql = sql.prepare(`
     select  
       compressed_public_key,
       msg,
@@ -133,38 +134,17 @@ export function createTransactionsStorage(isMemory = false) {
  
   `);
 
-  function saveSignatureDetails(
+  function getSignatures(compressed_public_key: Buffer, r: Buffer) {
+    return getSignaturesSql.all(compressed_public_key, r) as TransactionRow[];
+  }
+
+  function saveSignature(
     compressed_public_key: Buffer,
     msg: Buffer,
     r: Buffer,
-    s: Buffer,
-    blockInformation: string
-    //spending_tx_hash: TransactionHash,
-    //spending_tx_input_index: number
+    s: Buffer
   ) {
-    const sameValues = checkDuplicatesSql.all(
-      compressed_public_key,
-      r
-    ) as TransactionRow[];
-    if (sameValues.some((valuesInDb) => valuesInDb.s.equals(s))) {
-      // Ok, we already have data with such compressed_public_key,r,s
-      return false;
-    }
-
-    const dataToDeriveKey = [
-      ...sameValues,
-      {
-        compressed_public_key,
-        msg,
-        r,
-        s,
-        //spending_tx_hash,
-        //spending_tx_input_index,
-      },
-    ];
-    const isNewKeyDerived = derivePrivateKey(dataToDeriveKey, blockInformation);
-
-    saveSignatureDetailsSql.run(
+    saveSignatureSql.run(
       compressed_public_key,
       msg,
       r,
@@ -172,50 +152,51 @@ export function createTransactionsStorage(isMemory = false) {
       // spending_tx_hash,
       // spending_tx_input_index
     );
-    return isNewKeyDerived;
   }
 
-  const isThisPubKeyAlreadyThereSql = sql.prepare(
-    `select id from found_keys where compressed_public_key = ?`
-  );
-  const insertNewKey = sql.prepare(`
-  insert into found_keys (
-    compressed_public_key,
-    bitcoin_wallet_comp,
-    bitcoin_wallet_uncomp,
-    private_key,
-    info
-  ) values (?, ?, ?, ?, ?)
-`);
-  function derivePrivateKey(data: TransactionRow[], blockInfo: string) {
-    let foundKey = false;
-    for (let i = 0; i < data.length - 1; i++) {
-      if (isThisPubKeyAlreadyThereSql.get(data[i].compressed_public_key)) {
-        continue;
-      }
-      for (let j = i + 1; j < data.length; j++) {
-        if (isThisPubKeyAlreadyThereSql.get(data[j].compressed_public_key)) {
-          continue;
-        }
-
-        const key = derivePrivateKeyFromPair(data[i], data[j]);
-        insertNewKey.run(
-          key.compressed_public_key,
-          key.walletStringComp,
-          key.walletStringUncomp,
-          key.privateKeyBuf,
-          blockInfo
-        );
-        foundKey = true;
-      }
-    }
-    return foundKey;
+  function doWeHavePrivateKeyForThisPubKey(publicKey: Buffer) {
+    return !!sql
+      .prepare(`select id from found_keys where compressed_public_key = ?`)
+      .get(publicKey);
+  }
+  /**
+   *
+   */
+  function savePrivateKey(
+    compressed_public_key: Buffer,
+    walletComp: string,
+    walletUncomp: string,
+    privateKey: Buffer,
+    tx_hash_reversed: Buffer
+  ) {
+    sql
+      .prepare(
+        `
+      insert into found_keys (
+        compressed_public_key,
+        bitcoin_wallet_comp,
+        bitcoin_wallet_uncomp,
+        private_key,
+        tx_hash_reversed
+      ) values (?, ?, ?, ?, ?)
+      `
+      )
+      .run(
+        compressed_public_key,
+        walletComp,
+        walletUncomp,
+        privateKey,
+        tx_hash_reversed
+      );
   }
 
   return {
     addUnspentTxOutput,
     getUnspentOutput,
     removeUnspendTx,
-    saveSignatureDetails,
+    getSignatures,
+    saveSignature,
+    doWeHavePrivateKeyForThisPubKey,
+    savePrivateKey,
   };
 }
