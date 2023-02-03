@@ -8,6 +8,7 @@ import {
 import { BitcoinMessage, MessagePayload } from "./messages.types";
 import { joinBuffers } from "./utils";
 import { createLogger } from "../logger/logger";
+import { randomBytes } from "crypto";
 
 const { info, warn, debug } = createLogger("PEER");
 
@@ -112,9 +113,7 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
         }
 
         pingTimerInterval = setInterval(() => {
-          const pingPayload = Buffer.from(new Array(8).fill(0)).map(() =>
-            Math.floor(Math.random() * 256)
-          ) as MessagePayload;
+          const pingPayload = randomBytes(8) as MessagePayload;
           client.write(buildMessage("ping", pingPayload));
           raiseWatchdog("pong" + pingPayload.toString("hex"));
         }, 120 * 1000);
