@@ -23,21 +23,29 @@ export function createOutgoingPeer(
   port: number,
   lastKnownBlock: number
 ) {
-  return createPeer(host, port, lastKnownBlock);
+  const client = new Socket();
+  client.connect(port, host);
+  return createPeer(client, true, lastKnownBlock);
 }
 
-function createPeer(host: string, port: number, lastKnownBlock: number) {
-  let client = new Socket();
-
+function createPeer(
+  client: Socket,
+  isOutgoing: boolean,
+  lastKnownBlock: number
+) {
   let sendThisMessagesWhenConnected: BitcoinMessage[] | null = [];
 
-  client.connect(port, host, () => {
-    debug(`${host}:${port} Connected`);
+  function addr() {
+    return `${client.remoteAddress}:${client.remotePort}`;
+  }
+
+  client.on("connect", () => {
+    debug(`${addr()} Connected`);
     client.write(createVersionMessage(lastKnownBlock));
   });
 
   client.on("close", function () {
-    debug(`${host}:${port} Connection closed`);
+    debug(`${addr()} Connection closed`);
 
     if (pingTimerInterval) {
       clearInterval(pingTimerInterval);
@@ -53,7 +61,7 @@ function createPeer(host: string, port: number, lastKnownBlock: number) {
   });
 
   client.on("error", (e) => {
-    debug(`${host}:${port} Connection error: ${e.name} ${e.message}`);
+    debug(`${addr()} Connection error: ${e.name} ${e.message}`);
     // Nothing here but we should have a listener to prevent crashing
     // We clear everything in the "close" listener
   });
@@ -73,19 +81,19 @@ function createPeer(host: string, port: number, lastKnownBlock: number) {
       clearTimeout(existingTimer);
       watchdogTimers.delete(kind);
     } else {
-      warn(`${host}:${port} Can not clear existing timer ${kind}, no timer`);
+      warn(`${addr()} Can not clear existing timer ${kind}, no timer`);
     }
   }
   function raiseWatchdog(kind: string, timeout = 30000) {
     const existingTimer = watchdogTimers.get(kind);
     if (existingTimer) {
-      warn(`${host}:${port} Already have timer for ${kind}`);
+      warn(`${addr()} Already have timer for ${kind}`);
       clearTimeout(existingTimer);
     }
     watchdogTimers.set(
       kind,
       setTimeout(() => {
-        debug(`${host}:${port} Watchdog timer ${kind} was not cleared!`);
+        debug(`${addr()} Watchdog timer ${kind} was not cleared!`);
         client.destroy();
       }, timeout)
     );
@@ -115,7 +123,7 @@ function createPeer(host: string, port: number, lastKnownBlock: number) {
       } else if (command === "version") {
         clearWatchdog("initial connection");
         if (pingTimerInterval) {
-          warn(`${host}:${port} Seeing "version" once again`);
+          warn(`${addr()} Seeing "version" once again`);
           client.destroy();
           return;
         }
@@ -127,7 +135,7 @@ function createPeer(host: string, port: number, lastKnownBlock: number) {
         }, 120 * 1000);
 
         const version = parseVersion(payload);
-        me.id = `${host}:${port}`;
+        me.id = `${addr()}`;
         info(
           `${me.id} version=${version.version} startHeight=${version.startHeight} ` +
             `${version.userAgent} ${version.services.join(",")}`
@@ -161,9 +169,13 @@ function createPeer(host: string, port: number, lastKnownBlock: number) {
     close() {
       client.destroy();
     },
-    id: `<${host}:${port}>`,
-    host,
-    port,
+    id: `<${addr()}>`,
+    get host() {
+      return client.remoteAddress;
+    },
+    get port() {
+      return client.remotePort;
+    },
   };
 
   return me;
