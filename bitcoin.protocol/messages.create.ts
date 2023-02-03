@@ -12,6 +12,7 @@ import {
   MessagePayload,
   TransactionPayload,
 } from "./messages.types";
+import { nodeId } from "./nodeid";
 import { joinBuffers } from "./utils";
 
 export function buildMessage(command: string, payload: MessagePayload) {
@@ -74,16 +75,15 @@ function packUint32(val: number) {
 }
 
 export function createVersionMessage(lastKnownBlock: number) {
-  // TODO: Change!
-  const services = Buffer.from("0100000000000000", "hex");
+  const services = Buffer.from([1 | 8, 0, 0, 0, 0, 0, 0, 0]);
   const date = Buffer.alloc(8).fill(0);
   date.writeInt32LE(new Date().getTime() / 1000);
   const addr = Buffer.from(
     "010000000000000000000000000000000000FFFF000000000000",
     "hex"
   );
-  const nodeId = Buffer.from("3B2EB35D8CE61711", "hex");
-  const subVersion = packVarStr("/Satoshi:0.7.2/"); // /Satoshi:0.16.2(bitcore)/
+
+  const subVersion = packVarStr("Oink&Baa 1");
   const lastKnownBlockBuf = packUint32(lastKnownBlock);
   const payload = joinBuffers(
     protocolVersion,
