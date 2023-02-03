@@ -656,7 +656,12 @@ Algoritm:
     connectToBootstapPeers();
   }, 1);
 
-  info(`Bitcoin node created`);
+  const startingLastKnownBlockId = storage.getLastKnownBlockId();
+  info(
+    `Bitcoin node created, starting height=${
+      startingLastKnownBlockId ? startingLastKnownBlockId - 1 : "<none>"
+    }`
+  );
 
   const me: BitcoinNodeApi = {
     destroy() {
