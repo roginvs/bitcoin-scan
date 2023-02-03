@@ -68,7 +68,9 @@ export function isSignatureScriptLooksLikeP2PKH(inputScript: SignatureScript) {
   };
 }
 
-export const VERIFICATION_FAILED_RESULT = "Verification failed";
+export const FAILED_VERIFICATION = "Verification failed";
+export const FAILED_PUBHASHES_NOT_EQUAL = "Public key hashes are not equal";
+
 export function check_P2PKH_SIGHASH_ALL(
   spending: BitcoinTransaction,
   spendingIndex: number,
@@ -86,7 +88,7 @@ export function check_P2PKH_SIGHASH_ALL(
   const { pubKey, signatureDer, hashCodeType } = inputScriptParsed;
   const pubkeyHashObserved = ripemd160(sha256(pubKey));
   if (!pubkeyHashExpected.equals(pubkeyHashObserved)) {
-    return "pubKey hash is not equal";
+    return FAILED_PUBHASHES_NOT_EQUAL;
   }
   if (hashCodeType !== 0x01) {
     return `This hashCodeType=${hashCodeType} is not supported yet`;
@@ -153,7 +155,7 @@ export function check_P2PKH_SIGHASH_ALL(
     if (verifyResultIfSignatureRepacked) {
       // ok, just an issue with DER encoding
     } else {
-      return VERIFICATION_FAILED_RESULT;
+      return FAILED_VERIFICATION;
     }
   }
 

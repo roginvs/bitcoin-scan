@@ -9,7 +9,7 @@ import {
   check_P2PKH_SIGHASH_ALL,
   isSignatureScriptLooksLikeP2PKH,
   isSourceScriptP2PKH,
-  VERIFICATION_FAILED_RESULT,
+  FAILED_VERIFICATION,
 } from "./script";
 import { sourceTxRaw, spendingTxRaw } from "./testdata";
 
@@ -159,7 +159,7 @@ describe(`Scripting`, () => {
     expect(rest.length).toBe(0);
     const result = check_P2PKH_SIGHASH_ALL(tx, 0, pkScript);
 
-    expect(result).toBe(VERIFICATION_FAILED_RESULT);
+    expect(result).toBe(FAILED_VERIFICATION);
   });
 
   it(`Verifies one more weird tx`, () => {

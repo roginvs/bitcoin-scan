@@ -5,7 +5,8 @@ import {
   check_P2PKH_SIGHASH_ALL,
   isSignatureScriptLooksLikeP2PKH,
   isSourceScriptP2PKH,
-  VERIFICATION_FAILED_RESULT,
+  FAILED_VERIFICATION,
+  FAILED_PUBHASHES_NOT_EQUAL,
 } from "../bitcoin.protocol/script";
 import { createTransactionsStorage } from "./database/transactions";
 import { createLogger } from "../logger/logger";
@@ -45,6 +46,7 @@ export function createAnalyzer(isMemory: boolean = false) {
         storage.removeUnspendTx(unspentOutput.id);
         continue;
       }
+
       const signatureCheck = check_P2PKH_SIGHASH_ALL(
         tx,
         index,
@@ -55,7 +57,10 @@ export function createAnalyzer(isMemory: boolean = false) {
         debug(`in ${index} signature not verified: ${signatureCheck}`);
         storage.removeUnspendTx(unspentOutput.id);
 
-        if (signatureCheck === VERIFICATION_FAILED_RESULT) {
+        if (
+          signatureCheck === FAILED_VERIFICATION ||
+          signatureCheck === FAILED_PUBHASHES_NOT_EQUAL
+        ) {
           warn(`signatureCheck=${signatureCheck} index=${index}`);
           warn(`Failed on this transaction`, tx);
           warn(`Txid=${Buffer.from(tx.txid).reverse().toString("hex")}`);
