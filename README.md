@@ -13,39 +13,18 @@ Currently works only for P2PKH scripts.
 Then check found keys
 
 ```
-sqlite3 data/scanner/transactions.db -quote 'select * from found_keys'
-
-# Or this way:
-while true; do \
-  date ; \
-  echo -n "Unspent transaction outputs: " ; \
-  sqlite3 data/scanner/transactions.db -quote 'select count(*) from unspent_transaction_output'; \
-  echo -n "Signatures: " ; \
-  sqlite3 data/scanner/transactions.db -quote 'select count(*) from signatures'; \
-  echo -n "Processed blocks: " ; \
-  sqlite3 data/scanner/blockchain.db -quote 'select count(*) from blocks where is_processed'; \
-  echo "File sizes"; \
-  ls -lah data/scanner/blockchain.db data/scanner/transactions.db ; \
-  echo "Found keys so far: " ; \
-  sqlite3 data/scanner/transactions.db -quote 'select * from found_keys'; \
-  echo "" ; \
-  sleep 10;
-done
+sqlite3 data/transactions.db -quote 'select * from found_keys'
 ```
 
 ## TODO:
-
-- Listen to incoming updates and fetch new data immediately when it is available
-
-- Sometimes public key is uncompressed so generated bitcoin wallet is wrong
 
 - Implement other scripts
 
 - Slighly split transactions database logic with recovery logic
 
-- Implement transaction flag and witness
-
 - Maybe automatically create transaction to withdraw funds into pre-defined wallet
+
+- Listen to mempool transactions and scan them too
 
 ## Links
 
