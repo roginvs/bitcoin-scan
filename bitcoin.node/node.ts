@@ -34,6 +34,9 @@ import {
   SubscribeEvent,
 } from "./node.plugin";
 import { BlockId, createNodeStorage } from "./node.storage";
+import { createLogger } from "../logger/logger";
+
+const { info, debug, warn } = createLogger("NET");
 
 export type PeerAddr = readonly [string, number];
 
@@ -103,11 +106,11 @@ Algoritm:
 
   const peersBlocksTasks = new Map<PeerConnection, BlockHash>();
   const blocksDownloadingNowStartedAt = new Map<string, Date>(); // We can not compare buffers directly!
-  const bufferedBlocks = new Map<string, BitcoinBlock>();
+  const bufferedBlocks = new Map<string, [BitcoinBlock, string]>();
 
   function connectToPeer(addr: PeerAddr) {
     const currentLastKnownBlockId = storage.getLastKnownBlockId();
-    console.info(
+    info(
       `Creating new peer ${addr[0]}:${addr[1]}, ` + `count=${peers.length + 1}`
     );
     const peer = createPeer(
@@ -149,7 +152,7 @@ Algoritm:
       throw new Error(`Internal error`);
     }
     peers.splice(idx, 1);
-    console.info(`${peer.id} disconnected, now have ${peers.length} peers`);
+    info(`${peer.id} disconnected, now have ${peers.length} peers`);
 
     if (peersToFetchHeaders[0] === peer) {
       // This peer was in the downloading phase
@@ -185,7 +188,7 @@ Algoritm:
     }
 
     if (peers.length === 0) {
-      console.info(`We are out of peers, starting from the beginning`);
+      info(`We are out of peers, starting from the beginning`);
       connectToBootstapPeers();
     }
   }
@@ -210,7 +213,7 @@ Algoritm:
     } else if (cmd === "getheaders") {
       // TODO
     } else {
-      console.info(`${peer.id} unknown message ${cmd}`);
+      debug(`${peer.id} unknown message ${cmd}`);
     }
   }
 
@@ -225,7 +228,7 @@ Algoritm:
         // If we are fetching headers now then raise flag that inv was received
         //  and we need to ask for headers even when we done
         if (!currentlyFetchingHeadersPeerSentInvWithSomeBlock) {
-          console.info(
+          debug(
             `${peer.id} got blocks inv, will re-fetch headers when done with current`
           );
           currentlyFetchingHeadersPeerSentInvWithSomeBlock = true;
@@ -236,12 +239,12 @@ Algoritm:
           peersToFetchHeaders.push(peer);
 
           if (peersToFetchHeaders.length === 1) {
-            console.info(`${peer.id} got blocks inv, let's see what it have`);
+            debug(`${peer.id} got blocks inv, let's see what it have`);
             // This flag should be already dropped, just in case
             currentlyFetchingHeadersPeerSentInvWithSomeBlock = false;
             performInitialHeadersDownload(peer);
           } else {
-            console.info(
+            debug(
               `${peer.id} got blocks inv, added to queue of headers fetching`
             );
           }
@@ -252,7 +255,7 @@ Algoritm:
 
   function onHeadersMessage(peer: PeerConnection, payload: MessagePayload) {
     if (peersToFetchHeaders[0] !== peer) {
-      console.warn(`${peer.id} Got headers from the wrong peer`);
+      warn(`${peer.id} Got headers from the wrong peer`);
       return;
     }
 
@@ -260,8 +263,10 @@ Algoritm:
 
     let lastKnownBlock = storage.getLastKnownBlocksHashes().slice().shift()!;
 
+    const startedWithLastKnownId = storage.getLastKnownBlockId();
+
     let [count, headers] = readVarInt(payload);
-    console.info(`${peer.id} Got headers for ${count} blocks`);
+    debug(`${peer.id} Got headers for ${count} blocks`);
     if (count > 0) {
       while (count > 0) {
         const [block, rest] = readBlock(headers as BlockPayload);
@@ -292,7 +297,7 @@ Algoritm:
           }
 
           // const lastKnownBlockIdInDb = storage.getLastKnownBlockId()!;
-          // console.info(
+          // info(
           //   `${peer.id} Got new block ${dumpBuf(
           //     lastKnownBlock
           //   )} time=${block.timestamp.toISOString()} current height = ${
@@ -300,7 +305,7 @@ Algoritm:
           //   } `
           // );
         } else {
-          console.warn(
+          warn(
             `${peer.id} Hmm, got block ${dumpBuf(
               lastKnownBlock
             )} time=${block.timestamp.toISOString()} but not understand where it is. Maybe good to save it`
@@ -322,12 +327,12 @@ Algoritm:
 
         if (peersToFetchHeaders.length > 0) {
           const nextPeerToFetchBlockheadersChain = peersToFetchHeaders[0];
-          console.info(
+          debug(
             `${peer.id} No more headers from this peer, picking new one ${nextPeerToFetchBlockheadersChain.id}`
           );
           performInitialHeadersDownload(nextPeerToFetchBlockheadersChain);
         } else {
-          console.info(
+          debug(
             `${peer.id} No more headers from this peer, no more peers in queue`
           );
         }
@@ -338,9 +343,21 @@ Algoritm:
         }
       }
     }
-    console.info(
-      `${peer.id} Current height = ${(storage.getLastKnownBlockId() || 0) - 1}`
-    );
+
+    const endedWithLastKnownId = storage.getLastKnownBlockId();
+    if ((startedWithLastKnownId || 0) < (endedWithLastKnownId || 0)) {
+      info(
+        `${peer.id} Current height updated ${
+          startedWithLastKnownId || "none"
+        } -> ${endedWithLastKnownId || "none"}`
+      );
+    } else {
+      debug(
+        `${peer.id} Current height still = ${
+          (storage.getLastKnownBlockId() || 0) - 1
+        }`
+      );
+    }
   }
 
   function onAddrMessage(peer: PeerConnection, payload: MessagePayload) {
@@ -357,22 +374,20 @@ Algoritm:
       if (!isPeerAlreadyConnected) {
         if (addr.ipFamily === 4) {
           if (peers.length > MAX_PEERS) {
-            console.info(
+            debug(
               `${peer.id} Got ipv4 addr but we have enough peers so ignoring ${addr.host}:${addr.port}`
             );
           } else {
-            console.info(
+            debug(
               `${peer.id} Got ipv4 addr, adding to the list ${addr.host}:${addr.port}`
             );
             connectToPeer([addr.host, addr.port]);
           }
         } else {
-          console.info(
-            `${peer.id} Got ipv6 addr, ignoring ${addr.host}:${addr.port}`
-          );
+          debug(`${peer.id} Got ipv6 addr, ignoring ${addr.host}:${addr.port}`);
         }
       } else {
-        console.info(
+        debug(
           `${peer.id} Got addr which is already connected ${addr.host}:${addr.port}`
         );
       }
@@ -384,7 +399,7 @@ Algoritm:
   function onBlockMessage(peer: PeerConnection, payload: BlockPayload) {
     const [block, rest] = readBlock(payload);
     if (rest.length !== 0) {
-      console.warn(
+      warn(
         `${peer.id} Got some data after block message ${rest.toString("hex")}`
       );
       peer.close();
@@ -394,7 +409,7 @@ Algoritm:
     if (!canFetchBlocks) {
       // Special case: fetching genesis header
       if (!block.hash.equals(genesisBlockHash)) {
-        console.warn(
+        warn(
           `${
             peer.id
           } Got unknown block hash during initial chain download ${dumpBuf(
@@ -413,7 +428,7 @@ Algoritm:
 
     const expectingBlockHash = peersBlocksTasks.get(peer);
     if (!expectingBlockHash || !expectingBlockHash.equals(block.hash)) {
-      console.warn(`${peer.id} unknown block ${dumpBuf(block.hash)}`);
+      warn(`${peer.id} unknown block ${dumpBuf(block.hash)}`);
       peer.close();
       return;
     }
@@ -444,14 +459,15 @@ Algoritm:
       );
     }
 
+    const downloadInfo =
+      `${(payload.length / 1000 / 1000).toFixed(2)}mb ` +
+      `in ${durationSeconds}s ${speedMbs}mb/s`;
+
     if (storageExpectingBlock.hash.equals(block.hash)) {
-      console.info(
-        `Block download: ${peer.id} downloaded ${dumpBuf(block.hash)} ${(
-          payload.length /
-          1000 /
-          1000
-        ).toFixed(2)}mb ` +
-          `in ${durationSeconds}s ${speedMbs}mb/s, block is going to database`
+      info(
+        `Blocks: ${peer.id} downloaded ${dumpBuf(
+          block.hash
+        )} ${downloadInfo}, ` + `block is going to database`
       );
 
       // TODO: Validate block
@@ -462,15 +478,11 @@ Algoritm:
 
       flushBlockBufferIfPossible();
     } else {
-      console.info(
-        `Block download: ${peer.id} downloaded ${dumpBuf(block.hash)} ${(
-          payload.length /
-          1000 /
-          1000
-        ).toFixed(2)}mb ` +
-          `in ${durationSeconds}s ${speedMbs}mb/s, keeping data in buffer`
+      debug(
+        `Blocks: ${peer.id} downloaded ${dumpBuf(block.hash)} ` +
+          `${downloadInfo}, keeping data in buffer`
       );
-      bufferedBlocks.set(block.hash.toString("hex"), block);
+      bufferedBlocks.set(block.hash.toString("hex"), [block, downloadInfo]);
     }
     givePeersTasksToDownloadBlocks();
   }
@@ -490,19 +502,19 @@ Algoritm:
         break;
       }
 
-      console.info(
-        `Block download: ${dumpBuf(
-          nextExpectingBlock.hash
-        )} is in buffer so using it`
+      info(
+        `Blocks: ${dumpBuf(nextExpectingBlock.hash)} ${
+          blockInBuffer[1]
+        } from buffer ${blockInBuffer[0].timestamp.toISOString()}`
       );
 
       // TODO: Validate block
       newBlockListeners.forEach((cb) =>
-        cb(blockInBuffer, nextExpectingBlock.id - 1)
+        cb(blockInBuffer[0], nextExpectingBlock.id - 1)
       );
       storage.saveBlockTransactions(
-        blockInBuffer.hash,
-        blockInBuffer.transactions
+        blockInBuffer[0].hash,
+        blockInBuffer[0].transactions
       );
 
       bufferedBlocks.delete(nextExpectingBlock.hash.toString("hex"));
@@ -515,12 +527,10 @@ Algoritm:
         const blockHash = item[1];
         const expectingBlockHash = peersBlocksTasks.get(peer);
         if (!expectingBlockHash || !expectingBlockHash.equals(blockHash)) {
-          console.warn(
-            `${peer.id} unknown notfound for block ${dumpBuf(item[1])}`
-          );
+          warn(`${peer.id} unknown notfound for block ${dumpBuf(item[1])}`);
           peer.close();
         } else {
-          console.info(`Block download: ${peer.id} do not have ${blockHash}`);
+          debug(`Blocks: ${peer.id} do not have ${blockHash}`);
           // Sad that this peer do not have this block. Let's hope others will have it
           peersBlocksTasks.delete(peer);
           blocksDownloadingNowStartedAt.delete(
@@ -529,9 +539,7 @@ Algoritm:
           givePeersTasksToDownloadBlocks();
         }
       } else {
-        console.warn(
-          `${peer.id} unknown notfound ${item[0]} ${dumpBuf(item[1])}`
-        );
+        warn(`${peer.id} unknown notfound ${item[0]} ${dumpBuf(item[1])}`);
         peer.close();
       }
     }
@@ -542,7 +550,7 @@ Algoritm:
       throw new Error(`Internal error: this should never be called`);
     }
     if (bufferedBlocks.size >= MAX_BUFFERED_BLOCKS) {
-      console.info(`Block download: buffer is full!`);
+      debug(`Blocks: buffer is full!`);
       // We already have a lot data which is unprocessed yet
       return;
     }
@@ -570,8 +578,8 @@ Algoritm:
           blocksToDownload.length
         )
       );
-    console.info(
-      `Block download: max=${MAX_DOWNLOADING_PEERS} ` +
+    debug(
+      `Blocks: max=${MAX_DOWNLOADING_PEERS} ` +
         `bufAvailable=${thresholdOfBuffer} freePeers=${freePeers.length} ` +
         `blockToDownload=${blocksToDownload.length} ` +
         `startJobs=${availablePeersForDownloading.length}`
@@ -581,7 +589,7 @@ Algoritm:
       if (!blockInfo) {
         throw new Error(`Internal error`);
       }
-      console.info(
+      debug(
         `  - ${peer.id} will download ${dumpBuf(blockInfo.hash)} h=${
           blockInfo.id - 1
         }`
