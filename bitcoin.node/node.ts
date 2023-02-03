@@ -14,6 +14,7 @@ import {
   BitcoinBlock,
   readAddrWithTime,
   readBlock,
+  readGetheadersMessage,
   readInvPayload,
   readNotFoundPayload,
   readTx,
@@ -214,9 +215,34 @@ Algoritm:
     } else if (cmd === "inv") {
       onInvMessage(peer, payload);
     } else if (cmd === "getheaders") {
-      // TODO
+      onGetHeaders(peer, payload);
     } else {
       debug(`${peer.id} unknown message ${cmd}`);
+    }
+  }
+
+  function onGetHeaders(peer: PeerConnection, payload: MessagePayload) {
+    const [data, rest] = readGetheadersMessage(payload);
+    if (rest.length > 0) {
+      warn(
+        `${peer.id} Some data is left in getheaders request`,
+        rest.toString("hex")
+      );
+      return;
+    }
+    for (const blockId of data.hashes) {
+      const info = storage.getBlockHeader(blockId);
+      if (!info) {
+        continue;
+      }
+      const blockStopId = data.hashStop.equals(Buffer.alloc(32, 0))
+        ? undefined
+        : storage.getBlockHeader(data.hashStop)?.id;
+      //const headersWeKnow = storage.getBlocksHeaders(
+      //  info.id + 1,
+      //  Math.min(2000, blockStopId ? blockStopId - info.id : 2000)
+      //);
+      // asd
     }
   }
 

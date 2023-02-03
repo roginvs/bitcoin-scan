@@ -14,6 +14,7 @@ import {
   InventoryItem,
   HashType,
   WitnessStackItem,
+  BlockHeaderPayload,
 } from "./messages.types";
 import { joinBuffers } from "./utils";
 
@@ -147,7 +148,10 @@ export function readBlock(buf: BlockPayload) {
   const [txCount, transactionsBuf] = readVarInt(
     buf.subarray(4 + 32 + 32 + 4 + 4 + 4)
   );
-  const headerPayload = buf.subarray(0, 4 + 32 + 32 + 4 + 4 + 4);
+  const headerPayload = buf.subarray(
+    0,
+    4 + 32 + 32 + 4 + 4 + 4
+  ) as BlockHeaderPayload;
   const hash = sha256(sha256(headerPayload)) as BlockHash;
 
   // If data is block header then txCount is zero so it is fine
@@ -469,5 +473,29 @@ export function readAddrWithTime(buf: Buffer) {
       time,
     },
     rest,
+  ] as const;
+}
+
+export function readGetheadersMessage(buffer: MessagePayload) {
+  let buf: Buffer = buffer;
+  const protocolVersion = buf.readUint32LE();
+  buf = buf.subarray(4);
+  let hashesLen;
+  const hashes: BlockHash[] = [];
+  [hashesLen, buf] = readVarInt(buf);
+  for (let i = 0; i < hashesLen; i++) {
+    const hash = buf.subarray(0, 32) as BlockHash;
+    hashes.push(hash);
+    buf = buf.subarray(32);
+  }
+  const hashStop = buf.subarray(0, 32) as BlockHash;
+  buf = buf.subarray(32);
+  return [
+    {
+      protocolVersion,
+      hashes,
+      hashStop,
+    },
+    buf,
   ] as const;
 }

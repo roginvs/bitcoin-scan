@@ -8,6 +8,7 @@ export type TransactionHash = Nominal<"transaction hash", Buffer>;
 export type MerkleRootHash = Nominal<"merkle root hash", Buffer>;
 
 export type BlockPayload = Nominal<"block payload", Buffer>;
+export type BlockHeaderPayload = Nominal<"block header payload", Buffer>;
 export type TransactionPayload = Nominal<"transaction payload", Buffer>;
 
 export type PkScript = Nominal<"public key script of tx_out", Buffer>;

@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import {
   BlockHash,
+  BlockHeaderPayload,
   BlockPayload,
   TransactionHash,
   TransactionPayload,
@@ -52,7 +53,10 @@ export function createNodeStorage(isMemory = false) {
     return blockHashes;
   }
 
-  function pushNewBlockHeader(hash: BlockHash, blockHeader: Buffer) {
+  function pushNewBlockHeader(
+    hash: BlockHash,
+    blockHeader: BlockHeaderPayload
+  ) {
     if (blockHeader.length !== 80) {
       throw new Error(`We expect block header here!`);
     }
@@ -132,11 +136,23 @@ export function createNodeStorage(isMemory = false) {
       .map((row) => ({ id: row.id as BlockId, hash: row.hash as BlockHash }));
   }
 
+  function getBlocksHeaders(
+    startingId: BlockHash | BlockId,
+    limit: number
+  ): BlockHeaderPayload[] {
+    return sql
+      .prepare(
+        `select header from headerschain where id >= startingId order by id limit ?`
+      )
+
+      .all(startingId, limit)
+      .map((row) => row.header);
+  }
   function getBlockHeader(hashOrId: BlockHash | BlockId):
     | {
         id: BlockId;
         hash: BlockHash;
-        header: BlockPayload;
+        header: BlockHeaderPayload;
       }
     | undefined {
     return sql
