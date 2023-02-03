@@ -39,6 +39,8 @@ describe("createAnalyzer", () => {
   });
 
   it(`Catches duplicate r`, () => {
+    // Here we artificially create vulnerable transactions
+
     const privKeySec1 = Buffer.from(
       "MHQCAQEEIB8g6XfObz3nqZLyJn449IlRAeFaKBX62uU8SOWwE5E5oAcGBSuBBAAKoUQDQgAEGQwy8UYanDS2pbnB/zY2Ev4f+I4bJZA68giEWqx11LlIf69ZVHtCnHFSB0zBfZzCqcl4GjOs+/PQyXeVsKJGYg==",
       "base64"
@@ -63,6 +65,8 @@ describe("createAnalyzer", () => {
       Buffer.from("88ac", "hex")
     ) as PkScript;
     expect(typeof isSourceScriptP2PKH(pkScript)).not.toBe("string");
+
+    const analyzer = createAnalyzer(true);
 
     const txOut = readTx(
       packTx({
@@ -99,10 +103,10 @@ describe("createAnalyzer", () => {
       })
     )[0];
 
-    const analyzer = createAnalyzer(true);
-
-    const statsIn = analyzer.transaction(txOut, "some info");
-    expect(statsIn.savedOutputsCount).toBe(3);
+    {
+      const statsIn = analyzer.transaction(txOut, "some info");
+      expect(statsIn.savedOutputsCount).toBe(3);
+    }
 
     for (const outpointIndex of [0, 1, 2]) {
       const txInForSig = packTx({
