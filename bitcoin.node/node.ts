@@ -35,13 +35,34 @@ import {
 } from "./node.plugin";
 import { BlockId, createNodeStorage } from "./node.storage";
 
-export type PeerAddr = [string, number];
+export type PeerAddr = readonly [string, number];
 
 function dumpBuf(buf: Buffer) {
   const str = Buffer.from(buf).reverse().toString("hex");
   return str.slice(0, 8) + "-" + str.slice(-8);
 }
-export function createBitcoinNode(bootstrapPeers: PeerAddr[]) {
+function getBootstrapPeers() {
+  const peersString = process.env.NODE_BOOTSTRAP_PEERS;
+  if (!peersString) {
+    throw new Error(`No NODE_BOOTSTRAP_PEERS in env`);
+  }
+  const peers = peersString
+    .split(",")
+    .map((pStr) => pStr.trim())
+    .map((pStr) => {
+      const [host, portStr] = pStr.split(":").map((s) => s.trim());
+      if (!host) {
+        throw new Error(`Wrong peers string`);
+      }
+      const port = portStr ? Number(portStr) : 8333;
+      return [host, port] as const;
+    });
+  return peers;
+}
+
+export function createBitcoinNode() {
+  const bootstrapPeers = getBootstrapPeers();
+
   const storage = createNodeStorage();
 
   /*

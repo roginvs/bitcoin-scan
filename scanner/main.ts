@@ -7,15 +7,7 @@ import { createAnalyzer } from "./transactionAnalyzer";
 const analyzer = createAnalyzer();
 console.info("Analyzer created");
 
-const node = createBitcoinNode([
-  [
-    process.argv[2] || "95.216.21.47",
-    process.argv[3] ? parseInt(process.argv[3]) : 8333,
-  ],
-  // Some other nodes
-  ["95.216.47.4", 8333],
-  ["95.216.76.224", 8333],
-]);
+const node = createBitcoinNode();
 
 function processBlock(block: BitcoinBlock, currentHeight: number) {
   const started = new Date();
