@@ -26,10 +26,11 @@ function processBlock(block: BitcoinBlock, currentHeight: number) {
   }
   totalKeysFound += keysFound;
   info(
-    `${blockInformation.slice(-8)} ` +
+    `block=...${blockInformation.slice(-8)} height=${currentHeight} ` +
       `tx_count=${block.transactions.length} savedOutputsCount=${savedOutputsCount} ` +
-      `savedSignatures=${savedSignatures} keysFound=${keysFound} totalKeysFound=${totalKeysFound}` +
-      ` in ${new Date().getTime() - started.getTime()}ms`
+      `savedSignatures=${savedSignatures} ` +
+      `took ${new Date().getTime() - started.getTime()}ms, ` +
+      `keysFound=${keysFound} totalKeysFound=${totalKeysFound}`
   );
 
   if (keysFound > 0) {
