@@ -126,7 +126,7 @@ describe(`Key derive`, () => {
       throw new Error(`Something wrong with my signatures check!`);
     }
   }
-  it.only(`derivePrivateKeyFromPair`, () => {
+  it(`derivePrivateKeyFromPair`, () => {
     const a = {
       compressed_public_key: Buffer.from(
         "034903acabebcd2185bd64afa44632af51813c4ef25d34b3310d0018271c73f122",
