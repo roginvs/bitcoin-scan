@@ -165,14 +165,77 @@ export function get_private_key_if_diff_k_is_known(
 
 export function get_private_key_if_diff_k_is_known_verified(
   curve: CurveParams,
-  pubKey: Point,
+  publicKey: Point,
   sig1: Signature,
   msgHash1: bigint,
   sig2: Signature,
   msgHash2: bigint,
   kDiff?: bigint
 ) {
-  // todo
+  if (!publicKey) {
+    throw new Error(`Public key cannot be zero point`);
+  }
+  if (
+    !check_signature({
+      curve,
+      msgHash: msgHash1,
+      publicKey,
+      r: sig1.r,
+      s: sig1.s,
+    })
+  ) {
+    throw new Error(`Signature 1 is not valid`);
+  }
+  if (
+    !check_signature({
+      curve,
+      msgHash: msgHash2,
+      publicKey,
+      r: sig2.r,
+      s: sig2.s,
+    })
+  ) {
+    throw new Error(`Signature 2 is not valid`);
+  }
+  for (const [inv1, inv2] of [
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [1, 1],
+  ]) {
+    const privateKeyCandidate = get_private_key_if_diff_k_is_known(
+      curve,
+      {
+        ...sig1,
+        s: inv1 ? curve.n - sig1.s : sig1.s,
+      },
+      msgHash1,
+      {
+        ...sig2,
+        s: inv2 ? curve.n - sig2.s : sig2.s,
+      },
+      msgHash2,
+      kDiff
+    );
+    const publicKeyCandidate = modulo_power_point(
+      curve.G,
+      privateKeyCandidate,
+      curve.a,
+      curve.p
+    );
+    if (!publicKeyCandidate) {
+      continue;
+    }
+    if (
+      publicKey[0] === publicKeyCandidate[0] &&
+      publicKey[1] === publicKeyCandidate[1]
+    ) {
+      return privateKeyCandidate;
+    }
+  }
+  throw new Error(
+    `Some internal error, this should never happen because we checked everything before`
+  );
 }
 
 export function recover_public_key(
