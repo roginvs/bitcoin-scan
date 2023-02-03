@@ -3,7 +3,6 @@ import { p256 } from "./curves.named";
 import {
   check_signature,
   get_private_key_if_diff_k_is_known,
-  get_private_key_if_k_is_the_same,
   recover_public_key,
   signature,
 } from "./ecdsa";
@@ -78,10 +77,8 @@ describe("ECDSA with NIST P-256", () => {
   });
 
   describe(`get_private_key_if_diff_k_is_known`, () => {
-    for (const kDiff of [null, BigInt(0), BigInt(1), BigInt(100)]) {
-      it(`kDiff = ${
-        kDiff ? kDiff.toString(10) : "<using simple func>"
-      }`, () => {
+    for (const kDiff of [undefined, BigInt(0), BigInt(1), BigInt(100)]) {
+      it(`kDiff = ${kDiff ? kDiff.toString(10) : `<same>`}`, () => {
         const k = BigInt(
           "0xA6E3C57DD01ABE90086538398355DD4C3B17AA873382B0F24D6129493D8AAD60"
         );
@@ -105,22 +102,14 @@ describe("ECDSA with NIST P-256", () => {
           k: k + (kDiff || BigInt(0)),
         });
 
-        const recoveredPrivateKey = kDiff
-          ? get_private_key_if_diff_k_is_known(
-              curve,
-              sig1,
-              msgHash1,
-              sig2,
-              msgHash2,
-              kDiff
-            )
-          : get_private_key_if_k_is_the_same(
-              curve,
-              sig1,
-              msgHash1,
-              sig2,
-              msgHash2
-            );
+        const recoveredPrivateKey = get_private_key_if_diff_k_is_known(
+          curve,
+          sig1,
+          msgHash1,
+          sig2,
+          msgHash2,
+          kDiff
+        );
 
         expect(recoveredPrivateKey).toBe(privateKey);
       });

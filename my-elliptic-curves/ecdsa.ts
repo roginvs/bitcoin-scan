@@ -82,7 +82,7 @@ export function check_signature({
   return x1modn === r;
 }
 
-export function get_private_key_if_k_is_the_same(
+function get_private_key_if_k_is_the_same(
   curve: CurveParams,
   sig1: Signature,
   msgHash1: bigint,
@@ -105,15 +105,19 @@ export function get_private_key_if_k_is_the_same(
     curve.n;
   return privateKey;
 }
+
+/**
+ * This function expects that signatures are correct and r is not inverted
+ */
 export function get_private_key_if_diff_k_is_known(
   curve: CurveParams,
   sig1: Signature,
   msgHash1: bigint,
   sig2: Signature,
   msgHash2: bigint,
-  kDiff: bigint
+  kDiff?: bigint
 ) {
-  if (kDiff === BigInt(0)) {
+  if (kDiff === undefined || kDiff === BigInt(0)) {
     return get_private_key_if_k_is_the_same(
       curve,
       sig1,
