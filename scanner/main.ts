@@ -15,7 +15,6 @@ let totalKeysFound = 0;
 function processBlock(block: BitcoinBlock, currentHeight: number) {
   const started = new Date();
   const blockInformation = Buffer.from(block.hash).reverse().toString("hex");
-  info(`Processing block ${blockInformation} h=${currentHeight}`);
   let savedOutputsCount = 0;
   let savedSignatures = 0;
   let keysFound = 0;
@@ -27,7 +26,8 @@ function processBlock(block: BitcoinBlock, currentHeight: number) {
   }
   totalKeysFound += keysFound;
   info(
-    `  tx_count=${block.transactions.length} savedOutputsCount=${savedOutputsCount} ` +
+    `${blockInformation.slice(-8)} ` +
+      `tx_count=${block.transactions.length} savedOutputsCount=${savedOutputsCount} ` +
       `savedSignatures=${savedSignatures} keysFound=${keysFound} totalKeysFound=${totalKeysFound}` +
       ` in ${new Date().getTime() - started.getTime()}ms`
   );
