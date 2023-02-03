@@ -1,8 +1,10 @@
-# Scan bitcoin blockchain for vulnarable signatures
+# Scan bitcoin blockchain for vulnerable signatures
 
 This is a small project to fetch all bitcoin transactions and to find out signatures with the same k value.
 
 Currently works only with P2PKH scripts.
+
+In 2023 this is not very actual because all known clients do not have this vulnerability and all vulnerabile wallets are empty now.
 
 ## Usage
 
@@ -20,11 +22,11 @@ sqlite3 data/transactions.db -quote 'select * from found_keys'
 
 ## TODO:
 
-- Implement other scripts
+- Implement other script types
 
 - Slighly split transactions database logic with recovery logic
 
-- Maybe automatically create transaction to withdraw funds into pre-defined wallet
+- Maybe automatically create transaction to withdraw funds into pre-defined wallet (careful here!)
 
 - Listen to mempool transactions and scan them too
 
