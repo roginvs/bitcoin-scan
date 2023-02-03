@@ -136,13 +136,23 @@ describe("ECDSA with NIST P-256", () => {
               k: k + (kDiff || BigInt(0)),
             });
 
+            const sig1modified = {
+              ...sig1,
+              s: invA ? curve.n - sig1.s : sig1.s,
+            };
+
+            const sig2modified = {
+              ...sig2,
+              s: invB ? curve.n - sig2.s : sig2.s,
+            };
+
             const expectedPrivateKey =
               get_private_key_if_diff_k_is_known_verified(
                 curve,
                 publicKey,
-                sig1,
+                sig1modified,
                 msgHash1,
-                sig2,
+                sig2modified,
                 msgHash2,
                 kDiff
               );
