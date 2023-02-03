@@ -1,5 +1,8 @@
 import { createTransactionsStorage } from "../scanner/database/transactions";
-import { checkThatThisPrivateKeyForThisPublicKey } from "./keyDerive";
+import {
+  checkThatThisPrivateKeyForThisPublicKey,
+  derivePrivateKeyFromPair,
+} from "./keyDerive";
 
 describe(`Key derive`, () => {
   it(`checkThatThisPrivateKeyForThisPublicKey`, () => {
@@ -83,5 +86,43 @@ describe(`Key derive`, () => {
       }
     }
     expect(pubKeys).toStrictEqual(1);
+  });
+
+  it(`derivePrivateKeyFromPair`, () => {
+    const a = {
+      compressed_public_key: Buffer.from(
+        "034903acabebcd2185bd64afa44632af51813c4ef25d34b3310d0018271c73f122",
+        "hex"
+      ),
+      msg: Buffer.from(
+        "59c05dcca0f8bc539d6276674113030751747d99cc67332f12dd973d2185b4d0",
+        "hex"
+      ),
+      r: Buffer.from(
+        "009ac20335eb38768d2052be1dbbc3c8f6178407458e51e6b4ad22f1d91758895b",
+        "hex"
+      ),
+      s: Buffer.from(
+        "43273c2390b15bbe7e4d38559b1d4e6c0d63aad2c586652ec423d851df065271",
+        "hex"
+      ),
+    };
+    const b = {
+      compressed_public_key: a.compressed_public_key,
+      msg: Buffer.from(
+        "125546f1e1f27e7c4eb629490b4f7136fb4a587c5248b4ce678e2eff5c7ef3de",
+        "hex"
+      ),
+      r: a.r,
+      s: Buffer.from(
+        "2da94e7cb83e17d307d46c80df4f3315b17af13c4a04ef352495f1442562a290",
+        "hex"
+      ),
+    };
+
+    const derived = derivePrivateKeyFromPair(a, b);
+    expect(derived.compressed_public_key.toString("hex")).toBe(
+      a.compressed_public_key.toString("hex")
+    );
   });
 });
