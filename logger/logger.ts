@@ -6,9 +6,7 @@
 
 type LogFilter = null | string[];
 function createFilterFromString(s?: string): LogFilter {
-  return s === undefined || s === "*"
-    ? null
-    : s.split(",").map((x) => x.trim());
+  return !s ? null : s.split(",").map((x) => x.trim());
 }
 const debugFilter = createFilterFromString(process.env.LOGGER_DEBUG);
 const infoFilter = createFilterFromString(process.env.LOGGER_INFO);
@@ -59,15 +57,14 @@ function coloredPrint(
   msg: string,
   args: any[]
 ) {
-  let mOut = msg;
-  if (id) {
-    mOut = id + " " + msg;
-  }
-  mOut = (color ?? colors.reset) + mOut;
+  const colorPrefix = color ?? colors.reset;
+  const idPrefix = id ? id + " " : "";
+  const consoleString = colorPrefix + idPrefix + msg;
+
   if (args.length === 0) {
-    return [mOut + (color ? colors.reset : "")];
+    return [consoleString + (color ? colors.reset : "")];
   }
-  return [mOut, ...args, ...(color ? [colors.reset] : [])];
+  return [consoleString, ...args, ...(color ? [colors.reset] : [])];
 }
 
 export function createLogger(id?: string) {
@@ -88,12 +85,24 @@ export function createLogger(id?: string) {
   };
 }
 
-/*
-console.info("Simple console");
+if (require.main === module) {
+  console.info("Simple console");
 
-const { debug, info, warn } = createLogger("lol");
-info("this is info", {}, [1, 2, 34]);
-warn("warning", [3, 4]);
-debug("some debug");
-info("still info", {}, [1, 2, 34]);
-*/
+  const { debug, info, warn } = createLogger("LOOL");
+  info("this is info", {}, [1, 2, 34]);
+  warn("warning", [3, 4]);
+  debug("some debug");
+  info(
+    "still info",
+    {
+      a: 123123123,
+      b: 5345345432,
+      c: 1112312321,
+      d: 545353543,
+      e: 60000123,
+      f: "adsadasdasdsadsad",
+    },
+    [1, 2, 34]
+  );
+  info(`Multiline info line1\nline2\nline3`);
+}
