@@ -127,6 +127,23 @@ export function check_P2PKH_SIGHASH_ALL(
 
   const verifyResult = verify(undefined, dataToVerify, pub, signatureDer);
   if (!verifyResult) {
+    {
+      /*
+      // This is an example how to verify using openssl command line tool
+
+      fs.writeFileSync("tmp/data", dataToVerify);
+      fs.writeFileSync("tmp/pubkey", create_spki_der_from_pubkey(pubKey));
+
+      // This will fail
+      // openssl dgst -verify pubkey -signature sig1 -keyform der data
+      fs.writeFileSync("tmp/sig1", signatureDer);
+
+      // This passes
+      // openssl dgst -verify pubkey -signature sig2 -keyform der data
+      fs.writeFileSync("tmp/sig2", repackSignature(signatureDer));
+  */
+    }
+
     const verifyResultIfSignatureRepacked = verify(
       undefined,
       dataToVerify,
