@@ -270,7 +270,6 @@ Algoritm:
 
     const [headersCount, headersAll] = readVarInt(payload);
     let headersBuf = headersAll;
-    let isThatsAllForThisPeer = false;
     debug(`${peer.id} Got headers for ${headersCount} blocks`);
     if (headersCount > 0) {
       for (let i = 0; i < headersCount; i++) {
@@ -321,7 +320,6 @@ Algoritm:
         performInitialHeadersDownload(peer);
       } else {
         // Ok, this peer have no idea about more blocks
-        isThatsAllForThisPeer = true;
         peersToFetchHeaders.splice(0, 1);
 
         if (peersToFetchHeaders.length > 0) {
@@ -348,14 +346,13 @@ Algoritm:
       info(
         `${peer.id} Current height updated ${
           startedWithLastKnownId || "none"
-        } -> ${endedWithLastKnownId || "none"}` +
-          (isThatsAllForThisPeer ? ", this is all from this peer" : "")
+        } -> ${endedWithLastKnownId || "none"}`
       );
     } else {
       debug(
         `${peer.id} Current height still = ${
           (storage.getLastKnownBlockId() || 0) - 1
-        }` + (isThatsAllForThisPeer ? ", this is all from this peer" : "")
+        }`
       );
     }
   }
