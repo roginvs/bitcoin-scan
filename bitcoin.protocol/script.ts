@@ -141,7 +141,7 @@ export function check_P2PKH_SIGHASH_ALL(
       // This passes
       // openssl dgst -verify pubkey -signature sig2 -keyform der data
       fs.writeFileSync("tmp/sig2", repackSignature(signatureDer));
-  */
+      */
     }
 
     const verifyResultIfSignatureRepacked = verify(
