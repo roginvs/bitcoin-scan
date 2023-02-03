@@ -268,16 +268,18 @@ Algoritm:
 
     const startedWithLastKnownId = storage.getLastKnownBlockId();
 
-    let [count, headers] = readVarInt(payload);
-    debug(`${peer.id} Got headers for ${count} blocks`);
-    if (count > 0) {
-      while (count > 0) {
-        const [block, rest] = readBlock(headers as BlockPayload);
-        const headersRaw = headers.subarray(
+    const [headersCount, headersAll] = readVarInt(payload);
+    let headersBuf = headersAll;
+    let isThatsAllForThisPeer = false;
+    debug(`${peer.id} Got headers for ${headersCount} blocks`);
+    if (headersCount > 0) {
+      for (let i = 0; i < headersCount; i++) {
+        const [block, rest] = readBlock(headersBuf as BlockPayload);
+        const headersRaw = headersBuf.subarray(
           0,
-          headers.length - rest.length
+          headersBuf.length - rest.length
         ) as BlockPayload;
-        headers = rest;
+        headersBuf = rest;
 
         // TODO: if block is in our blockchain then just skip
         // But if is is not then his prevBlock should be
@@ -314,8 +316,6 @@ Algoritm:
             )} time=${block.timestamp.toISOString()} but not understand where it is. Maybe good to save it`
           );
         }
-
-        count--;
       }
       performInitialHeadersDownload(peer);
     } else {
@@ -325,7 +325,7 @@ Algoritm:
         performInitialHeadersDownload(peer);
       } else {
         // Ok, this peer have no idea about more blocks
-
+        isThatsAllForThisPeer = true;
         peersToFetchHeaders.splice(0, 1);
 
         if (peersToFetchHeaders.length > 0) {
@@ -352,13 +352,14 @@ Algoritm:
       info(
         `${peer.id} Current height updated ${
           startedWithLastKnownId || "none"
-        } -> ${endedWithLastKnownId || "none"}`
+        } -> ${endedWithLastKnownId || "none"}` +
+          (isThatsAllForThisPeer ? ", this is all from this peer" : "")
       );
     } else {
       debug(
         `${peer.id} Current height still = ${
           (storage.getLastKnownBlockId() || 0) - 1
-        }`
+        }` + (isThatsAllForThisPeer ? ", this is all from this peer" : "")
       );
     }
   }
@@ -563,7 +564,10 @@ Algoritm:
     }
     const blocksWithoutTransactionsData =
       storage.getBlockWithoutTransactionsInfo(MAX_BUFFERED_BLOCKS);
-
+    if (blocksWithoutTransactionsData.length === 0) {
+      debug(`Blocks: no more blocks without data`);
+      return;
+    }
     const blocksToDownload = blocksWithoutTransactionsData.filter(
       (blockInfo) => {
         const notDownloadingNow = !blocksDownloadingNowStartedAt.has(
