@@ -163,6 +163,18 @@ export function get_private_key_if_diff_k_is_known(
   return privateKey;
 }
 
+export function get_private_key_if_diff_k_is_known_verified(
+  curve: CurveParams,
+  pubKey: Point,
+  sig1: Signature,
+  msgHash1: bigint,
+  sig2: Signature,
+  msgHash2: bigint,
+  kDiff?: bigint
+) {
+  // todo
+}
+
 export function recover_public_key(
   curve: CurveParams,
   r: bigint,
