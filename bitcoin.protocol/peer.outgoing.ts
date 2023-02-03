@@ -76,7 +76,7 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
     watchdogTimers.set(
       kind,
       setTimeout(() => {
-        warn(`${host}:${port} Watchdog timer ${kind} was not cleared!`);
+        debug(`${host}:${port} Watchdog timer ${kind} was not cleared!`);
         client.destroy();
       }, timeout)
     );
