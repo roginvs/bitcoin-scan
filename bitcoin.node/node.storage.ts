@@ -137,14 +137,13 @@ export function createNodeStorage(isMemory = false) {
   }
 
   function getBlocksHeaders(
-    startingId: BlockHash | BlockId,
+    startingId: BlockId,
     limit: number
   ): BlockHeaderPayload[] {
     return sql
       .prepare(
-        `select header from headerschain where id >= startingId order by id limit ?`
+        `select header from headerschain where id > ? order by id limit ?`
       )
-
       .all(startingId, limit)
       .map((row) => row.header);
   }
@@ -186,6 +185,7 @@ export function createNodeStorage(isMemory = false) {
     getBlockWithoutTransactionsInfo,
     saveBlockTransactions,
     getBlockHeader,
+    getBlocksHeaders,
     getBlockTransactions,
   };
 }

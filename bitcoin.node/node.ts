@@ -6,6 +6,7 @@ import { genesisBlockHash } from "../bitcoin.protocol/consts";
 //
 
 import {
+  buildMessage,
   createGetdataMessage,
   createGetheadersMessage,
   packVarInt,
@@ -230,19 +231,33 @@ Algoritm:
       );
       return;
     }
-    for (const blockId of data.hashes) {
-      const info = storage.getBlockHeader(blockId);
+    debug(`${peer.id} asks for headers`);
+    for (const blockHash of data.hashes) {
+      const info = storage.getBlockHeader(blockHash);
       if (!info) {
+        debug(`  - header ${dumpBuf(blockHash)} is not found in our chain`);
         continue;
       }
       const blockStopId = data.hashStop.equals(Buffer.alloc(32, 0))
         ? undefined
         : storage.getBlockHeader(data.hashStop)?.id;
-      //const headersWeKnow = storage.getBlocksHeaders(
-      //  info.id + 1,
-      //  Math.min(2000, blockStopId ? blockStopId - info.id : 2000)
-      //);
-      // asd
+      const headersWeKnow = storage.getBlocksHeaders(
+        info.id,
+        Math.min(2000, blockStopId ? blockStopId - info.id : 2000)
+      );
+      const len = packVarInt(headersWeKnow.length);
+      const responsePayload = joinBuffers(
+        len,
+        ...headersWeKnow.flatMap((header) => [header, Buffer.from([0])])
+      ) as MessagePayload;
+
+      debug(
+        `  - header ${dumpBuf(blockHash)} found, h=${info.id} ` +
+          `stopId=${blockStopId ? blockStopId : "none"} ` +
+          `resultLen=${headersWeKnow.length}`
+      );
+      peer.send(buildMessage("headers", responsePayload));
+      break;
     }
   }
 
