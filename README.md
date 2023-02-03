@@ -2,15 +2,17 @@
 
 This is a small project to fetch all bitcoin transactions and to find out signatures with the same k value.
 
-Currently works only for P2PKH scripts.
+Currently works only with P2PKH scripts.
 
 ## Usage
 
-```
-./node_modules/.bin/ts-node scanner/main.ts [<peer ip> <peer port>]
-```
+1. Install nodejs at least version 16, do `npm install`.
 
-Then check found keys
+2. (optional) Copy `.env.defaults` into `.env` and change configuration there
+
+3. Start `./node_modules/.bin/ts-node scanner/main.ts`
+
+4. Periodically check found keys
 
 ```
 sqlite3 data/transactions.db -quote 'select * from found_keys'
