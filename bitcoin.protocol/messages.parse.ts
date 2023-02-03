@@ -23,7 +23,7 @@ export function parseMessage(buf: Buffer) {
   }
   const magic = buf.subarray(0, 4);
   if (!magic.equals(bitcoinMessageMagic)) {
-    console.warn(`Got some other magic`, magic);
+    throw new Error(`Got some other magic ${magic.toString("hex")}`);
   }
   const commandBuf = buf.subarray(4, 4 + 12);
   const nullIndexInCommand = commandBuf.indexOf(0);
@@ -289,8 +289,7 @@ export function readTx(payload: TransactionPayload) {
   const version = buf.readUInt32LE(0);
   const isWitness = buf[4] === 0;
   if (isWitness && buf[5] !== 1) {
-    console.error(payload);
-    throw new Error("Unknown flag");
+    throw new Error(`Unknown flag ${payload.toString("hex")}`);
   }
 
   buf = isWitness ? buf.subarray(6) : buf.subarray(4);

@@ -2,17 +2,19 @@ import "dotenv-defaults/config";
 import { createBitcoinNode } from "../bitcoin.node/node";
 import { BlockId } from "../bitcoin.node/node.storage";
 import { BitcoinBlock } from "../bitcoin.protocol/messages.parse";
+import { createLogger } from "../logger/logger";
 import { createAnalyzer } from "./transactionAnalyzer";
+const { info, warn, debug } = createLogger("SCANNER");
 
 const analyzer = createAnalyzer();
-console.info("Analyzer created");
+debug("Analyzer created");
 
 const node = createBitcoinNode();
 
 function processBlock(block: BitcoinBlock, currentHeight: number) {
   const started = new Date();
   const blockInformation = Buffer.from(block.hash).reverse().toString("hex");
-  console.info(`Processing block ${blockInformation} h=${currentHeight}`);
+  info(`Processing block ${blockInformation} h=${currentHeight}`);
   let savedOutputsCount = 0;
   let savedSignatures = 0;
   let keysFound = 0;
@@ -22,12 +24,12 @@ function processBlock(block: BitcoinBlock, currentHeight: number) {
     savedSignatures += stats.savedSignatures;
     keysFound += stats.keysFound;
   }
-  console.info(
+  info(
     `  tx_count=${block.transactions.length} savedOutputsCount=${savedOutputsCount} savedSignatures=${savedSignatures}` +
       ` in ${new Date().getTime() - started.getTime()}ms`
   );
   if (keysFound > 0) {
-    console.info(`FOUND NEW KEYS`);
+    warn(`FOUND NEW KEYS`);
   }
 }
 
@@ -51,7 +53,7 @@ const pruning = process.env.SCANNER_PRUNE
   ? parseInt("process.env.SCANNER_PRUNE")
   : 0;
 if (pruning && pruning > 3) {
-  console.info(`
+  info(`
 ========================================
 Scanner will prune processed blocks data
 ========================================

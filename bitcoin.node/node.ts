@@ -36,7 +36,7 @@ import {
 import { BlockId, createNodeStorage } from "./node.storage";
 import { createLogger } from "../logger/logger";
 
-const { info, debug, warn } = createLogger("NET");
+const { info, debug, warn } = createLogger("NODE");
 
 export type PeerAddr = readonly [string, number];
 

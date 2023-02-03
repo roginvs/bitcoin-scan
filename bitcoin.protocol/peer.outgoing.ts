@@ -7,6 +7,9 @@ import {
 } from "./messages.create";
 import { BitcoinMessage, MessagePayload } from "./messages.types";
 import { joinBuffers } from "./utils";
+import { createLogger } from "../logger/logger";
+
+const { info, warn, debug } = createLogger("PEER");
 
 export type PeerConnection = ReturnType<typeof createPeer>;
 /**
@@ -20,12 +23,12 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
   let sendThisMessagesWhenConnected: BitcoinMessage[] | null = [];
 
   client.connect(port, host, () => {
-    console.log(`${host}:${port} Connected`);
+    debug(`${host}:${port} Connected`);
     client.write(createVersionMessage(lastKnownBlock));
   });
 
   client.on("close", function () {
-    console.log(`${host}:${port} Connection closed`);
+    debug(`${host}:${port} Connection closed`);
 
     if (pingTimerInterval) {
       clearInterval(pingTimerInterval);
@@ -41,7 +44,7 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
   });
 
   client.on("error", (e) => {
-    console.warn(`${host}:${port} Connection error: ${e.name} ${e.message}`);
+    debug(`${host}:${port} Connection error: ${e.name} ${e.message}`);
     // Nothing here but we should have a listener to prevent crashing
     // We clear everything in the "close" listener
   });
@@ -61,21 +64,19 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
       clearTimeout(existingTimer);
       watchdogTimers.delete(kind);
     } else {
-      console.warn(
-        `${host}:${port} Can not clear existing timer ${kind}, no timer`
-      );
+      warn(`${host}:${port} Can not clear existing timer ${kind}, no timer`);
     }
   }
   function raiseWatchdog(kind: string, timeout = 30000) {
     const existingTimer = watchdogTimers.get(kind);
     if (existingTimer) {
-      console.warn(`${host}:${port} Already have timer for ${kind}`);
+      warn(`${host}:${port} Already have timer for ${kind}`);
       clearTimeout(existingTimer);
     }
     watchdogTimers.set(
       kind,
       setTimeout(() => {
-        console.warn(`${host}:${port} Watchdog timer ${kind} was not cleared!`);
+        warn(`${host}:${port} Watchdog timer ${kind} was not cleared!`);
         client.destroy();
       }, timeout)
     );
@@ -105,7 +106,7 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
       } else if (command === "version") {
         clearWatchdog("initial connection");
         if (pingTimerInterval) {
-          console.warn(`${host}:${port} Seeing "version" once again`);
+          warn(`${host}:${port} Seeing "version" once again`);
           client.destroy();
           return;
         }
@@ -120,11 +121,10 @@ export function createPeer(host: string, port: number, lastKnownBlock: number) {
 
         const version = parseVersion(payload);
         me.id = `${host}:${port}`;
-        console.info(
-          `${me.id} version=${version.version} startHeight=${version.startHeight} `
+        info(
+          `${me.id} version=${version.version} startHeight=${version.startHeight} ` +
+            `${version.userAgent} ${version.services.join(",")}`
         );
-        console.info(`  userAgent=${version.userAgent}`);
-        console.info(`  services=${version.services.join(", ")}`);
         client.write(createVerackMessage());
 
         if (sendThisMessagesWhenConnected) {

@@ -8,15 +8,13 @@ import {
   VERIFICATION_FAILED_RESULT,
 } from "../bitcoin.protocol/script";
 import { createTransactionsStorage } from "./database/transactions";
+import { createLogger } from "../logger/logger";
+const { info, warn, debug } = createLogger("SCANNER");
 
 export function createAnalyzer(isMemory: boolean = false) {
   const storage = createTransactionsStorage(isMemory);
 
   function transaction(tx: BitcoinTransaction, blockInformation: string) {
-    function debug(msg: string) {
-      // console.info(`Tx ${tx.hash.toString("hex")} ${msg}`);
-    }
-
     let savedOutputsCount = 0;
     for (const [index, outTx] of tx.txOut.entries()) {
       const pubKeyHash = isSourceScriptP2PKH(outTx.script);
@@ -58,12 +56,10 @@ export function createAnalyzer(isMemory: boolean = false) {
         storage.removeUnspendTx(unspentOutput.id);
 
         if (signatureCheck === VERIFICATION_FAILED_RESULT) {
-          console.info(`signatureCheck=${signatureCheck} index=${index}`);
-          console.info(`Failed on this transaction`, tx);
-          console.info(
-            `Txid=${Buffer.from(tx.txid).reverse().toString("hex")}`
-          );
-          console.info(packTx(tx).toString("hex"));
+          warn(`signatureCheck=${signatureCheck} index=${index}`);
+          warn(`Failed on this transaction`, tx);
+          warn(`Txid=${Buffer.from(tx.txid).reverse().toString("hex")}`);
+          warn(packTx(tx).toString("hex"));
 
           throw new Error(
             `Why we have unverified transaction in the blockchain?`
