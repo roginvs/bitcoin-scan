@@ -24,9 +24,11 @@ export function createAnalyzer(isMemory: boolean = false) {
         debug(`out ${index} not a P2PKH: ${pubKeyHash}`);
         continue;
       }
-      debug(`out ${index} added to unspent`);
-      storage.addUnspentTxOutput(tx.txid, index, outTx.script);
-      savedOutputsCount++;
+      if (!storage.getUnspentOutput(tx.txid, index)) {
+        debug(`out ${index} added to unspent`);
+        storage.addUnspentTxOutput(tx.txid, index, outTx.script);
+        savedOutputsCount++;
+      }
     }
 
     let savedSignatures = 0;
