@@ -7,7 +7,6 @@ import { sha256 } from "../bitcoin.protocol/hashes";
 import { Secp256k1 } from "../my-elliptic-curves/curves.named";
 import { check_signature } from "../my-elliptic-curves/ecdsa";
 import { uncompressPublicKey } from "../my-elliptic-curves/uncompressPublicKey";
-import { createTransactionsStorage } from "../scanner/database/transactions";
 import {
   checkThatThisPrivateKeyForThisPublicKey,
   derivePrivateKeyFromPair,
