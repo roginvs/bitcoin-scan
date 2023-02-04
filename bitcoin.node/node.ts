@@ -456,6 +456,9 @@ Algoritm:
           startedWithLastKnownId || "none"
         } -> ${endedWithLastKnownId || "none"}`
       );
+      if (canFetchBlocks) {
+        givePeersTasksToDownloadBlocks();
+      }
     } else {
       debug(
         `${peer.id} Current height still = ${
