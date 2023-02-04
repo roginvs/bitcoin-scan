@@ -301,8 +301,12 @@ Algoritm:
     const notFoundInventories: InventoryItem[] = [];
     for (const inv of inventories) {
       if (inv[0] === HashType.MSG_BLOCK) {
-        // TODO: Send raw block
-        notFoundInventories.push(inv);
+        const block = getSavedBlockRaw(inv[1], true);
+        if (block) {
+          peer.send(buildMessage("block", block as Buffer as MessagePayload));
+        } else {
+          notFoundInventories.push(inv);
+        }
       } else if (inv[0] === HashType.MSG_WITNESS_BLOCK) {
         const block = getSavedBlockRaw(inv[1]);
         if (block) {
