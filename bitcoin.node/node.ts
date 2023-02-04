@@ -37,6 +37,7 @@ import {
 } from "./node.plugin";
 import { BlockId, createNodeStorage } from "./node.storage";
 import { createLogger } from "../logger/logger";
+import { createServer, Server } from "net";
 
 const { info, debug, warn } = createLogger("NODE");
 
@@ -89,12 +90,14 @@ Algoritm:
 
   const newBlockListeners: NewBlockListener[] = [];
 
-  const MAX_PEERS = 10;
+  const MAX_OUTGOING_PEERS = 10;
+  const MAX_INCOMING_PEERS = 30;
   const MAX_DOWNLOADING_PEERS = 5;
   const MAX_BUFFERED_BLOCKS = 15;
 
   const peers: PeerConnection[] = [];
-
+  let outgoingPeersCount = 0;
+  let incomingPeersCount = 0;
   /**
    * This is a queue of peers to fetch headers chain.
    * We fetching chain only from one peer at time so first item in this array
@@ -158,6 +161,11 @@ Algoritm:
     }
     peers.splice(idx, 1);
     info(`${peer.id} disconnected, now have ${peers.length} peers`);
+    if (peer.isOutgoing) {
+      outgoingPeersCount--;
+    } else {
+      incomingPeersCount--;
+    }
 
     if (peersToFetchHeaders[0] === peer) {
       // This peer was in the downloading phase
@@ -411,7 +419,7 @@ Algoritm:
       );
       if (!isPeerAlreadyConnected) {
         if (addr.ipFamily === 4) {
-          if (peers.length > MAX_PEERS) {
+          if (outgoingPeersCount > MAX_OUTGOING_PEERS) {
             debug(
               `${peer.id} Got ipv4 addr but we have enough peers so ignoring ${addr.host}:${addr.port}`
             );
@@ -419,6 +427,7 @@ Algoritm:
             debug(
               `${peer.id} Got ipv4 addr, adding to the list ${addr.host}:${addr.port}`
             );
+            outgoingPeersCount++;
             connectToPeer([addr.host, addr.port]);
           }
         } else {
@@ -690,6 +699,7 @@ Algoritm:
 
   function connectToBootstapPeers() {
     for (const addr of bootstrapPeers) {
+      outgoingPeersCount++;
       connectToPeer(addr);
     }
   }
@@ -706,6 +716,23 @@ Algoritm:
       startingLastKnownBlockId ? startingLastKnownBlockId - 1 : "<none>"
     }`
   );
+
+  const listeningPort = Number(process.env.NODE_LISTEN_PORT);
+  if (!isNaN(listeningPort)) {
+    const incomingServer = createServer((socket) => {
+      //createP;
+      //warn("LOL SOCKER", socket);
+    });
+    incomingServer.on("listening", () => {
+      info(`Listening at port ${listeningPort}`);
+    });
+    incomingServer.on("error", () => {
+      throw new Error(`Failed to listen on port ${listeningPort}`);
+    });
+    incomingServer.listen(listeningPort);
+  } else {
+    info(`Not accepting incoming connections`);
+  }
 
   const me: BitcoinNodeApi = {
     destroy() {

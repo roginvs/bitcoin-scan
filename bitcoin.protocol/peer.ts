@@ -27,6 +27,9 @@ export function createOutgoingPeer(
   client.connect(port, host);
   return createPeer(client, true, lastKnownBlock);
 }
+export function createIncomingPeer(client: Socket, lastKnownBlock: number) {
+  return createPeer(client, false, lastKnownBlock);
+}
 
 function createPeer(
   client: Socket,
@@ -41,7 +44,11 @@ function createPeer(
 
   client.on("connect", () => {
     debug(`${addr()} Connected`);
-    client.write(createVersionMessage(lastKnownBlock));
+    if (isOutgoing) {
+      client.write(createVersionMessage(lastKnownBlock));
+    } else {
+      // We are waiting for the first "version" message
+    }
   });
 
   client.on("close", function () {
@@ -118,12 +125,20 @@ function createPeer(
       const [command, payload, rest] = parsed;
       incomingBuf = rest;
 
-      if (command === "verack") {
-        continue;
-      } else if (command === "version") {
+      /**
+       * outgoing              !outgoing == incoming
+       *
+       * version     ------>
+       *             <------   verack
+       *             <------   version
+       *                       [handshare is done]
+       * verack      ------>
+       * [handshake is done]
+       */
+      function handshakeIsDone() {
         clearWatchdog("initial connection");
         if (pingTimerInterval) {
-          warn(`${addr()} Seeing "version" once again`);
+          warn(`${addr()} Seeing "version"/"verack" once again`);
           client.destroy();
           return;
         }
@@ -134,6 +149,19 @@ function createPeer(
           raiseWatchdog("pong" + pingPayload.toString("hex"));
         }, 120 * 1000);
 
+        if (sendThisMessagesWhenConnected) {
+          for (const msg of sendThisMessagesWhenConnected) {
+            client.write(msg);
+          }
+          sendThisMessagesWhenConnected = null;
+        }
+      }
+
+      if (command === "verack") {
+        if (!isOutgoing) {
+          handshakeIsDone();
+        }
+      } else if (command === "version") {
         const version = parseVersion(payload);
         me.id = `${addr()}`;
         info(
@@ -142,11 +170,8 @@ function createPeer(
         );
         client.write(createVerackMessage());
 
-        if (sendThisMessagesWhenConnected) {
-          for (const msg of sendThisMessagesWhenConnected) {
-            client.write(msg);
-          }
-          sendThisMessagesWhenConnected = null;
+        if (isOutgoing) {
+          handshakeIsDone();
         }
       } else if (command === "alert") {
         // do nothing
@@ -176,6 +201,7 @@ function createPeer(
     get port() {
       return client.remotePort;
     },
+    isOutgoing,
   };
 
   return me;
