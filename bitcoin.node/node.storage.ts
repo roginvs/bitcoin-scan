@@ -19,7 +19,7 @@ function getDbPath(dbFileName: string) {
 export type BlockId = Nominal<"block numeric id", number>;
 
 export function createNodeStorage(isMemory = false) {
-  const sql = new Database(isMemory ? ":memory:" : getDbPath("blockchain.db"));
+  const sql = new Database(isMemory ? ":memory:" : getDbPath("node.db"));
 
   sql.pragma("journal_mode = WAL");
   sql.pragma("auto_vacuum = FULL");
