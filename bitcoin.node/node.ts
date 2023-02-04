@@ -28,7 +28,11 @@ import {
   MessagePayload,
   TransactionHash,
 } from "../bitcoin.protocol/messages.types";
-import { createOutgoingPeer, PeerConnection } from "../bitcoin.protocol/peer";
+import {
+  createIncomingPeer,
+  createOutgoingPeer,
+  PeerConnection,
+} from "../bitcoin.protocol/peer";
 import { joinBuffers } from "../bitcoin.protocol/utils";
 import {
   BitcoinNodeApi,
@@ -37,7 +41,7 @@ import {
 } from "./node.plugin";
 import { BlockId, createNodeStorage } from "./node.storage";
 import { createLogger } from "../logger/logger";
-import { createServer, Server } from "net";
+import { createServer, Server, Socket } from "net";
 
 const { info, debug, warn } = createLogger("NODE");
 
@@ -116,16 +120,38 @@ Algoritm:
     [block: BitcoinBlock, downloadInfo: string, peerId: string]
   >();
 
-  function connectToPeer(addr: PeerAddr) {
+  function connectToPeer(
+    peerInfo:
+      | {
+          isOutgoing: true;
+          addr: PeerAddr;
+        }
+      | {
+          isOutgoing: false;
+          socket: Socket;
+        }
+  ) {
     const currentLastKnownBlockId = storage.getLastKnownBlockId();
+    const lastKnownHeight = currentLastKnownBlockId
+      ? currentLastKnownBlockId - 1
+      : 0;
+
+    if (peerInfo.isOutgoing) {
+      outgoingPeersCount++;
+    } else {
+      incomingPeersCount++;
+    }
+
     info(
-      `Creating new peer ${addr[0]}:${addr[1]}, ` + `count=${peers.length + 1}`
+      `Creating new peer ` +
+        (peerInfo.isOutgoing
+          ? `outgoing ${peerInfo.addr[0]}:${peerInfo.addr[1]}`
+          : `incoming ${peerInfo.socket.remoteAddress}:${peerInfo.socket.remotePort}`) +
+        `, count=${peers.length + 1}`
     );
-    const peer = createOutgoingPeer(
-      addr[0],
-      addr[1],
-      currentLastKnownBlockId ? currentLastKnownBlockId - 1 : 0
-    );
+    const peer = peerInfo.isOutgoing
+      ? createOutgoingPeer(peerInfo.addr[0], peerInfo.addr[1], lastKnownHeight)
+      : createIncomingPeer(peerInfo.socket, lastKnownHeight);
     peer.onMessage = (cmd, payload) => onMessage(peer, cmd, payload);
     peers.push(peer);
 
@@ -427,8 +453,11 @@ Algoritm:
             debug(
               `${peer.id} Got ipv4 addr, adding to the list ${addr.host}:${addr.port}`
             );
-            outgoingPeersCount++;
-            connectToPeer([addr.host, addr.port]);
+
+            connectToPeer({
+              isOutgoing: true,
+              addr: [addr.host, addr.port],
+            });
           }
         } else {
           debug(`${peer.id} Got ipv6 addr, ignoring ${addr.host}:${addr.port}`);
@@ -699,8 +728,10 @@ Algoritm:
 
   function connectToBootstapPeers() {
     for (const addr of bootstrapPeers) {
-      outgoingPeersCount++;
-      connectToPeer(addr);
+      connectToPeer({
+        isOutgoing: true,
+        addr,
+      });
     }
   }
 
@@ -720,8 +751,17 @@ Algoritm:
   const listeningPort = Number(process.env.NODE_LISTEN_PORT);
   if (!isNaN(listeningPort)) {
     const incomingServer = createServer((socket) => {
-      //createP;
-      //warn("LOL SOCKER", socket);
+      if (incomingPeersCount > MAX_INCOMING_PEERS) {
+        debug(
+          `Already have enough incoming peers, rejecting ${socket.remoteAddress}:${socket.remotePort}`
+        );
+        socket.destroy();
+      } else {
+        connectToPeer({
+          isOutgoing: false,
+          socket,
+        });
+      }
     });
     incomingServer.on("listening", () => {
       info(`Listening at port ${listeningPort}`);
