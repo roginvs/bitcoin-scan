@@ -48,8 +48,16 @@ export function createTransactionsStorage(isMemory = false) {
     -- spending_tx_hash CHARACTER(32) NOT NULL,
     -- spending_tx_input_index INTEGER NOT NULL
   );
-  CREATE INDEX IF NOT EXISTS signature_pub_r ON signatures
-    (compressed_public_key, r);
+  
+  -- CREATE INDEX IF NOT EXISTS signature_pub_r ON signatures
+  --  (compressed_public_key, r);
+  -- Looks like having index only on r value is faster
+  -- TODO: Check substring(...) index (do we need to update queries too?)
+  DROP INDEX IF EXISTS signature_pub_r;
+  CREATE INDEX IF NOT EXISTS signature_r ON signatures (r);
+
+
+
 
   CREATE TABLE IF NOT EXISTS found_keys (
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
