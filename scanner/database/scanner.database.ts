@@ -25,9 +25,7 @@ export interface TransactionRow {
 }
 
 export function createTransactionsStorage(isMemory = false) {
-  const sql = new Database(
-    isMemory ? ":memory:" : getDbPath("/transactions.db")
-  );
+  const sql = new Database(isMemory ? ":memory:" : getDbPath("/scanner.db"));
 
   sql.pragma("journal_mode = WAL");
   sql.pragma("auto_vacuum = FULL");
