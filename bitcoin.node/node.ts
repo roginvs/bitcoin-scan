@@ -315,6 +315,11 @@ Algoritm:
           notFoundInventories.push(inv);
         }
       } else {
+        warn(
+          `${peer.id} asked for data ${
+            inv[0]
+          } but we do not have such ${inv[1].toString("hex")}`
+        );
         notFoundInventories.push(inv);
       }
     }
