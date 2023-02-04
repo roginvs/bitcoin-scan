@@ -173,6 +173,8 @@ function createPeer(
 
         if (isOutgoing) {
           handshakeIsDone();
+        } else {
+          client.write(createVersionMessage(lastKnownBlock));
         }
       } else if (command === "alert") {
         // do nothing
