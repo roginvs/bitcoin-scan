@@ -629,19 +629,35 @@ Algoritm:
   function onNotFoundMessage(peer: PeerConnection, payload: MessagePayload) {
     for (const item of readNotFoundPayload(payload)) {
       if (item[0] === HashType.MSG_WITNESS_BLOCK) {
-        const blockHash = item[1];
-        const expectingBlockHash = peersBlocksTasks.get(peer);
-        if (!expectingBlockHash || !expectingBlockHash.equals(blockHash)) {
-          warn(`${peer.id} unknown notfound for block ${dumpBuf(item[1])}`);
+        if (!canFetchBlocks) {
+          // Special case: fetching genesis header
+          if (item[1].equals(genesisBlockHash)) {
+            warn(`${peer.id} notfound genesis block ${dumpBuf(item[1])}`);
+          } else {
+            warn(
+              `${
+                peer.id
+              } was asked for genesis block but returned not found for this ${dumpBuf(
+                item[1]
+              )}`
+            );
+          }
           peer.close();
         } else {
-          debug(`Blocks: ${peer.id} do not have ${blockHash}`);
-          // Sad that this peer do not have this block. Let's hope others will have it
-          peersBlocksTasks.delete(peer);
-          blocksDownloadingNowStartedAt.delete(
-            expectingBlockHash.toString("hex")
-          );
-          givePeersTasksToDownloadBlocks();
+          const blockHash = item[1];
+          const expectingBlockHash = peersBlocksTasks.get(peer);
+          if (!expectingBlockHash || !expectingBlockHash.equals(blockHash)) {
+            warn(`${peer.id} unknown notfound for block ${dumpBuf(item[1])}`);
+            peer.close();
+          } else {
+            debug(`Blocks: ${peer.id} do not have ${blockHash}`);
+            // Sad that this peer do not have this block. Let's hope others will have it
+            peersBlocksTasks.delete(peer);
+            blocksDownloadingNowStartedAt.delete(
+              expectingBlockHash.toString("hex")
+            );
+            givePeersTasksToDownloadBlocks();
+          }
         }
       } else {
         warn(`${peer.id} unknown notfound ${item[0]} ${dumpBuf(item[1])}`);
