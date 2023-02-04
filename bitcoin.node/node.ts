@@ -1,9 +1,4 @@
 import { genesisBlockHash } from "../bitcoin.protocol/consts";
-//const genesisBlockHash = Buffer.from(
-//  "00000000000000000005f883a624ff0896bdfaa2020630b5e98d400fba5d0972",
-//  "hex"
-//).reverse() as BlockHash;
-//
 
 import {
   buildMessage,
