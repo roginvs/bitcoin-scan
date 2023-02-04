@@ -253,6 +253,8 @@ Algoritm:
       onGetHeaders(peer, payload);
     } else if (cmd === "getdata") {
       onGetData(peer, payload);
+    } else if (cmd === "mempool") {
+      warn(`Got mempool request`);
     } else {
       debug(`${peer.id} unknown message ${cmd}`);
     }
