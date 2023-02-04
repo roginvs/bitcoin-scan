@@ -9,6 +9,7 @@ import { BitcoinMessage, MessagePayload } from "./messages.types";
 import { joinBuffers } from "./utils";
 import { createLogger } from "../logger/logger";
 import { randomBytes } from "crypto";
+import { nodeId } from "./nodeid";
 
 const { info, warn, debug } = createLogger("PEER");
 
@@ -165,6 +166,11 @@ function createPeer(
       } else if (command === "version") {
         const version = parseVersion(payload);
         me.id = `${addr()}`;
+        if (version.nonce.equals(nodeId)) {
+          warn(`${me.id} Got connections with the same nodeid, closing`);
+          client.destroy();
+          return;
+        }
         info(
           `${me.id} version=${version.version} startHeight=${version.startHeight} ` +
             `${version.userAgent} ${version.services.join(",")}`

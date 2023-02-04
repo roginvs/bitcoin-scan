@@ -128,7 +128,7 @@ export function parseVersion(payload: MessagePayload) {
     services: parseServices(services),
     startHeight,
     userAgent: userAgent.toString(),
-    nonce: nonce.toString("hex"),
+    nonce,
     relay,
     timestamp,
   };
