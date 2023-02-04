@@ -17,7 +17,7 @@ In 2023 this is not very actual because all known clients do not have this vulne
 4. Periodically check found keys
 
 ```
-sqlite3 data/transactions.db -quote 'select * from found_keys'
+sqlite3 data/scanner.db -quote 'select * from found_keys'
 ```
 
 ## TODO:
