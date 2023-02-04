@@ -36,6 +36,7 @@ export function createTransactionsStorage(isMemory = false) {
     output_id INTEGER NOT NULL,
     pub_script CHARACTER(32) NOT NULL
   );
+  -- TODO: Maybe it will be better to remove output_id from this index
   CREATE INDEX IF NOT EXISTS  unspent_hash_out ON unspent_transaction_output
     (transaction_hash, output_id);
 
