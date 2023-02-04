@@ -149,6 +149,7 @@ function createPeer(
           raiseWatchdog("pong" + pingPayload.toString("hex"));
         }, 120 * 1000);
 
+        debug(`${addr()} Handshake is done`);
         if (sendThisMessagesWhenConnected) {
           for (const msg of sendThisMessagesWhenConnected) {
             client.write(msg);
