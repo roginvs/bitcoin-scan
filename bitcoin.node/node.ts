@@ -5,6 +5,7 @@ import {
   createGetdataMessage,
   createGetheadersMessage,
   createNotfoundMessage,
+  packTx,
   packVarInt,
 } from "../bitcoin.protocol/messages.create";
 import {
@@ -736,18 +737,33 @@ Algoritm:
     }
   }
 
-  function getSavedBlockRaw(blockLocator: BlockHash | BlockId) {
+  function getSavedBlockRaw(
+    blockLocator: BlockHash | BlockId,
+    removeWitness = false
+  ) {
     const blockMeta = storage.getBlockHeader(blockLocator);
 
     if (!blockMeta) {
       return null;
     }
-    const transactionsPayload = storage.getBlockTransactions(blockMeta.id);
+    const transactionsPayloads = storage
+      .getBlockTransactions(blockMeta.id)
+      .map((txData) => {
+        if (!removeWitness) {
+          return txData;
+        }
+        const tx = readTx(txData)[0];
+        const repackedTx = packTx({
+          ...tx,
+          isWitness: false,
+        });
+        return repackedTx;
+      });
 
     const data = joinBuffers(
       blockMeta.header,
-      packVarInt(transactionsPayload.length),
-      ...transactionsPayload
+      packVarInt(transactionsPayloads.length),
+      ...transactionsPayloads
     ) as BlockPayload;
     return data;
   }
