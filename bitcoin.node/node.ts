@@ -303,8 +303,12 @@ Algoritm:
         // TODO: Send raw block
         notFoundInventories.push(inv);
       } else if (inv[0] === HashType.MSG_WITNESS_BLOCK) {
-        // TODO: Read block
-        notFoundInventories.push(inv);
+        const block = getSavedBlockRaw(inv[1]);
+        if (block) {
+          peer.send(buildMessage("block", block as Buffer as MessagePayload));
+        } else {
+          notFoundInventories.push(inv);
+        }
       } else {
         notFoundInventories.push(inv);
       }
@@ -732,9 +736,7 @@ Algoritm:
     }
   }
 
-  function getSavedBlock(
-    blockLocator: BlockHash | BlockId
-  ): BitcoinBlock | null {
+  function getSavedBlockRaw(blockLocator: BlockHash | BlockId) {
     const blockMeta = storage.getBlockHeader(blockLocator);
 
     if (!blockMeta) {
@@ -742,13 +744,21 @@ Algoritm:
     }
     const transactionsPayload = storage.getBlockTransactions(blockMeta.id);
 
-    const [block, rest] = readBlock(
-      joinBuffers(
-        blockMeta.header,
-        packVarInt(transactionsPayload.length),
-        ...transactionsPayload
-      ) as BlockPayload
-    );
+    const data = joinBuffers(
+      blockMeta.header,
+      packVarInt(transactionsPayload.length),
+      ...transactionsPayload
+    ) as BlockPayload;
+    return data;
+  }
+  function getSavedBlock(
+    blockLocator: BlockHash | BlockId
+  ): BitcoinBlock | null {
+    const data = getSavedBlockRaw(blockLocator);
+    if (!data) {
+      return null;
+    }
+    const [block, rest] = readBlock(data);
     if (rest.length !== 0) {
       throw new Error(`Db error`);
     }
