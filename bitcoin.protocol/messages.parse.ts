@@ -420,6 +420,10 @@ export function readInvPayload(payload: MessagePayload) {
       inventories.push([type, hash as BlockHash]);
     } else if (type === HashType.MSG_TX) {
       inventories.push([type, hash as TransactionHash]);
+    } else if (type === HashType.MSG_WITNESS_TX) {
+      inventories.push([type, hash as TransactionHash]);
+    } else if (type === HashType.MSG_WITNESS_BLOCK) {
+      inventories.push([type, hash as BlockHash]);
     } else {
       // TODO
       // Just ignore for now
@@ -430,6 +434,10 @@ export function readInvPayload(payload: MessagePayload) {
 export function readNotFoundPayload(payload: MessagePayload) {
   return readInvPayload(payload);
 }
+export function readGetdataPayload(payload: MessagePayload) {
+  return readInvPayload(payload);
+}
+
 export function readAddr(payload: Buffer) {
   const services = parseServices(payload.subarray(0, 8));
   const ipv4or6 = payload.subarray(8, 8 + 16);

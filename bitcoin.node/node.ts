@@ -9,12 +9,14 @@ import {
   buildMessage,
   createGetdataMessage,
   createGetheadersMessage,
+  createNotfoundMessage,
   packVarInt,
 } from "../bitcoin.protocol/messages.create";
 import {
   BitcoinBlock,
   readAddrWithTime,
   readBlock,
+  readGetdataPayload,
   readGetheadersMessage,
   readInvPayload,
   readNotFoundPayload,
@@ -25,6 +27,7 @@ import {
   BlockHash,
   BlockPayload,
   HashType,
+  InventoryItem,
   MessagePayload,
   TransactionHash,
 } from "../bitcoin.protocol/messages.types";
@@ -174,6 +177,7 @@ Algoritm:
     } else {
       // A initial case when no data even for genesis block
       peer.raiseWatchdog("genesis block data");
+      debug(`${peer.id} asking for genesis block data`);
       peer.send(
         createGetdataMessage([[HashType.MSG_WITNESS_BLOCK, genesisBlockHash]])
       );
@@ -251,6 +255,8 @@ Algoritm:
       onInvMessage(peer, payload);
     } else if (cmd === "getheaders") {
       onGetHeaders(peer, payload);
+    } else if (cmd === "getdata") {
+      onGetData(peer, payload);
     } else {
       debug(`${peer.id} unknown message ${cmd}`);
     }
@@ -293,6 +299,22 @@ Algoritm:
       peer.send(buildMessage("headers", responsePayload));
       break;
     }
+  }
+  function onGetData(peer: PeerConnection, payload: MessagePayload) {
+    const inventories = readGetdataPayload(payload);
+    const notFoundInventories: InventoryItem[] = [];
+    for (const inv of inventories) {
+      if (inv[0] === HashType.MSG_BLOCK) {
+        // TODO: Send raw block
+        notFoundInventories.push(inv);
+      } else if (inv[0] === HashType.MSG_WITNESS_BLOCK) {
+        // TODO: Read block
+        notFoundInventories.push(inv);
+      } else {
+        notFoundInventories.push(inv);
+      }
+    }
+    peer.send(createNotfoundMessage(notFoundInventories));
   }
 
   function onInvMessage(peer: PeerConnection, payload: MessagePayload) {

@@ -114,13 +114,19 @@ export function createGetheadersMessage(
   return buildMessage("getheaders", payload);
 }
 
-export function createGetdataMessage(inventories: InventoryItem[]) {
+function packInventories(inventories: InventoryItem[]) {
   const invCount = packVarInt(inventories.length);
   const payload = joinBuffers(
     invCount,
     ...inventories.flatMap(([type, value]) => [packUint32(type), value])
   ) as MessagePayload;
-  return buildMessage("getdata", payload);
+  return payload;
+}
+export function createGetdataMessage(inventories: InventoryItem[]) {
+  return buildMessage("getdata", packInventories(inventories));
+}
+export function createNotfoundMessage(inventories: InventoryItem[]) {
+  return buildMessage("notfound", packInventories(inventories));
 }
 
 export function packTxIn(txin: BitcoinTransactionIn) {
