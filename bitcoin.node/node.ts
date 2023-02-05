@@ -362,6 +362,18 @@ Algoritm:
         }
       }
     }
+    for (const inv of data) {
+      if (inv[0] !== HashType.MSG_TX) {
+        continue;
+      }
+      const txId = inv[1];
+      if (!storage.isMempoolTxExists(txId)) {
+        // TODO: Maybe we fetching the same txid from some other peer
+      }
+    }
+    if (data.filter((inv) => inv[0] === HashType.MSG_WITNESS_TX).length > 0) {
+      warn(`${peer.id} provided inv with MSG_WITNESS_TX`);
+    }
   }
 
   function onHeadersMessage(peer: PeerConnection, payload: MessagePayload) {
