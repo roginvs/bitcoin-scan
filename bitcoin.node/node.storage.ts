@@ -33,15 +33,16 @@ export function createNodeStorage(isMemory = false) {
     CREATE INDEX IF NOT EXISTS block_hash ON headerschain (hash);
 
     CREATE TABLE IF NOT EXISTS block_transactions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT, 
+      id INTEGER PRIMARY KEY, 
       block_numeric_id INTEGER,      
       txid CHARACTER(32) NOT NULL,      
       transaction_index_in_block INTEGER NOT NULL,
       data BLOB NOT NULL
     );
-    CREATE INDEX IF NOT EXISTS transaction_hash ON block_transactions (txid);
+    CREATE UNIQUE INDEX IF NOT EXISTS transaction_hash ON block_transactions (txid);
     CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_numeric_id);    
     -- CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_id, block_index);
+
   `);
 
   function getLastKnownBlocksHashes(n = 10): BlockHash[] {
@@ -176,6 +177,8 @@ export function createNodeStorage(isMemory = false) {
       .all(blockId)
       .map((row) => row.data);
   }
+
+  // function
 
   return {
     getLastKnownBlocksHashes,
