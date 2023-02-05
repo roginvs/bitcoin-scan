@@ -112,8 +112,11 @@ Algoritm:
   /** We can fetch blocks when we have updated blockchain from at least one peer */
   let canFetchBlocks = false;
 
+  // Fething only one block from the peer at time.
+  // Blocks are big enough, no need to request simultaneously multiple blocks
   const peersBlocksTasks = new Map<PeerConnection, BlockHash>();
-  const blocksDownloadingNowStartedAt = new Map<string, Date>(); // We can not compare buffers directly!
+  // We can not compare buffers directly so we use string here
+  const blocksDownloadingNowStartedAt = new Map<string, Date>();
   const bufferedBlocks = new Map<
     string,
     [block: BitcoinBlock, downloadInfo: string, peerId: string]
@@ -368,6 +371,7 @@ Algoritm:
       }
       const txId = inv[1];
       if (!storage.isMempoolTxExists(txId)) {
+        // debug(`${peer.id} announce tx ${dumpBuf(txId)}`);
         // TODO: Maybe we fetching the same txid from some other peer
       }
     }
