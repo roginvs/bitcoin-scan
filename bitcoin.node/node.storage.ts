@@ -210,6 +210,15 @@ export function createNodeStorage(isMemory = false) {
       payload: TransactionPayload;
     }[];
   }
+  function pruneOldMempoolTransactions(hours = 24 * 3) {
+    sql
+      .prepare(
+        `
+      delete from mempool_transactions where created_at < STRFTIME('%s') - ?
+    `
+      )
+      .run(hours * 60 * 60);
+  }
 
   return {
     getLastKnownBlocksHashes,
@@ -223,5 +232,6 @@ export function createNodeStorage(isMemory = false) {
     getBlockTransactions,
     addMempoolTransaction,
     getAllMempoolTransactions,
+    pruneOldMempoolTransactions,
   };
 }
