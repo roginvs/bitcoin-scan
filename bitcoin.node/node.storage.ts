@@ -211,7 +211,7 @@ export function createNodeStorage(isMemory = false) {
     }[];
   }
   function pruneMempoolTransactions(
-    txids: TransactionHash,
+    txids: TransactionHash[],
     expiredThreshold = 24 * 3
   ) {
     const removeTxById = sql.prepare(

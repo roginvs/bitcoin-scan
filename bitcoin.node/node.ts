@@ -581,12 +581,7 @@ Algoritm:
           `${block.timestamp.toISOString()} ${downloadInfo}`
       );
 
-      // TODO: Validate block
-      newBlockListeners.forEach((cb) =>
-        cb(block, storageExpectingBlock.id - 1)
-      );
-      storage.saveBlockTransactions(block.hash, block.transactions);
-
+      processBlockData(block, storageExpectingBlock.id - 1);
       flushBlockBufferIfPossible();
     } else {
       debug(
@@ -603,6 +598,14 @@ Algoritm:
       info(`Blocks: all blocks downloaded`);
     }
     givePeersTasksToDownloadBlocks();
+  }
+
+  function processBlockData(block: BitcoinBlock, blockHeight: number) {
+    // TODO: Validate block
+
+    newBlockListeners.forEach((cb) => cb(block, blockHeight));
+    storage.saveBlockTransactions(block.hash, block.transactions);
+    storage.pruneMempoolTransactions(block.transactions.map((tx) => tx.txid));
   }
 
   function flushBlockBufferIfPossible() {
@@ -627,14 +630,7 @@ Algoritm:
           `${blockInBuffer[1]} (buf)`
       );
 
-      // TODO: Validate block
-      newBlockListeners.forEach((cb) =>
-        cb(blockInBuffer[0], nextExpectingBlock.id - 1)
-      );
-      storage.saveBlockTransactions(
-        blockInBuffer[0].hash,
-        blockInBuffer[0].transactions
-      );
+      processBlockData(blockInBuffer[0], nextExpectingBlock.id - 1);
 
       bufferedBlocks.delete(nextExpectingBlock.hash.toString("hex"));
     }
@@ -855,6 +851,7 @@ Algoritm:
     pruneSavedTxes,
     onNewDownloadedBlock: buildSubscriber(newBlockListeners),
   };
+
   return me;
 }
 
