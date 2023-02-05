@@ -210,14 +210,21 @@ export function createNodeStorage(isMemory = false) {
       payload: TransactionPayload;
     }[];
   }
-  function pruneOldMempoolTransactions(hours = 24 * 3) {
+  function pruneMempoolTransactions(
+    txids: TransactionHash,
+    expiredThreshold = 24 * 3
+  ) {
+    const removeTxById = sql.prepare(
+      `delete from mempool_transactions where txid = ?`
+    );
+    txids.forEach((txid) => removeTxById.run(txid));
     sql
       .prepare(
         `
       delete from mempool_transactions where created_at < STRFTIME('%s') - ?
     `
       )
-      .run(hours * 60 * 60);
+      .run(expiredThreshold * 60 * 60);
   }
 
   return {
@@ -232,6 +239,6 @@ export function createNodeStorage(isMemory = false) {
     getBlockTransactions,
     addMempoolTransaction,
     getAllMempoolTransactions,
-    pruneOldMempoolTransactions,
+    pruneMempoolTransactions,
   };
 }
