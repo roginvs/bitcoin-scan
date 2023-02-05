@@ -43,6 +43,18 @@ export function createNodeStorage(isMemory = false) {
     CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_numeric_id);    
     -- CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_id, block_index);
 
+
+
+    CREATE TABLE IF NOT EXISTS mempool_transactions (
+      id INTEGER PRIMARY KEY,
+      txid CHARACTER(32) NOT NULL,      
+      payload BLOB NOT NULL,
+      fee integer not null,
+      created_at integer not null
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS mempool_transactions_txid ON mempool_transactions (txid);
+    CREATE INDEX IF NOT EXISTS mempool_transactions_created_at ON mempool_transactions (created_at);
+    CREATE INDEX IF NOT EXISTS mempool_transactions_fee ON mempool_transactions (fee);
   `);
 
   function getLastKnownBlocksHashes(n = 10): BlockHash[] {
@@ -178,7 +190,26 @@ export function createNodeStorage(isMemory = false) {
       .map((row) => row.data);
   }
 
-  // function
+  const addMempoolTransactionSql = sql.prepare(
+    `insert or ignore into mempool_transactions 
+      (txid, payload, fee, created_at) values (?, ?, ?, STRFTIME('%s'));
+    `
+  );
+  function addMempoolTransaction(
+    txid: TransactionHash,
+    payload: TransactionPayload,
+    fee: number
+  ) {
+    addMempoolTransactionSql.run(txid, payload, fee);
+  }
+  function getAllMempoolTransactions() {
+    return sql
+      .prepare(`select txid, payload from mempool_transactions`)
+      .all() as {
+      txid: TransactionHash;
+      payload: TransactionPayload;
+    }[];
+  }
 
   return {
     getLastKnownBlocksHashes,
@@ -190,5 +221,7 @@ export function createNodeStorage(isMemory = false) {
     getBlockHeader,
     getBlocksHeaders,
     getBlockTransactions,
+    addMempoolTransaction,
+    getAllMempoolTransactions,
   };
 }
