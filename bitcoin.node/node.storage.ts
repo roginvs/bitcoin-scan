@@ -226,6 +226,12 @@ export function createNodeStorage(isMemory = false) {
       )
       .run(expiredThreshold * 60 * 60);
   }
+  const isMempoolTxExistsSql = sql.prepare(
+    "select count(*) as count from mempool_transactions where txid = ?"
+  );
+  function isMempoolTxExists(txid: TransactionHash) {
+    return isMempoolTxExistsSql.get(txid).count > 0;
+  }
 
   return {
     getLastKnownBlocksHashes,
@@ -240,5 +246,6 @@ export function createNodeStorage(isMemory = false) {
     addMempoolTransaction,
     getAllMempoolTransactions,
     pruneMempoolTransactions,
+    isMempoolTxExists,
   };
 }
