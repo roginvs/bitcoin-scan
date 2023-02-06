@@ -826,12 +826,19 @@ Algoritm:
     connectToBootstapPeers();
   }, 1);
 
-  const startingLastKnownBlockId = storage.getLastKnownBlockId();
-  info(
-    `Bitcoin node created, starting height=${
-      startingLastKnownBlockId ? startingLastKnownBlockId - 1 : "<none>"
-    }`
-  );
+  {
+    const startingLastKnownBlockId = storage.getLastKnownBlockId();
+    const startingLastBlockIdWithData = storage
+      .getBlockWithoutTransactionsInfo(1)
+      .shift()?.id;
+    info(
+      `Bitcoin node created, starting height=${
+        startingLastKnownBlockId ? startingLastKnownBlockId - 1 : "<none>"
+      } lastBlockWithDataHeight=${
+        startingLastBlockIdWithData ? startingLastBlockIdWithData - 1 : "<none>"
+      }`
+    );
+  }
 
   const listeningPort = Number(process.env.NODE_LISTEN_PORT);
   if (!isNaN(listeningPort)) {
