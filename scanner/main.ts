@@ -46,6 +46,9 @@ if (RESCAN_EVERYTHING_FROM_THE_BEGINNING) {
     if (!block) {
       break;
     }
+    if (block.transactions.length === 0) {
+      break;
+    }
     processBlock(block, i - 1);
 
     i++;
