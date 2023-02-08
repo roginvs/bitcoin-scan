@@ -136,7 +136,7 @@ Algoritm:
           socket: Socket;
         }
   ) {
-    const currentLastKnownBlockDbId = storage.getLastKnownBlockId();
+    const currentLastKnownBlockDbId = storage.getLastKnownBlockDbId();
     const lastKnownHeight = currentLastKnownBlockDbId
       ? currentLastKnownBlockDbId - 1
       : 0;
@@ -393,7 +393,7 @@ Algoritm:
 
     let lastKnownBlock = storage.getLastKnownBlocksHashes().slice().shift()!;
 
-    const startedWithLastKnownId = storage.getLastKnownBlockId();
+    const startedWithLastKnownDbId = storage.getLastKnownBlockDbId();
 
     const [headersCount, headersAll] = readVarInt(payload);
     let headersBuf = headersAll;
@@ -468,11 +468,11 @@ Algoritm:
       }
     }
 
-    const endedWithLastKnownId = storage.getLastKnownBlockId();
-    if ((startedWithLastKnownId || 0) < (endedWithLastKnownId || 0)) {
+    const endedWithLastKnownId = storage.getLastKnownBlockDbId();
+    if ((startedWithLastKnownDbId || 0) < (endedWithLastKnownId || 0)) {
       info(
         `${peer.id} Current height updated ${
-          startedWithLastKnownId || "none"
+          startedWithLastKnownDbId || "none"
         } -> ${endedWithLastKnownId || "none"}`
       );
       if (canFetchBlocks) {
@@ -481,7 +481,7 @@ Algoritm:
     } else {
       debug(
         `${peer.id} Current height still = ${
-          (storage.getLastKnownBlockId() || 0) - 1
+          (storage.getLastKnownBlockDbId() || 0) - 1
         }`
       );
     }
@@ -827,15 +827,17 @@ Algoritm:
   }, 1);
 
   {
-    const startingLastKnownBlockId = storage.getLastKnownBlockId();
-    const startingLastBlockIdWithData = storage
+    const startingLastKnownBlockDbId = storage.getLastKnownBlockDbId();
+    const startingLastBlockDbIdWithData = storage
       .getBlockWithoutTransactionsInfo(1)
       .shift()?.id;
     info(
       `Bitcoin node created, starting height=${
-        startingLastKnownBlockId ? startingLastKnownBlockId - 1 : "<none>"
+        startingLastKnownBlockDbId ? startingLastKnownBlockDbId - 1 : "<none>"
       } lastBlockWithDataHeight=${
-        startingLastBlockIdWithData ? startingLastBlockIdWithData - 1 : "<none>"
+        startingLastBlockDbIdWithData
+          ? startingLastBlockDbIdWithData - 1
+          : "<none>"
       }`
     );
   }

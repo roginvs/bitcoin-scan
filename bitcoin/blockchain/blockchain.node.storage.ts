@@ -229,7 +229,7 @@ export function createNodeStorage(isMemory = false) {
   return {
     getLastKnownBlocksHashes,
     pushNewBlockHeader,
-    getLastKnownBlockId,
+    getLastKnownBlockDbId: getLastKnownBlockId,
     pruneSavedTxes,
     getBlockWithoutTransactionsInfo,
     saveBlockTransactions,
