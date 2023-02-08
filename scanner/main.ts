@@ -55,7 +55,7 @@ if (RESCAN_EVERYTHING_FROM_THE_BEGINNING) {
   }
 }
 
-node.onNewDownloadedBlock(processBlock);
+node.onBeforeBlockSaved(processBlock);
 
 const pruning = process.env.SCANNER_PRUNE
   ? parseInt("process.env.SCANNER_PRUNE")
@@ -67,7 +67,7 @@ Scanner will prune processed blocks data
 ========================================
 `);
   // Scanner will remove it because it have own database for specific txes
-  node.onNewDownloadedBlock(() => {
+  node.onBeforeBlockSaved(() => {
     node.pruneSavedTxes(pruning);
   });
 }

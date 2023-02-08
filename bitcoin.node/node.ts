@@ -33,18 +33,19 @@ import {
   PeerConnection,
 } from "../bitcoin.protocol/peer";
 import { joinBuffers } from "../bitcoin.protocol/utils";
-import {
-  BitcoinNodeApi,
-  NewBlockListener,
-  SubscribeEvent,
-} from "./node.plugin";
 import { BlockId, createNodeStorage } from "./node.storage";
 import { createLogger } from "../logger/logger";
-import { createServer, Server, Socket } from "net";
+import { createServer, Socket } from "net";
 
 const { info, debug, warn } = createLogger("NODE");
 
 export type PeerAddr = readonly [string, number];
+
+export type NewBlockListener = (
+  block: BitcoinBlock,
+  currentHeight: number
+) => void;
+export type SubscribeEvent<T extends Function> = (cb: T) => () => void;
 
 function dumpBuf(buf: Buffer) {
   const str = Buffer.from(buf).reverse().toString("hex");
@@ -84,14 +85,11 @@ Algoritm:
     - But only one peer at time
 
 
-  - TODO:
-    - If "inv" with blocks were received during request for headers
-      then re-request headers when all headers are done
-  
   
 */
 
-  const newBlockListeners: NewBlockListener[] = [];
+  const beforeBlockSavedListeners: NewBlockListener[] = [];
+  const afterBlockSavedListeners: NewBlockListener[] = [];
 
   const MAX_OUTGOING_PEERS = 10;
   const MAX_INCOMING_PEERS = 30;
@@ -617,10 +615,9 @@ Algoritm:
   }
 
   function processBlockData(block: BitcoinBlock, blockHeight: number) {
-    // TODO: Validate block
-
-    newBlockListeners.forEach((cb) => cb(block, blockHeight));
+    beforeBlockSavedListeners.forEach((cb) => cb(block, blockHeight));
     storage.saveBlockTransactions(block.hash, block.transactions);
+    afterBlockSavedListeners.forEach((cb) => cb(block, blockHeight));
     storage.pruneMempoolTransactions(block.transactions.map((tx) => tx.txid));
   }
 
@@ -866,13 +863,14 @@ Algoritm:
     info(`Not accepting incoming connections`);
   }
 
-  const me: BitcoinNodeApi = {
+  const me = {
     destroy() {
       throw new Error(`Not implemented`);
     },
     getSavedBlock: getSavedBlock,
     pruneSavedTxes,
-    onNewDownloadedBlock: buildSubscriber(newBlockListeners),
+    onBeforeBlockSaved: buildSubscriber(beforeBlockSavedListeners),
+    onAfterBlockSaved: buildSubscriber(afterBlockSavedListeners),
   };
 
   return me;
