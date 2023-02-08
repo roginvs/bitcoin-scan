@@ -24,8 +24,6 @@ sqlite3 data/scanner.db -quote 'select * from found_keys'
 
 - Implement other script types
 
-- Slighly split transactions database logic with recovery logic
-
 - Maybe automatically create transaction to withdraw funds into pre-defined wallet (careful here!)
 
 - Listen to mempool transactions and scan them too
@@ -33,9 +31,15 @@ sqlite3 data/scanner.db -quote 'select * from found_keys'
 ## Links
 
 https://www.blockchain.com/explorer
+
 https://en.bitcoin.it/wiki/OP_CHECKSIG
+
 https://developer.bitcoin.org/devguide/transactions.html#locktime_parsing_rules
+
 https://en.bitcoin.it/wiki/Script
+
 https://en.bitcoin.it/wiki/Protocol_documentation
+
 https://bitnodes.io/nodes/?q=Finland
+
 https://developer.bitcoin.org/devguide/contracts.html
