@@ -746,7 +746,7 @@ Algoritm:
       }
       debug(
         `  - ${peer.id} will download ${dumpBuf(blockInfo.hash)} h=${
-          blockInfo.id - 1
+          blockInfo.id
         }`
       );
 
