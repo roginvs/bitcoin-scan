@@ -304,14 +304,14 @@ Algoritm:
     const notFoundInventories: InventoryItem[] = [];
     for (const inv of inventories) {
       if (inv[0] === HashType.MSG_BLOCK) {
-        const block = getSavedBlockRaw(inv[1], true);
+        const block = getSavedBlockRaw(inv[1], true)?.[0];
         if (block) {
           peer.send(buildMessage("block", block as Buffer as MessagePayload));
         } else {
           notFoundInventories.push(inv);
         }
       } else if (inv[0] === HashType.MSG_WITNESS_BLOCK) {
-        const block = getSavedBlockRaw(inv[1]);
+        const block = getSavedBlockRaw(inv[1])?.[0];
         if (block) {
           peer.send(buildMessage("block", block as Buffer as MessagePayload));
         } else {
@@ -762,7 +762,7 @@ Algoritm:
 
   function getSavedBlockRaw(
     blockLocator: BlockHash | BlockId,
-    removeWitness = false
+    removeWitnessInEachTransaction = false
   ) {
     const blockMeta = storage.getBlockHeader(blockLocator);
 
@@ -772,7 +772,7 @@ Algoritm:
     const transactionsPayloads = storage
       .getBlockTransactions(blockMeta.id)
       .map((txData) => {
-        if (!removeWitness) {
+        if (!removeWitnessInEachTransaction) {
           return txData;
         }
         const tx = readTx(txData)[0];
@@ -788,20 +788,18 @@ Algoritm:
       packVarInt(transactionsPayloads.length),
       ...transactionsPayloads
     ) as BlockPayload;
-    return data;
+    return [data, blockMeta.id] as const;
   }
-  function getSavedBlock(
-    blockLocator: BlockHash | BlockId
-  ): BitcoinBlock | null {
+  function getSavedBlock(blockLocator: BlockHash | BlockId) {
     const data = getSavedBlockRaw(blockLocator);
     if (!data) {
       return null;
     }
-    const [block, rest] = readBlock(data);
+    const [block, rest] = readBlock(data[0]);
     if (rest.length !== 0) {
       throw new Error(`Db error`);
     }
-    return block;
+    return [block, data[1]] as const;
   }
 
   function pruneSavedTxes(keepLastNBlocks: number) {
@@ -867,7 +865,7 @@ Algoritm:
     destroy() {
       throw new Error(`Not implemented`);
     },
-    getSavedBlock: getSavedBlock,
+    getSavedBlock,
     pruneSavedTxes,
     onBeforeBlockSaved: buildSubscriber(beforeBlockSavedListeners),
     onAfterBlockSaved: buildSubscriber(afterBlockSavedListeners),

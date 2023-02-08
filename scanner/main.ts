@@ -41,7 +41,7 @@ const RESCAN_EVERYTHING_FROM_THE_BEGINNING = false;
 if (RESCAN_EVERYTHING_FROM_THE_BEGINNING) {
   let i = 1;
   while (true) {
-    const block = node.getSavedBlock(i as BlockId);
+    const block = node.getSavedBlock(i as BlockId)?.[0];
     if (!block) {
       break;
     }

@@ -37,9 +37,9 @@ export function createFinancialStorage(isMemory = false) {
 
 
     -- Just a way to remember which block we processed last time
-    CREATE TABLE last_processed_block_hash (
+    CREATE TABLE IF NOT EXISTS last_processed_block_hash (
         _uniq INTEGER NOT NULL CHECK (_uniq = 1),
-        block_hash CHARACTER(32) NOT NULL, 
+        block_hash CHARACTER(32) NOT NULL
     );
     CREATE UNIQUE INDEX IF NOT EXISTS last_processed_block_hash_idx ON last_processed_block_hash
      (_uniq);
