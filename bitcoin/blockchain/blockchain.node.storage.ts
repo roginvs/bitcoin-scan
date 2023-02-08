@@ -7,19 +7,12 @@ import {
   TransactionPayload,
 } from "../protocol/messages.types";
 import { Nominal } from "../../nominal_types/nominaltypes";
-
-function getDbPath(dbFileName: string) {
-  const dataFolder = process.env.NODE_STORAGE_DIR;
-  if (!dataFolder) {
-    throw new Error(`Env variable NODE_STORAGE_DIR is not defined`);
-  }
-  return dataFolder + "/" + dbFileName;
-}
+import { getDbPath } from "../config";
 
 export type BlockId = Nominal<"block numeric id", number>;
 
 export function createNodeStorage(isMemory = false) {
-  const sql = new Database(isMemory ? ":memory:" : getDbPath("node.db"));
+  const sql = new Database(isMemory ? ":memory:" : getDbPath("blockchain.db"));
 
   sql.pragma("journal_mode = WAL");
   sql.pragma("auto_vacuum = FULL");
