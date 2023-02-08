@@ -8,7 +8,7 @@ import {
   createFinancialStorage,
 } from "./node.financial.storage";
 import { validateScript } from "./validateScript";
-const { info, debug, warn } = createLogger("FINA");
+const { info, debug, warn } = createLogger("FINANCE");
 
 function dumpBuf(buf: Buffer) {
   const str = Buffer.from(buf).reverse().toString("hex");
