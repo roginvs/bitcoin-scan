@@ -1,13 +1,13 @@
-import { compressPublicKey } from "../bitcoin.protocol/compressPublicKey";
-import { packTx } from "../bitcoin.protocol/messages.create";
-import { BitcoinTransaction } from "../bitcoin.protocol/messages.parse";
+import { compressPublicKey } from "../bitcoin/protocol/compressPublicKey";
+import { packTx } from "../bitcoin/protocol/messages.create";
+import { BitcoinTransaction } from "../bitcoin/protocol/messages.parse";
 import {
   check_P2PKH_SIGHASH_ALL,
   isSignatureScriptLooksLikeP2PKH,
   isSourceScriptP2PKH,
   FAILED_VERIFICATION,
   FAILED_PUBHASHES_NOT_EQUAL,
-} from "../bitcoin.protocol/script";
+} from "../bitcoin/protocol/script";
 import { createTransactionsStorage } from "./database/scanner.database";
 import { createLogger } from "../logger/logger";
 import { derivePrivateKeyFromPair } from "../crypto/keyDerive";

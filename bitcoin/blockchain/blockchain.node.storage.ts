@@ -5,8 +5,8 @@ import {
   BlockPayload,
   TransactionHash,
   TransactionPayload,
-} from "../bitcoin.protocol/messages.types";
-import { Nominal } from "../nominal_types/nominaltypes";
+} from "../protocol/messages.types";
+import { Nominal } from "../../nominal_types/nominaltypes";
 
 function getDbPath(dbFileName: string) {
   const dataFolder = process.env.NODE_STORAGE_DIR;

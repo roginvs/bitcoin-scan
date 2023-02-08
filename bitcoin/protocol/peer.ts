@@ -7,7 +7,7 @@ import {
 } from "./messages.create";
 import { BitcoinMessage, MessagePayload } from "./messages.types";
 import { joinBuffers } from "./utils";
-import { createLogger } from "../logger/logger";
+import { createLogger } from "../../logger/logger";
 import { randomBytes } from "crypto";
 import { nodeId } from "./nodeid";
 

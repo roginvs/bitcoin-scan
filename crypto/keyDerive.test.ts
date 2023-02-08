@@ -2,8 +2,8 @@ import { createPublicKey, verify } from "crypto";
 import {
   create_spki_der_from_pubkey,
   packAsn1PairOfIntegers,
-} from "../bitcoin.protocol/asn1";
-import { sha256 } from "../bitcoin.protocol/hashes";
+} from "../bitcoin/protocol/asn1";
+import { sha256 } from "../bitcoin/protocol/hashes";
 import { Secp256k1 } from "../my-elliptic-curves/curves.named";
 import { check_signature } from "../my-elliptic-curves/ecdsa";
 import { uncompressPublicKey } from "../my-elliptic-curves/uncompressPublicKey";

@@ -1,6 +1,6 @@
 import "dotenv-defaults/config";
-import { createBitcoinNode, BlockId } from "../bitcoin.node/node";
-import { BitcoinBlock } from "../bitcoin.protocol/messages.parse";
+import { createBitcoinNode, BlockId } from "../bitcoin/node";
+import { BitcoinBlock } from "../bitcoin/protocol/messages.parse";
 import { createLogger } from "../logger/logger";
 import { createAnalyzer } from "./transactionAnalyzer";
 const { info, warn, debug } = createLogger("SCANNER");

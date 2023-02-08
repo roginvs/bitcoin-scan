@@ -1,4 +1,4 @@
-import { genesisBlockHash } from "../bitcoin.protocol/consts";
+import { genesisBlockHash } from "../protocol/consts";
 
 import {
   buildMessage,
@@ -7,7 +7,7 @@ import {
   createNotfoundMessage,
   packTx,
   packVarInt,
-} from "../bitcoin.protocol/messages.create";
+} from "../protocol/messages.create";
 import {
   BitcoinBlock,
   readAddrWithTime,
@@ -18,7 +18,7 @@ import {
   readNotFoundPayload,
   readTx,
   readVarInt,
-} from "../bitcoin.protocol/messages.parse";
+} from "../protocol/messages.parse";
 import {
   BlockHash,
   BlockPayload,
@@ -26,17 +26,17 @@ import {
   InventoryItem,
   MessagePayload,
   TransactionHash,
-} from "../bitcoin.protocol/messages.types";
+} from "../protocol/messages.types";
 import {
   createIncomingPeer,
   createOutgoingPeer,
   PeerConnection,
-} from "../bitcoin.protocol/peer";
-import { joinBuffers } from "../bitcoin.protocol/utils";
-import { BlockId, createNodeStorage } from "./blocks.node.storage";
-import { createLogger } from "../logger/logger";
+} from "../protocol/peer";
+import { joinBuffers } from "../protocol/utils";
+import { BlockId, createNodeStorage } from "./blockchain.node.storage";
+import { createLogger } from "../../logger/logger";
 import { createServer, Socket } from "net";
-import { buildSubscriber } from "./subscriber";
+import { buildSubscriber } from "../subscriber";
 
 const { info, debug, warn } = createLogger("NODE");
 

@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import {
   PkScript,
   TransactionHash,
-} from "../../bitcoin.protocol/messages.types";
+} from "../../bitcoin/protocol/messages.types";
 import { Nominal } from "../../nominal_types/nominaltypes";
 
 function getDbPath(dbFileName: string) {

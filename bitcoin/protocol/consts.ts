@@ -10,7 +10,7 @@ const realGenesisHash = Buffer.from(
 
 // Just for debugging
 const fakeGenesisHash = Buffer.from(
-  "00000000000000000005f883a624ff0896bdfaa2020630b5e98d400fba5d0972",
+  "0000000000000000000592dd3b01d348d8200e546c1e40958292a3208469487b",
   "hex"
 ).reverse() as BlockHash;
 
