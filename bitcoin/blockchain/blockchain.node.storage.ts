@@ -9,7 +9,7 @@ import {
 import { Nominal } from "../../nominal_types/nominaltypes";
 import { getDbPath } from "../config";
 
-export type BlockId = Nominal<"block numeric id", number>;
+export type BlockDbId = Nominal<"block numeric id", number>;
 
 export function createNodeStorage(isMemory = false) {
   const sql = new Database(isMemory ? ":memory:" : getDbPath("blockchain.db"));
@@ -95,7 +95,7 @@ export function createNodeStorage(isMemory = false) {
         `
             select id from headerschain order by id desc limit 1`
       )
-      .get()?.id as BlockId | undefined;
+      .get()?.id as BlockDbId | undefined;
     return dbId;
   }
 
@@ -139,11 +139,11 @@ export function createNodeStorage(isMemory = false) {
     `
       )
       .all(n)
-      .map((row) => ({ id: row.id as BlockId, hash: row.hash as BlockHash }));
+      .map((row) => ({ id: row.id as BlockDbId, hash: row.hash as BlockHash }));
   }
 
   function getBlocksHeaders(
-    startingId: BlockId,
+    startingId: BlockDbId,
     limit: number
   ): BlockHeaderPayload[] {
     return sql
@@ -153,9 +153,9 @@ export function createNodeStorage(isMemory = false) {
       .all(startingId, limit)
       .map((row) => row.header);
   }
-  function getBlockHeader(hashOrId: BlockHash | BlockId):
+  function getBlockHeader(hashOrId: BlockHash | BlockDbId):
     | {
-        id: BlockId;
+        id: BlockDbId;
         hash: BlockHash;
         header: BlockHeaderPayload;
       }
@@ -168,7 +168,7 @@ export function createNodeStorage(isMemory = false) {
       )
       .get(hashOrId);
   }
-  function getBlockTransactions(blockId: BlockId): TransactionPayload[] {
+  function getBlockTransactions(blockId: BlockDbId): TransactionPayload[] {
     return sql
       .prepare(
         `

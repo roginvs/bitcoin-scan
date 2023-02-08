@@ -33,7 +33,7 @@ import {
   PeerConnection,
 } from "../protocol/peer";
 import { joinBuffers } from "../protocol/utils";
-import { BlockId, createNodeStorage } from "./blockchain.node.storage";
+import { BlockDbId, createNodeStorage } from "./blockchain.node.storage";
 import { createLogger } from "../../logger/logger";
 import { createServer, Socket } from "net";
 import { buildSubscriber } from "../subscriber";
@@ -42,9 +42,14 @@ const { info, debug, warn } = createLogger("NODE");
 
 export type PeerAddr = readonly [string, number];
 
-export type NewBlockListener = (
+export type BeforeBlockSavedListener = (
   block: BitcoinBlock,
   currentHeight: number
+) => void;
+
+export type AfterBlockSavedListener = (
+  block: BitcoinBlock,
+  blockDbId: BlockDbId
 ) => void;
 
 function dumpBuf(buf: Buffer) {
@@ -88,8 +93,8 @@ Algoritm:
   
 */
 
-  const beforeBlockSavedListeners: NewBlockListener[] = [];
-  const afterBlockSavedListeners: NewBlockListener[] = [];
+  const beforeBlockSavedListeners: BeforeBlockSavedListener[] = [];
+  const afterBlockSavedListeners: AfterBlockSavedListener[] = [];
 
   const MAX_OUTGOING_PEERS = 10;
   const MAX_INCOMING_PEERS = 30;
@@ -131,9 +136,9 @@ Algoritm:
           socket: Socket;
         }
   ) {
-    const currentLastKnownBlockId = storage.getLastKnownBlockId();
-    const lastKnownHeight = currentLastKnownBlockId
-      ? currentLastKnownBlockId - 1
+    const currentLastKnownBlockDbId = storage.getLastKnownBlockId();
+    const lastKnownHeight = currentLastKnownBlockDbId
+      ? currentLastKnownBlockDbId - 1
       : 0;
 
     if (peerInfo.isOutgoing) {
@@ -595,7 +600,7 @@ Algoritm:
           `${block.timestamp.toISOString()} ${downloadInfo}`
       );
 
-      processBlockData(block, storageExpectingBlock.id - 1);
+      processBlockData(block, storageExpectingBlock.id);
       flushBlockBufferIfPossible();
     } else {
       debug(
@@ -614,10 +619,10 @@ Algoritm:
     givePeersTasksToDownloadBlocks();
   }
 
-  function processBlockData(block: BitcoinBlock, blockHeight: number) {
-    beforeBlockSavedListeners.forEach((cb) => cb(block, blockHeight));
+  function processBlockData(block: BitcoinBlock, blockDbId: BlockDbId) {
+    beforeBlockSavedListeners.forEach((cb) => cb(block, blockDbId));
     storage.saveBlockTransactions(block.hash, block.transactions);
-    afterBlockSavedListeners.forEach((cb) => cb(block, blockHeight));
+    afterBlockSavedListeners.forEach((cb) => cb(block, blockDbId));
     storage.pruneMempoolTransactions(block.transactions.map((tx) => tx.txid));
   }
 
@@ -643,7 +648,7 @@ Algoritm:
           `${blockInBuffer[1]} (buf)`
       );
 
-      processBlockData(blockInBuffer[0], nextExpectingBlock.id - 1);
+      processBlockData(blockInBuffer[0], nextExpectingBlock.id);
 
       bufferedBlocks.delete(nextExpectingBlock.hash.toString("hex"));
     }
@@ -761,7 +766,7 @@ Algoritm:
   }
 
   function getSavedBlockRaw(
-    blockLocator: BlockHash | BlockId,
+    blockLocator: BlockHash | BlockDbId,
     removeWitnessInEachTransaction = false
   ) {
     const blockMeta = storage.getBlockHeader(blockLocator);
@@ -790,7 +795,7 @@ Algoritm:
     ) as BlockPayload;
     return [data, blockMeta.id] as const;
   }
-  function getSavedBlock(blockLocator: BlockHash | BlockId) {
+  function getSavedBlock(blockLocator: BlockHash | BlockDbId) {
     const data = getSavedBlockRaw(blockLocator);
     if (!data) {
       return null;
