@@ -45,12 +45,38 @@ export function createFinancialStorage(isMemory = false) {
      (_uniq);
 `);
 
-  function addBlockData(data: {
+  const removeUnspendTxSql = sql.prepare(
+    "delete from unspent_transaction_outputs where transaction_hash = ? and output_id = ?"
+  );
+  const addNewUnspentTxSql = sql.prepare(
+    `insert into unspent_transaction_outputs 
+    (transaction_hash, output_id, pub_script, value) values (?,?,?,?)`
+  );
+  const replaceLastProcessedBlockHashSql = sql.prepare(
+    `delete from last_processed_block_hash; ` +
+      `
+    insert into last_processed_block_hash (_uniq, block_hash) values (1, ?) `
+  );
+  interface AddBlockDataParams {
     unspentTxesToRemove: [txid: TransactionHash, out_number: number][];
-    addNewUnspentTxes: UnspentTxRow;
+    addNewUnspentTxes: UnspentTxRow[];
     blockId: BlockHash;
-  }) {
-    // TODO
+  }
+  function addBlockData(params: AddBlockDataParams) {
+    sql.transaction<(data: AddBlockDataParams) => void>((data) => {
+      data.unspentTxesToRemove.forEach(([txid, output_id]) =>
+        removeUnspendTxSql.run(txid, output_id)
+      );
+      data.addNewUnspentTxes.forEach((row) =>
+        addNewUnspentTxSql.run(
+          row.transaction_hash,
+          row.output_id,
+          row.pub_script,
+          row.value
+        )
+      );
+      replaceLastProcessedBlockHashSql.run(data.blockId);
+    })(params);
   }
 
   const getUnspentTxSql = sql.prepare(`
