@@ -7,12 +7,16 @@ import {
 import { Nominal } from "../../nominal_types/nominaltypes";
 import { getDbPath } from "../config";
 
-interface UnspentTxRow {
+export interface UnspentTxRow {
   transaction_hash: TransactionHash;
   output_id: number;
-  pub_script: Buffer;
-  /** Or maybe bigint? */
-  value: number;
+  pub_script: PkScript;
+  value: BigInt;
+}
+export interface AddBlockDataParams {
+  unspentTxesToRemove: [txid: TransactionHash, out_number: number][];
+  addNewUnspentTxes: UnspentTxRow[];
+  blockId: BlockHash;
 }
 export function createFinancialStorage(isMemory = false) {
   const sql = new Database(isMemory ? ":memory:" : getDbPath("financial.db"));
@@ -58,11 +62,7 @@ export function createFinancialStorage(isMemory = false) {
   const addLastProcessedBlockHashSql = sql.prepare(
     `insert into last_processed_block_hash (_uniq, block_hash) values (1, ?) `
   );
-  interface AddBlockDataParams {
-    unspentTxesToRemove: [txid: TransactionHash, out_number: number][];
-    addNewUnspentTxes: UnspentTxRow[];
-    blockId: BlockHash;
-  }
+
   function addBlockData(params: AddBlockDataParams) {
     sql.transaction<(data: AddBlockDataParams) => void>((data) => {
       data.unspentTxesToRemove.forEach(([txid, output_id]) =>
@@ -86,7 +86,7 @@ export function createFinancialStorage(isMemory = false) {
      unspent_transaction_outputs where transaction_hash = ? and output_id = ?
   `);
   function getUnspentTx(txid: TransactionHash, output_id: number) {
-    getUnspentTxSql.get(txid, output_id) as UnspentTxRow | undefined;
+    return getUnspentTxSql.get(txid, output_id) as UnspentTxRow | undefined;
   }
 
   function getLastProcessedBlockId() {
