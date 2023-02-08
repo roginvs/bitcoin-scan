@@ -52,10 +52,11 @@ export function createFinancialStorage(isMemory = false) {
     `insert into unspent_transaction_outputs 
     (transaction_hash, output_id, pub_script, value) values (?,?,?,?)`
   );
-  const replaceLastProcessedBlockHashSql = sql.prepare(
-    `delete from last_processed_block_hash; ` +
-      `
-    insert into last_processed_block_hash (_uniq, block_hash) values (1, ?) `
+  const removeLastProcessedBlock = sql.prepare(
+    `delete from last_processed_block_hash; `
+  );
+  const addLastProcessedBlockHashSql = sql.prepare(
+    `insert into last_processed_block_hash (_uniq, block_hash) values (1, ?) `
   );
   interface AddBlockDataParams {
     unspentTxesToRemove: [txid: TransactionHash, out_number: number][];
@@ -75,7 +76,8 @@ export function createFinancialStorage(isMemory = false) {
           row.value
         )
       );
-      replaceLastProcessedBlockHashSql.run(data.blockId);
+      removeLastProcessedBlock.run();
+      addLastProcessedBlockHashSql.run(data.blockId);
     })(params);
   }
 
