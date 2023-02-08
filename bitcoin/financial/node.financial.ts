@@ -2,25 +2,17 @@ import { createLogger } from "../../logger/logger";
 import { createBitcoinBlocksNode } from "../blockchain/blockchain.node";
 import { BlockId } from "../node";
 import { genesisBlockHash } from "../protocol/consts";
-import { BitcoinBlock, BitcoinTransaction } from "../protocol/messages.parse";
-import { PkScript } from "../protocol/messages.types";
+import { BitcoinBlock } from "../protocol/messages.parse";
 import {
   AddBlockDataParams,
   createFinancialStorage,
 } from "./node.financial.storage";
+import { validateScript } from "./validateScript";
 const { info, debug, warn } = createLogger("FINA");
 
 function dumpBuf(buf: Buffer) {
   const str = Buffer.from(buf).reverse().toString("hex");
   return str.slice(0, 8) + "-" + str.slice(-8);
-}
-
-function validateScript(
-  pkScript: PkScript,
-  tx: BitcoinTransaction,
-  txInIndex: number
-) {
-  // TODO
 }
 
 export function addFinancial(node: ReturnType<typeof createBitcoinBlocksNode>) {
