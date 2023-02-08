@@ -36,6 +36,7 @@ import { joinBuffers } from "../bitcoin.protocol/utils";
 import { BlockId, createNodeStorage } from "./node.storage";
 import { createLogger } from "../logger/logger";
 import { createServer, Socket } from "net";
+import { buildSubscriber } from "./subscriber";
 
 const { info, debug, warn } = createLogger("NODE");
 
@@ -45,7 +46,6 @@ export type NewBlockListener = (
   block: BitcoinBlock,
   currentHeight: number
 ) => void;
-export type SubscribeEvent<T extends Function> = (cb: T) => () => void;
 
 function dumpBuf(buf: Buffer) {
   const str = Buffer.from(buf).reverse().toString("hex");
@@ -874,19 +874,4 @@ Algoritm:
   };
 
   return me;
-}
-
-function buildSubscriber<T extends Function>(
-  listeners: T[]
-): SubscribeEvent<T> {
-  return (cb) => {
-    listeners.push(cb);
-    return () => {
-      const idx = listeners.indexOf(cb);
-      if (idx < 0) {
-        throw new Error(`Unable to unsubscribe`);
-      }
-      listeners.splice(idx, 1);
-    };
-  };
 }
