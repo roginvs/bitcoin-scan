@@ -1,10 +1,12 @@
-# Scan bitcoin blockchain for vulnerable signatures
+# Scan Bitcoin blockchain for vulnerable signatures
 
 This is a small project to fetch all bitcoin transactions and to find out signatures with the same k value.
 
 Currently works only with P2PKH scripts.
 
 In 2023 this is not very actual because all known clients do not have this vulnerability and all vulnerabile wallets are empty now.
+
+It is easier to obtain the same result just by patching official Bitcoin client but I made this project in order to learn Bitcoin internals.
 
 ## Usage
 
