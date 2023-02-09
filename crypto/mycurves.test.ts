@@ -1,6 +1,6 @@
-import { sha256 } from "../bitcoin/protocol/hashes";
+import { sha256 } from "../bitcoin/utils/hashes";
 import { readTx } from "../bitcoin/protocol/messages.parse";
-import { check_P2PKH_SIGHASH_ALL } from "../bitcoin/protocol/script";
+import { check_P2PKH_SIGHASH_ALL } from "../bitcoin/script/script";
 import { sourceTxRaw, spendingTxRaw } from "../bitcoin/protocol/testdata";
 import { Secp256k1 } from "../my-elliptic-curves/curves.named";
 import { check_signature } from "../my-elliptic-curves/ecdsa";

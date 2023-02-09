@@ -4,11 +4,11 @@ import {
   create_spki_der_from_pubkey,
   repackSignature,
 } from "./asn1";
-import { ripemd160, sha256 } from "./hashes";
-import { packTx } from "./messages.create";
-import { BitcoinTransaction } from "./messages.parse";
-import { PkScript, SignatureScript } from "./messages.types";
-import { joinBuffers } from "./utils";
+import { ripemd160, sha256 } from "../utils/hashes";
+import { packTx } from "../protocol/messages.create";
+import { BitcoinTransaction } from "../protocol/messages.parse";
+import { PkScript, SignatureScript } from "../protocol/messages.types";
+import { joinBuffers } from "../utils/joinBuffer";
 
 export function isSourceScriptP2PKH(sourcePkScript: PkScript) {
   if (sourcePkScript.length !== 0x14 + 5) {

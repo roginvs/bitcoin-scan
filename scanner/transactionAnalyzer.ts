@@ -7,7 +7,7 @@ import {
   isSourceScriptP2PKH,
   FAILED_VERIFICATION,
   FAILED_PUBHASHES_NOT_EQUAL,
-} from "../bitcoin/protocol/script";
+} from "../bitcoin/script/script";
 import { createTransactionsStorage } from "./database/scanner.database";
 import { createLogger } from "../logger/logger";
 import { derivePrivateKeyFromPair } from "../crypto/keyDerive";

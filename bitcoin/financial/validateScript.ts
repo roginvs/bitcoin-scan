@@ -9,7 +9,7 @@ import {
   FAILED_VERIFICATION,
   isSignatureScriptLooksLikeP2PKH,
   isSourceScriptP2PKH,
-} from "../protocol/script";
+} from "../script/script";
 
 const { info, debug, warn } = createLogger("SCRIPT");
 

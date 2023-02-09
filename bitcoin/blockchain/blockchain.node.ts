@@ -32,7 +32,7 @@ import {
   createOutgoingPeer,
   PeerConnection,
 } from "../protocol/peer";
-import { joinBuffers } from "../protocol/utils";
+import { joinBuffers } from "../utils/joinBuffer";
 import { BlockDbId, createNodeStorage } from "./blockchain.node.storage";
 import { createLogger } from "../../logger/logger";
 import { createServer, Socket } from "net";

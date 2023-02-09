@@ -1,17 +1,17 @@
-import { sha256 } from "./hashes";
-import { readTx } from "./messages.parse";
+import { sha256 } from "../utils/hashes";
+import { readTx } from "../protocol/messages.parse";
 import {
   PkScript,
   SignatureScript,
   TransactionPayload,
-} from "./messages.types";
+} from "../protocol/messages.types";
 import {
   check_P2PKH_SIGHASH_ALL,
   isSignatureScriptLooksLikeP2PKH,
   isSourceScriptP2PKH,
   FAILED_VERIFICATION,
 } from "./script";
-import { sourceTxRaw, spendingTxRaw } from "./testdata";
+import { sourceTxRaw, spendingTxRaw } from "../protocol/testdata";
 
 // Bitcoin IDE
 // https://vlad15june.github.io/bitcoinIDE/build/editor.html

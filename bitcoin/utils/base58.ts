@@ -1,5 +1,5 @@
 import { sha256 } from "./hashes";
-import { joinBuffers } from "./utils";
+import { joinBuffers } from "./joinBuffer";
 
 export function base58encode(data: Buffer) {
   const codeString =

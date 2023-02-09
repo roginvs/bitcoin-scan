@@ -1,4 +1,4 @@
-import { joinBuffers } from "./utils";
+import { joinBuffers } from "../utils/joinBuffer";
 
 export function packIntForAsn(b: Buffer) {
   if (b[0] !== 0 && !(b[0] & 0b10000000)) {

@@ -1,5 +1,5 @@
 import { genesisBlockHash } from "./consts";
-import { sha256 } from "./hashes";
+import { sha256 } from "../utils/hashes";
 import {
   buildMessage,
   createGetdataMessage,
@@ -9,7 +9,7 @@ import {
 import { parseMessage, readTx } from "./messages.parse";
 import { HashType, MessagePayload } from "./messages.types";
 import { sourceTxRaw, spendingTxRaw } from "./testdata";
-import { joinBuffers } from "./utils";
+import { joinBuffers } from "../utils/joinBuffer";
 
 function bufFromStr(str: string) {
   return Buffer.from(

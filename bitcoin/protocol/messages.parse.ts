@@ -1,5 +1,5 @@
 import { bitcoinMessageMagic, protocolVersion } from "./consts";
-import { sha256 } from "./hashes";
+import { sha256 } from "../utils/hashes";
 import { packTx } from "./messages.create";
 import {
   BitcoinMessage,
@@ -16,7 +16,7 @@ import {
   WitnessStackItem,
   BlockHeaderPayload,
 } from "./messages.types";
-import { joinBuffers } from "./utils";
+import { joinBuffers } from "../utils/joinBuffer";
 
 export function parseMessage(buf: Buffer) {
   if (buf.length < 4 + 12 + 4 + 4) {

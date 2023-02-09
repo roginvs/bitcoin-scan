@@ -1,5 +1,5 @@
 import { bitcoinMessageMagic, protocolVersion } from "./consts";
-import { sha256 } from "./hashes";
+import { sha256 } from "../utils/hashes";
 import {
   BitcoinTransaction,
   BitcoinTransactionIn,
@@ -13,7 +13,7 @@ import {
   TransactionPayload,
 } from "./messages.types";
 import { nodeId } from "./nodeid";
-import { joinBuffers } from "./utils";
+import { joinBuffers } from "../utils/joinBuffer";
 
 export function buildMessage(command: string, payload: MessagePayload) {
   const commandBuf = Buffer.alloc(12).fill(0);

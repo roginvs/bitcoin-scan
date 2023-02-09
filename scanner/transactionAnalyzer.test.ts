@@ -3,9 +3,9 @@ import {
   asn1parse,
   packAsn1PairOfIntegers,
   packIntForAsn,
-} from "../bitcoin/protocol/asn1";
+} from "../bitcoin/script/asn1";
 import { compressPublicKey } from "../bitcoin/protocol/compressPublicKey";
-import { ripemd160, sha256 } from "../bitcoin/protocol/hashes";
+import { ripemd160, sha256 } from "../bitcoin/utils/hashes";
 import { packTx } from "../bitcoin/protocol/messages.create";
 import { BitcoinTransaction, readTx } from "../bitcoin/protocol/messages.parse";
 import {
@@ -14,9 +14,9 @@ import {
   TransactionHash,
   TransactionPayload,
 } from "../bitcoin/protocol/messages.types";
-import { isSourceScriptP2PKH } from "../bitcoin/protocol/script";
+import { isSourceScriptP2PKH } from "../bitcoin/script/script";
 import { sourceTxRaw, spendingTxRaw } from "../bitcoin/protocol/testdata";
-import { joinBuffers } from "../bitcoin/protocol/utils";
+import { joinBuffers } from "../bitcoin/utils/joinBuffer";
 import { Secp256k1 } from "../my-elliptic-curves/curves.named";
 import { signature } from "../my-elliptic-curves/ecdsa";
 import { createAnalyzer } from "./transactionAnalyzer";
