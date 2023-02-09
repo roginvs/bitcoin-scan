@@ -14,7 +14,7 @@ import {
   TransactionHash,
   TransactionPayload,
 } from "../bitcoin/protocol/messages.types";
-import { isSourceScriptP2PKH } from "../bitcoin/script/script";
+import { isSourceScriptP2PKH } from "../bitcoin/script/p2pkh";
 import { sourceTxRaw, spendingTxRaw } from "../bitcoin/protocol/testdata";
 import { joinBuffers } from "../bitcoin/utils/joinBuffer";
 import { Secp256k1 } from "../my-elliptic-curves/curves.named";

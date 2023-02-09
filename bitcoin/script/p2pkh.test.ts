@@ -10,7 +10,7 @@ import {
   isSignatureScriptLooksLikeP2PKH,
   isSourceScriptP2PKH,
   FAILED_VERIFICATION,
-} from "./script";
+} from "./p2pkh";
 import { sourceTxRaw, spendingTxRaw } from "../protocol/testdata";
 
 // Bitcoin IDE
