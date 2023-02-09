@@ -30,6 +30,7 @@ export function validateScript(
     return;
   }
 
+  // TODO: Check not only for SIGHASH_ALL
   const signatureCheck = check_P2PKH_SIGHASH_ALL(tx, txInIndex, pkScript);
 
   if (typeof signatureCheck === "string") {
@@ -57,5 +58,5 @@ export function validateScript(
   }
 
   // TODO: Call callback
-  throw new Error("TODO: Found first signature");
+  throw new Error("TODO: Found first P2PKH signature");
 }
