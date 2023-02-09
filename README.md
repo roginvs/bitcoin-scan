@@ -45,3 +45,5 @@ https://en.bitcoin.it/wiki/Protocol_documentation
 https://bitnodes.io/nodes/?q=Finland
 
 https://developer.bitcoin.org/devguide/contracts.html
+
+https://github.com/bitcoin/bips/blob/master/README.mediawiki
