@@ -6,10 +6,9 @@ import {
   TransactionPayload,
 } from "../protocol/messages.types";
 import {
-  check_P2PKH_SIGHASH_ALL,
+  check_P2PKH,
   isSignatureScriptLooksLikeP2PKH,
   isSourceScriptP2PKH,
-  FAILED_VERIFICATION,
 } from "./p2pkh";
 import { sourceTxRaw, spendingTxRaw } from "../protocol/testdata";
 
@@ -64,7 +63,7 @@ describe(`Scripting`, () => {
     const sourcePkScript =
       sourceTxParsed.txOut[spendingTxParsed.txIn[0].outpointIndex].script;
 
-    const result = check_P2PKH_SIGHASH_ALL(spendingTxParsed, 0, sourcePkScript);
+    const result = check_P2PKH(spendingTxParsed, 0, sourcePkScript);
 
     if (typeof result === "string") {
       throw new Error(result);
@@ -101,7 +100,7 @@ describe(`Scripting`, () => {
 
     const [tx, rest] = readTx(spendingRaw);
     expect(rest.length).toBe(0);
-    const result = check_P2PKH_SIGHASH_ALL(tx, 0, pkScript);
+    const result = check_P2PKH(tx, 0, pkScript);
 
     if (typeof result === "string") {
       throw new Error(result);
@@ -129,7 +128,7 @@ describe(`Scripting`, () => {
 
     const [tx, rest] = readTx(spendingRaw);
     expect(rest.length).toBe(0);
-    const result = check_P2PKH_SIGHASH_ALL(tx, 0, pkScript);
+    const result = check_P2PKH(tx, 0, pkScript);
 
     if (typeof result === "string") {
       throw new Error(result);
@@ -157,9 +156,7 @@ describe(`Scripting`, () => {
 
     const [tx, rest] = readTx(spendingRaw);
     expect(rest.length).toBe(0);
-    const result = check_P2PKH_SIGHASH_ALL(tx, 0, pkScript);
-
-    expect(result).toBe(FAILED_VERIFICATION);
+    expect(() => check_P2PKH(tx, 0, pkScript)).toThrow();
   });
 
   it(`Verifies one more weird tx`, () => {
@@ -230,7 +227,7 @@ describe(`Scripting`, () => {
     const [tx, rest] = readTx(spendingRaw);
 
     expect(rest.length).toBe(0);
-    const result = check_P2PKH_SIGHASH_ALL(tx, 1, pkScript);
+    const result = check_P2PKH(tx, 1, pkScript);
 
     if (typeof result === "string") {
       throw new Error(result);
@@ -253,7 +250,7 @@ describe(`Scripting`, () => {
     const [tx, rest] = readTx(spendingRaw);
 
     expect(rest.length).toBe(0);
-    const result = check_P2PKH_SIGHASH_ALL(tx, 4, pkScript);
+    const result = check_P2PKH(tx, 4, pkScript);
 
     if (typeof result === "string") {
       throw new Error(result);

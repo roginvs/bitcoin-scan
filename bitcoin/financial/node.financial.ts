@@ -3,6 +3,8 @@ import { createBitcoinBlocksNode } from "../blockchain/blockchain.node";
 import { BlockId } from "../node";
 import { genesisBlockHash } from "../protocol/consts";
 import { BitcoinBlock } from "../protocol/messages.parse";
+import { ECDSASignatureValidatedListener } from "../script/types";
+import { buildSubscriber } from "../subscriber";
 import {
   AddBlockDataParams,
   createFinancialStorage,
@@ -17,6 +19,8 @@ function dumpBuf(buf: Buffer) {
 
 export function addFinancial(node: ReturnType<typeof createBitcoinBlocksNode>) {
   const storage = createFinancialStorage();
+
+  const onValidatedSignature: ECDSASignatureValidatedListener[] = [];
 
   function processBlock(block: BitcoinBlock, blockId: BlockId) {
     debug(`Processing block ${dumpBuf(block.hash)} id=${blockId}`);
@@ -66,7 +70,14 @@ export function addFinancial(node: ReturnType<typeof createBitcoinBlocksNode>) {
             }
           }
 
-          validateScript(inputForThisTx.pub_script, tx, txInIndex);
+          validateScript(
+            inputForThisTx.pub_script,
+            tx,
+            txInIndex,
+            (sigData) => {
+              onValidatedSignature.forEach((f) => f(sigData));
+            }
+          );
 
           data.unspentTxesToRemove.push([
             inputForThisTx.transaction_hash,
@@ -132,5 +143,6 @@ export function addFinancial(node: ReturnType<typeof createBitcoinBlocksNode>) {
 
   return {
     ...node,
+    onValidatedSignature: buildSubscriber(onValidatedSignature),
   };
 }

@@ -1,10 +1,11 @@
 import { sha256 } from "../bitcoin/utils/hashes";
 import { readTx } from "../bitcoin/protocol/messages.parse";
-import { check_P2PKH_SIGHASH_ALL } from "../bitcoin/script/p2pkh";
+import { check_P2PKH } from "../bitcoin/script/p2pkh";
 import { sourceTxRaw, spendingTxRaw } from "../bitcoin/protocol/testdata";
 import { Secp256k1 } from "../my-elliptic-curves/curves.named";
 import { check_signature } from "../my-elliptic-curves/ecdsa";
 import { uncompressPublicKey } from "../my-elliptic-curves/uncompressPublicKey";
+import { ECDSASignatureInfo } from "../bitcoin/script/types";
 
 describe(`Scripting`, () => {
   it(`Verify transactions with BigInt implementation`, () => {
@@ -15,7 +16,7 @@ describe(`Scripting`, () => {
     const sourcePkScript =
       sourceTxParsed.txOut[spendingTxParsed.txIn[0].outpointIndex].script;
 
-    const result = check_P2PKH_SIGHASH_ALL(spendingTxParsed, 0, sourcePkScript);
+    const result = check_P2PKH(spendingTxParsed, 0, sourcePkScript);
 
     if (typeof result === "string") {
       throw new Error(result);

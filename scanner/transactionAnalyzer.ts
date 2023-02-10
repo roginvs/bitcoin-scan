@@ -2,7 +2,7 @@ import { compressPublicKey } from "../bitcoin/protocol/compressPublicKey";
 import { packTx } from "../bitcoin/protocol/messages.create";
 import { BitcoinTransaction } from "../bitcoin/protocol/messages.parse";
 import {
-  check_P2PKH_SIGHASH_ALL,
+  check_P2PKH,
   isSignatureScriptLooksLikeP2PKH,
   isSourceScriptP2PKH,
   FAILED_VERIFICATION,
@@ -50,11 +50,7 @@ export function createAnalyzer(isMemory: boolean = false) {
         continue;
       }
 
-      const signatureCheck = check_P2PKH_SIGHASH_ALL(
-        tx,
-        index,
-        unspentOutput.pub_script
-      );
+      const signatureCheck = check_P2PKH(tx, index, unspentOutput.pub_script);
 
       if (typeof signatureCheck === "string") {
         debug(`in ${index} signature not verified: ${signatureCheck}`);

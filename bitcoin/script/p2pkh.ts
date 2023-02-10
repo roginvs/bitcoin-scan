@@ -9,6 +9,8 @@ import { packTx } from "../protocol/messages.create";
 import { BitcoinTransaction } from "../protocol/messages.parse";
 import { PkScript, SignatureScript } from "../protocol/messages.types";
 import { joinBuffers } from "../utils/joinBuffer";
+import { ECDSASignatureValidatedListener } from "./types";
+import { compressPublicKey } from "../protocol/compressPublicKey";
 
 export function isSourceScriptP2PKH(sourcePkScript: PkScript) {
   if (sourcePkScript.length !== 0x14 + 5) {
@@ -68,10 +70,11 @@ export function isSignatureScriptLooksLikeP2PKH(inputScript: SignatureScript) {
   };
 }
 
-export const FAILED_VERIFICATION = "Verification failed";
-export const FAILED_PUBHASHES_NOT_EQUAL = "Public key hashes are not equal";
-
-export function check_P2PKH_SIGHASH_ALL(
+/**
+ * If not a P2PKH returns string with description
+ * If is a P2PKH then it throws if signature is not valid
+ */
+export function check_P2PKH(
   spending: BitcoinTransaction,
   spendingIndex: number,
   sourcePkScript: PkScript
@@ -88,10 +91,10 @@ export function check_P2PKH_SIGHASH_ALL(
   const { pubKey, signatureDer, hashCodeType } = inputScriptParsed;
   const pubkeyHashObserved = ripemd160(sha256(pubKey));
   if (!pubkeyHashExpected.equals(pubkeyHashObserved)) {
-    return FAILED_PUBHASHES_NOT_EQUAL;
+    throw new Error("Public key hashes are not equal");
   }
   if (hashCodeType !== 0x01) {
-    return `This hashCodeType=${hashCodeType} is not supported yet`;
+    throw new Error(`This hashCodeType=${hashCodeType} is not supported yet`);
   }
 
   const txNew: BitcoinTransaction = {
@@ -155,7 +158,7 @@ export function check_P2PKH_SIGHASH_ALL(
     if (verifyResultIfSignatureRepacked) {
       // ok, just an issue with DER encoding
     } else {
-      return FAILED_VERIFICATION;
+      throw new Error(`Signature verification failed`);
     }
   }
 
@@ -185,10 +188,15 @@ export function check_P2PKH_SIGHASH_ALL(
     throw new Error(`Internal error: not a buffer`);
   }
 
+  const pubKeyCompressed = compressPublicKey(pubKey);
+  if (!pubKeyCompressed) {
+    throw new Error(`Failed to compress public key`);
+  }
+
   return {
     r,
     s,
     msg: dataToVerify,
-    pubKey,
+    pubKeyCompressed,
   };
 }
