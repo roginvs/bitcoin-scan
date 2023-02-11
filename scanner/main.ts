@@ -17,17 +17,17 @@ node.onAfterBlockSaved(() => {
   );
 });
 
-const pruning = process.env.SCANNER_PRUNE
-  ? parseInt("process.env.SCANNER_PRUNE")
+const keepLastNBlocks = process.env.SCANNER_PRUNE
+  ? parseInt(process.env.SCANNER_PRUNE)
   : 0;
-if (pruning && pruning > 3) {
+if (keepLastNBlocks && keepLastNBlocks > 3) {
   info(`
-========================================
-Scanner will prune processed blocks data
-========================================
+============================================================================
+Scanner will prune processed blocks data keeping only last ${keepLastNBlocks} blocks
+============================================================================
 `);
   // Scanner will remove it because it have own database for specific txes
   node.onBeforeBlockSaved(() => {
-    node.pruneSavedTxes(pruning);
+    node.pruneSavedTxes(keepLastNBlocks);
   });
 }
