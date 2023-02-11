@@ -93,7 +93,7 @@ export function check_P2PKH(
   if (!pubkeyHashExpected.equals(pubkeyHashObserved)) {
     throw new Error("Public key hashes are not equal");
   }
-  if (hashCodeType !== 0x01) {
+  if (hashCodeType !== 0x01 && hashCodeType !== 0x00) {
     throw new Error(`This hashCodeType=${hashCodeType} is not supported yet`);
   }
 
@@ -120,7 +120,7 @@ export function check_P2PKH(
     joinBuffers(
       packTx(txNew),
       // hashTypeCode
-      Buffer.from("01000000", "hex")
+      Buffer.from([hashCodeType, 0, 0, 0])
     )
   );
 
