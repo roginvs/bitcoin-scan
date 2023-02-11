@@ -31,8 +31,12 @@ Scanner will prune processed blocks data keeping only last ${keepLastNBlocks} bl
   });
 }
 
-process.on("SIGINT", () => {
-  info("Received SIGINT, terminating");
-  analyzer.close();
-  node.stop();
-});
+setTimeout(() => {
+  // During development node & other parts might have lots of synchronous work on startup
+  // Adding a SIGINT handler will prevent process from exiting until all synchronous work is done
+  process.on("SIGINT", () => {
+    info("Received SIGINT, terminating");
+    analyzer.close();
+    node.stop();
+  });
+}, 20);
