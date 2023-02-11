@@ -94,6 +94,9 @@ export function check_P2PKH(
     throw new Error("Public key hashes are not equal");
   }
   if (hashCodeType !== 0x01 && hashCodeType !== 0x00) {
+    console.info(`Spending tx index=${spendingIndex} txData=`);
+    console.info(packTx(spending).toString("hex"));
+    console.info(`pkScript =`, sourcePkScript.toString("hex"));
     throw new Error(`This hashCodeType=${hashCodeType} is not supported yet`);
   }
 
