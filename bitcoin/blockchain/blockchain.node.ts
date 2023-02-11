@@ -820,9 +820,12 @@ Algoritm:
     }
   }
 
-  // Connect to peers after small delay so if someone wants
-  // to do syncronous stuff on startup connections will not be blocked
   setTimeout(() => {
+    // We have to do it asynchronously so consumers can attach their callbacks
+    flushCatchUpTasks();
+
+    // Connect to peers after small delay so if someone wants
+    // to do syncronous stuff on startup connections will not be blocked
     connectToBootstapPeers();
   }, 1);
 
@@ -870,12 +873,12 @@ Algoritm:
 
   let catchupTasks:
     | [
-        lastBlockSelector: BlockHash | BlockDbId | null,
+        lastBlockSelector: BlockHash | BlockDbId | null | undefined,
         onBlockCatchup: AfterBlockSavedListener
       ][]
     | null = [];
   function catchUpBlocks(
-    lastBlockSelector: BlockHash | BlockDbId | null,
+    lastBlockSelector: BlockHash | BlockDbId | null | undefined,
     onBlockCatchup: AfterBlockSavedListener
   ) {
     if (!catchupTasks) {
@@ -892,7 +895,14 @@ Algoritm:
     }
 
     for (const [lastBlockSelector, onBlockCatchup] of catchupTasks) {
-      debug(`Start to catch-up from ${lastBlockSelector}`);
+      debug(
+        `Start to catch-up from ` +
+          (lastBlockSelector
+            ? typeof lastBlockSelector === "number"
+              ? `${lastBlockSelector}`
+              : dumpBuf(lastBlockSelector)
+            : "<none>")
+      );
       let cathingUpBlockIndex: BlockDbId | null;
 
       if (lastBlockSelector) {
@@ -902,6 +912,12 @@ Algoritm:
             `Cannot catch-up because ${lastBlockSelector} is not found`
           );
         }
+
+        debug(
+          `Found processed block ${dumpBuf(blockInfo[0].hash)} id=${
+            blockInfo[1]
+          }, will continue with the next one`
+        );
 
         cathingUpBlockIndex = blockInfo[1];
         cathingUpBlockIndex++;
@@ -925,7 +941,9 @@ Algoritm:
           break;
         }
 
-        debug(`Catching up block ${cathingUpBlockIndex}`);
+        debug(
+          `Catching up block ${dumpBuf(block.hash)} id=${cathingUpBlockIndex}`
+        );
         onBlockCatchup(block, cathingUpBlockIndex);
 
         cathingUpBlockIndex++;
