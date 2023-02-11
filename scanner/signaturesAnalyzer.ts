@@ -63,5 +63,6 @@ export function createSignaturesAnalyzer(isMemory: boolean = false) {
     get signaturesSaved() {
       return signaturesSaved;
     },
+    close: storage.close,
   };
 }

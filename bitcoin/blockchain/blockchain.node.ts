@@ -80,6 +80,7 @@ export function createBitcoinBlocksNode() {
 
   const storage = createNodeStorage();
 
+  let isTerminated = false;
   /*
 
 Algoritm:
@@ -212,7 +213,9 @@ Algoritm:
         } else {
           // It means we do not have any peers more. We will not get any new peers
           // So the best is to terminate
-          throw new Error(`No candidates for initial blockheaders download`);
+          if (!isTerminated) {
+            throw new Error(`No candidates for initial blockheaders download`);
+          }
         }
       }
     } else {
@@ -232,7 +235,7 @@ Algoritm:
       givePeersTasksToDownloadBlocks();
     }
 
-    if (peers.length === 0) {
+    if (peers.length === 0 && !isTerminated) {
       info(`We are out of peers, starting from the beginning`);
       connectToBootstapPeers();
     }
@@ -847,20 +850,23 @@ Algoritm:
   }
 
   const listeningPort = Number(process.env.NODE_LISTEN_PORT);
-  if (!isNaN(listeningPort)) {
-    const incomingServer = createServer((socket) => {
-      if (incomingPeersCount > MAX_INCOMING_PEERS) {
-        debug(
-          `Already have enough incoming peers, rejecting ${socket.remoteAddress}:${socket.remotePort}`
-        );
-        socket.destroy();
-      } else {
-        connectToPeer({
-          isOutgoing: false,
-          socket,
-        });
-      }
-    });
+
+  const incomingServer = !isNaN(listeningPort)
+    ? createServer((socket) => {
+        if (incomingPeersCount > MAX_INCOMING_PEERS) {
+          debug(
+            `Already have enough incoming peers, rejecting ${socket.remoteAddress}:${socket.remotePort}`
+          );
+          socket.destroy();
+        } else {
+          connectToPeer({
+            isOutgoing: false,
+            socket,
+          });
+        }
+      })
+    : null;
+  if (incomingServer) {
     incomingServer.on("listening", () => {
       info(`Listening at port ${listeningPort}`);
     });
@@ -957,6 +963,13 @@ Algoritm:
     catchupTasks = null;
   }
 
+  function stop() {
+    isTerminated = true;
+    storage.close();
+    peers.forEach((peer) => peer.close());
+    incomingServer?.close();
+  }
+
   const me = {
     destroy() {
       throw new Error(`Not implemented`);
@@ -966,6 +979,7 @@ Algoritm:
     onBeforeBlockSaved: buildSubscriber(beforeBlockSavedListeners),
     onAfterBlockSaved: buildSubscriber(afterBlockSavedListeners),
     catchUpBlocks,
+    stop,
   };
 
   return me;

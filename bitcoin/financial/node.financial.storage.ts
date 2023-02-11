@@ -98,5 +98,6 @@ export function createFinancialStorage(isMemory = false) {
     addBlockData,
     getUnspentTx,
     getLastProcessedBlockId,
+    close: () => sql.close(),
   };
 }

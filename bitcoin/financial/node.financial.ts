@@ -107,5 +107,9 @@ export function addFinancial(node: ReturnType<typeof createBitcoinBlocksNode>) {
   return {
     ...node,
     onValidatedSignature: buildSubscriber(onValidatedSignature),
+    stop: () => {
+      node.stop();
+      storage.close();
+    },
   };
 }

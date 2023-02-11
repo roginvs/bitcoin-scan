@@ -128,5 +128,6 @@ export function createSignaturesAnalyzerStorage(isMemory = false) {
     saveSignature,
     doWeHavePrivateKeyForThisPubKey,
     savePrivateKey,
+    close: () => sql.close(),
   };
 }

@@ -30,3 +30,9 @@ Scanner will prune processed blocks data keeping only last ${keepLastNBlocks} bl
     node.removeOldBlocksData(keepLastNBlocks);
   });
 }
+
+process.on("SIGINT", () => {
+  info("Received SIGINT, terminating");
+  analyzer.close();
+  node.stop();
+});

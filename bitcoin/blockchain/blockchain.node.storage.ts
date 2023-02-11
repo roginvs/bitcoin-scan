@@ -240,5 +240,6 @@ export function createNodeStorage(isMemory = false) {
     getAllMempoolTransactions,
     pruneMempoolTransactions,
     isMempoolTxExists,
+    close: () => sql.close(),
   };
 }
