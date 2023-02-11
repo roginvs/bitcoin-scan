@@ -104,21 +104,27 @@ export function check_P2PKH(
   const txNew: BitcoinTransaction = {
     ...spending,
     isWitness: false,
-    txIn: spending.txIn.map((txIn, index) => {
-      if (index !== spendingIndex) {
-        return {
-          ...txIn,
-          sequence: isSigHashNone ? 0 : txIn.sequence,
-          script: Buffer.alloc(0) as SignatureScript,
-        };
-      } else {
-        return {
-          ...txIn,
-          // We do not check OP_CODESEPARATORS here
-          script: sourcePkScript as Buffer as SignatureScript,
-        };
-      }
-    }),
+    txIn: spending.txIn
+      .map((txIn, index) => {
+        if (index !== spendingIndex) {
+          if (isSigHashAnyone) {
+            return null;
+          }
+          return {
+            ...txIn,
+            sequence: isSigHashNone ? 0 : txIn.sequence,
+            script: Buffer.alloc(0) as SignatureScript,
+          };
+        } else {
+          return {
+            ...txIn,
+            // We do not check OP_CODESEPARATORS here
+            script: sourcePkScript as Buffer as SignatureScript,
+          };
+        }
+      })
+      .filter((x) => x)
+      .map((x) => x!),
     txOut: isSigHashNone ? [] : spending.txOut,
   };
 
@@ -164,6 +170,13 @@ export function check_P2PKH(
     if (verifyResultIfSignatureRepacked) {
       // ok, just an issue with DER encoding
     } else {
+      console.info(
+        isSigHashNone,
+        isSigHashSingle,
+        isSigHashAnyone,
+        isSigHashAll
+      );
+
       console.info(`hashCodeType=${hashCodeType}`);
       console.info(`spendingIndex=${spendingIndex} `);
       console.info(`Spending tx`);
