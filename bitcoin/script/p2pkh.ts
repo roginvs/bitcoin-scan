@@ -101,17 +101,6 @@ export function check_P2PKH(
     !isSigHashNone && !isSigHashSingle && !!(hashCodeType & 0x00000080);
   const isSigHashAll = !isSigHashNone && !isSigHashSingle && !isSigHashAnyone;
 
-  /*
-  if (hashCodeType !== 0x01 && hashCodeType !== 0x00) {
-    console.info(`Spending tx index=${spendingIndex} txData=`);
-    console.info(packTx(spending).toString("hex"));
-    console.info(`pkScript =`, sourcePkScript.toString("hex"));
-    throw new Error(`This hashCodeType=${hashCodeType} is not supported yet`);
-  }
-  */
-
-  //console.info(spending);
-
   const txNew: BitcoinTransaction = {
     ...spending,
     isWitness: false,
@@ -175,6 +164,11 @@ export function check_P2PKH(
     if (verifyResultIfSignatureRepacked) {
       // ok, just an issue with DER encoding
     } else {
+      console.info(`hashCodeType=${hashCodeType}`);
+      console.info(`spendingIndex=${spendingIndex} `);
+      console.info(`Spending tx`);
+      console.info(packTx(spending).toString("hex"));
+      console.info(`pkScript =`, sourcePkScript.toString("hex"));
       throw new Error(`Signature verification failed`);
     }
   }
