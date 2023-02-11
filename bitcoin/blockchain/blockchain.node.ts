@@ -826,6 +826,7 @@ Algoritm:
 
     // Connect to peers after small delay so if someone wants
     // to do syncronous stuff on startup connections will not be blocked
+    info(`Starting network connections...`);
     connectToBootstapPeers();
   }, 1);
 
