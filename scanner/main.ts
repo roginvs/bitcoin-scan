@@ -13,7 +13,7 @@ const node = createBitcoinNode();
 node.onValidatedSignature((sigInfo) => analyzer.ecdsaSignature(sigInfo));
 node.onAfterBlockSaved(() => {
   info(
-    `signaturesSaved=${analyzer.signaturesSaved} keysFound=${analyzer.keysFound}`
+    `Block was saved. Status: signaturesSaved=${analyzer.signaturesSaved} keysFound=${analyzer.keysFound}`
   );
 });
 
