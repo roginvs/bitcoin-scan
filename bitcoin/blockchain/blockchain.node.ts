@@ -173,6 +173,9 @@ Algoritm:
   }
 
   function performInitialHeadersDownload(peer: PeerConnection) {
+    if (isTerminated) {
+      return;
+    }
     const fewLastKnownBlocks = storage.getLastKnownBlocksHashes();
     if (fewLastKnownBlocks.length > 0) {
       peer.send(createGetheadersMessage(fewLastKnownBlocks));
@@ -235,9 +238,11 @@ Algoritm:
       givePeersTasksToDownloadBlocks();
     }
 
-    if (peers.length === 0 && !isTerminated) {
-      info(`We are out of peers, starting from the beginning`);
-      connectToBootstapPeers();
+    if (peers.length === 0) {
+      if (!isTerminated) {
+        info(`We are out of peers, starting from the beginning`);
+        connectToBootstapPeers();
+      }
     }
   }
 
@@ -701,6 +706,9 @@ Algoritm:
     if (!canFetchBlocks) {
       throw new Error(`Internal error: this should never be called`);
     }
+    if (isTerminated) {
+      return;
+    }
     if (bufferedBlocks.size >= MAX_BUFFERED_BLOCKS) {
       debug(`Blocks: buffer is full!`);
       // We already have a lot data which is unprocessed yet
@@ -815,6 +823,9 @@ Algoritm:
   }
 
   function connectToBootstapPeers() {
+    if (isTerminated) {
+      return;
+    }
     for (const addr of bootstrapPeers) {
       connectToPeer({
         isOutgoing: true,
@@ -964,6 +975,7 @@ Algoritm:
   }
 
   function stop() {
+    info(`Terminating`);
     isTerminated = true;
     storage.close();
     peers.forEach((peer) => peer.close());
