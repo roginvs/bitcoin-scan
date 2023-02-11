@@ -943,7 +943,9 @@ Algoritm:
         }
 
         info(
-          `Catching up block ${dumpBuf(block.hash)} id=${cathingUpBlockIndex}`
+          `Catching up block ${dumpBuf(
+            block.hash
+          )} id=${cathingUpBlockIndex} date=${block.timestamp.toISOString()}`
         );
         onBlockCatchup(block, cathingUpBlockIndex);
 
