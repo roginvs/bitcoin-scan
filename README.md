@@ -42,6 +42,8 @@ https://en.bitcoin.it/wiki/Script
 
 https://en.bitcoin.it/wiki/Protocol_documentation
 
+https://en.bitcoin.it/wiki/Transaction
+
 https://bitnodes.io/nodes/?q=Finland
 
 https://developer.bitcoin.org/devguide/contracts.html
