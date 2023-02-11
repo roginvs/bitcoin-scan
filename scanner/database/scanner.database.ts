@@ -1,9 +1,4 @@
 import Database from "better-sqlite3";
-import {
-  PkScript,
-  TransactionHash,
-} from "../../bitcoin/protocol/messages.types";
-import { Nominal } from "../../nominal_types/nominaltypes";
 
 function getDbPath(dbFileName: string) {
   const dataFolder = process.env.SCANNER_STORAGE_DIR;
@@ -13,32 +8,19 @@ function getDbPath(dbFileName: string) {
   return dataFolder + "/" + dbFileName;
 }
 
-export type UnspentTxId = Nominal<"unspent tx id", number>;
-
-export interface TransactionRow {
+export interface SignatureRow {
   compressed_public_key: Buffer;
   msg: Buffer;
   r: Buffer;
   s: Buffer;
-  //spending_tx_hash: TransactionHash;
-  //spending_tx_input_index: number;
 }
 
-export function createTransactionsStorage(isMemory = false) {
+export function createSignaturesAnalyzerStorage(isMemory = false) {
   const sql = new Database(isMemory ? ":memory:" : getDbPath("/scanner.db"));
 
   sql.pragma("journal_mode = WAL");
   sql.pragma("auto_vacuum = FULL");
   sql.exec(`
-  CREATE TABLE IF NOT EXISTS unspent_transaction_output  (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, 
-    transaction_hash CHARACTER(32) NOT NULL, 
-    output_id INTEGER NOT NULL,
-    pub_script CHARACTER(32) NOT NULL
-  );
-  -- TODO: Maybe it will be better to remove output_id from this index
-  CREATE INDEX IF NOT EXISTS  unspent_hash_out ON unspent_transaction_output
-    (transaction_hash, output_id);
 
   CREATE TABLE IF NOT EXISTS signatures  (
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -49,15 +31,10 @@ export function createTransactionsStorage(isMemory = false) {
     -- spending_tx_hash CHARACTER(32) NOT NULL,
     -- spending_tx_input_index INTEGER NOT NULL
   );
-  
-  -- CREATE INDEX IF NOT EXISTS signature_pub_r ON signatures
-  --  (compressed_public_key, r);
-  -- Looks like having index only on r value is faster
-  -- TODO: Check substring(...) index (do we need to update queries too?)
-  DROP INDEX IF EXISTS signature_pub_r;
+
+  -- Having index (compressed_public_key, r) have the same performance
+  --  but takes more space
   CREATE INDEX IF NOT EXISTS signature_r ON signatures (r);
-
-
 
 
   CREATE TABLE IF NOT EXISTS found_keys (
@@ -65,8 +42,7 @@ export function createTransactionsStorage(isMemory = false) {
     compressed_public_key CHARACTER(33) NOT NULL, 
     bitcoin_wallet_comp CHARACTER(40), -- Have no idea about hard limit
     bitcoin_wallet_uncomp CHARACTER(40), -- Have no idea about hard limit
-    private_key CHARACTER(32) NOT NULL,
-    tx_hash_reversed CHARACTER(32) NOT NULL
+    private_key CHARACTER(32) NOT NULL
   );
   CREATE UNIQUE INDEX IF NOT EXISTS found_keys_pub_key ON found_keys
     (compressed_public_key);
@@ -75,47 +51,6 @@ export function createTransactionsStorage(isMemory = false) {
   // Use
   // .mode quote
   // to show values in sqlite console
-
-  const FIX_EXISTING_DUPLICATES = false;
-  if (FIX_EXISTING_DUPLICATES) {
-    sql.exec(`
-          delete from signatures where id in (
-           select id from signatures group by compressed_public_key, r,s, msg having count(*) > 1
-          );
-        `);
-  }
-
-  const insertSql = sql.prepare(`insert into unspent_transaction_output 
-    (transaction_hash, output_id, pub_script) values (?, ?, ?)`);
-  function addUnspentTxOutput(
-    hash: TransactionHash,
-    output_id: number,
-    pubScript: PkScript
-  ) {
-    insertSql.run(hash, output_id, pubScript);
-  }
-
-  const getUnspentSql = sql.prepare(
-    `
-      select id, pub_script from unspent_transaction_output 
-      where transaction_hash = ? and output_id = ?
-    `
-  );
-  function getUnspentOutput(hash: TransactionHash, output_id: number) {
-    return getUnspentSql.get(hash, output_id) as
-      | { id: UnspentTxId; pub_script: PkScript }
-      | undefined;
-  }
-
-  const removeUnpendTx = sql.prepare(
-    `
-       delete from unspent_transaction_output 
-      where id = ?
-    `
-  );
-  function removeUnspendTx(id: UnspentTxId) {
-    removeUnpendTx.run(id);
-  }
 
   const saveSignatureSql = sql.prepare(`
     insert into signatures (        
@@ -142,7 +77,7 @@ export function createTransactionsStorage(isMemory = false) {
   `);
 
   function getSignatures(compressed_public_key: Buffer, r: Buffer) {
-    return getSignaturesSql.all(compressed_public_key, r) as TransactionRow[];
+    return getSignaturesSql.all(compressed_public_key, r) as SignatureRow[];
   }
 
   function saveSignature(
@@ -166,15 +101,12 @@ export function createTransactionsStorage(isMemory = false) {
       .prepare(`select id from found_keys where compressed_public_key = ?`)
       .get(publicKey);
   }
-  /**
-   *
-   */
+
   function savePrivateKey(
     compressed_public_key: Buffer,
     walletComp: string,
     walletUncomp: string,
-    privateKey: Buffer,
-    tx_hash_reversed: Buffer
+    privateKey: Buffer
   ) {
     sql
       .prepare(
@@ -183,24 +115,15 @@ export function createTransactionsStorage(isMemory = false) {
         compressed_public_key,
         bitcoin_wallet_comp,
         bitcoin_wallet_uncomp,
-        private_key,
-        tx_hash_reversed
-      ) values (?, ?, ?, ?, ?)
+        private_key
+        
+      ) values (?, ?, ?, ?)
       `
       )
-      .run(
-        compressed_public_key,
-        walletComp,
-        walletUncomp,
-        privateKey,
-        tx_hash_reversed
-      );
+      .run(compressed_public_key, walletComp, walletUncomp, privateKey);
   }
 
   return {
-    addUnspentTxOutput,
-    getUnspentOutput,
-    removeUnspendTx,
     getSignatures,
     saveSignature,
     doWeHavePrivateKeyForThisPubKey,
