@@ -868,6 +868,74 @@ Algoritm:
     info(`Not accepting incoming connections`);
   }
 
+  let catchupTasks:
+    | [
+        lastBlockSelector: BlockHash | BlockDbId | null,
+        onBlockCatchup: AfterBlockSavedListener
+      ][]
+    | null = [];
+  function catchUpBlocks(
+    lastBlockSelector: BlockHash | BlockDbId | null,
+    onBlockCatchup: AfterBlockSavedListener
+  ) {
+    if (!catchupTasks) {
+      throw new Error(
+        `Too late to catch-up blocks, we alrady started connection. Do this earlier!`
+      );
+    }
+    catchupTasks.push([lastBlockSelector, onBlockCatchup]);
+  }
+
+  function flushCatchUpTasks() {
+    if (!catchupTasks) {
+      throw new Error(`Internal error`);
+    }
+
+    for (const [lastBlockSelector, onBlockCatchup] of catchupTasks) {
+      debug(`Start to catch-up from ${lastBlockSelector}`);
+      let cathingUpBlockIndex: BlockDbId | null;
+
+      if (lastBlockSelector) {
+        const blockInfo = getSavedBlock(lastBlockSelector);
+        if (!blockInfo) {
+          throw new Error(
+            `Cannot catch-up because ${lastBlockSelector} is not found`
+          );
+        }
+
+        cathingUpBlockIndex = blockInfo[1];
+        cathingUpBlockIndex++;
+      } else {
+        const genesisInfo = getSavedBlock(genesisBlockHash);
+        if (genesisInfo) {
+          cathingUpBlockIndex = genesisInfo[1];
+        } else {
+          cathingUpBlockIndex = null;
+        }
+      }
+
+      if (cathingUpBlockIndex === null) {
+        debug(`Blockchain do not even have genesis so nothing to catch up`);
+        continue;
+      }
+
+      while (true) {
+        const block = getSavedBlock(cathingUpBlockIndex)?.[0];
+        if (!block || block.transactions.length === 0) {
+          break;
+        }
+
+        debug(`Catching up block ${cathingUpBlockIndex}`);
+        onBlockCatchup(block, cathingUpBlockIndex);
+
+        cathingUpBlockIndex++;
+      }
+      debug(`Done with catch up, now ready to accept new blocks`);
+    }
+
+    catchupTasks = null;
+  }
+
   const me = {
     destroy() {
       throw new Error(`Not implemented`);
@@ -876,6 +944,7 @@ Algoritm:
     pruneSavedTxes,
     onBeforeBlockSaved: buildSubscriber(beforeBlockSavedListeners),
     onAfterBlockSaved: buildSubscriber(afterBlockSavedListeners),
+    catchUpBlocks,
   };
 
   return me;
