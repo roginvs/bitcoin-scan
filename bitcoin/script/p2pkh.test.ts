@@ -256,4 +256,24 @@ describe(`Scripting`, () => {
       throw new Error(result);
     }
   });
+
+  it(`Verifies hashCodeType = 0x02`, () => {
+    const result = check_P2PKH(
+      readTx(
+        Buffer.from(
+          "01000000015f386c8a3842c9a9dcfa9b78be785a40a7bda08b64646be3654301eaccfc8d5e010000008a4730440220bb4fbc495aa23babb2c2be4e3fb4a5dffefe20c8eff5940f135649c3ea96444a022004afcda966c807bb97622d3eefea828f623af306ef2b756782ee6f8a22a959a2024104f1939ae6b01e849bf05d0ed51fd5b92b79a0e313e3f389c726f11fa3e144d9227b07e8a87c0ee36372e967e090d11b777707aa73efacabffffa285c00b3622d6ffffffff0240420f00000000001976a914660d4ef3a743e3e696ad990364e555c271ad504b88ac2072c801000000001976a91421c43ce400901312a603e4207aadfd742be8e7da88ac00000000",
+          "hex"
+        ) as TransactionPayload
+      )[0],
+      0,
+      Buffer.from(
+        "76a91421c43ce400901312a603e4207aadfd742be8e7da88ac",
+        "hex"
+      ) as PkScript
+    );
+
+    if (typeof result === "string") {
+      throw new Error(result);
+    }
+  });
 });
