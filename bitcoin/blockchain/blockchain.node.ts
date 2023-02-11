@@ -807,7 +807,7 @@ Algoritm:
     return [block, data[1]] as const;
   }
 
-  function pruneSavedTxes(keepLastNBlocks: number) {
+  function removeOldBlocksData(keepLastNBlocks: number) {
     storage.pruneSavedTxes(keepLastNBlocks);
   }
 
@@ -960,7 +960,7 @@ Algoritm:
       throw new Error(`Not implemented`);
     },
     getSavedBlock,
-    pruneSavedTxes,
+    removeOldBlocksData,
     onBeforeBlockSaved: buildSubscriber(beforeBlockSavedListeners),
     onAfterBlockSaved: buildSubscriber(afterBlockSavedListeners),
     catchUpBlocks,

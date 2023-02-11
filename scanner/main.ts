@@ -26,8 +26,7 @@ if (keepLastNBlocks && keepLastNBlocks > 3) {
 Scanner will prune processed blocks data keeping only last ${keepLastNBlocks} blocks
 ============================================================================
 `);
-  // Scanner will remove it because it have own database for specific txes
   node.onBeforeBlockSaved(() => {
-    node.pruneSavedTxes(keepLastNBlocks);
+    node.removeOldBlocksData(keepLastNBlocks);
   });
 }
