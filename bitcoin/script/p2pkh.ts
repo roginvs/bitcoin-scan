@@ -93,12 +93,24 @@ export function check_P2PKH(
   if (!pubkeyHashExpected.equals(pubkeyHashObserved)) {
     throw new Error("Public key hashes are not equal");
   }
+
+  const isSigHashNone = (hashCodeType & 0x1f) === 0x00000002;
+  const isSigHashSingle =
+    !isSigHashNone && (hashCodeType & 0x1f) === 0x00000003;
+  const isSigHashAnyone =
+    !isSigHashNone && !isSigHashSingle && !!(hashCodeType & 0x00000080);
+  const isSigHashAll = !isSigHashNone && !isSigHashSingle && !isSigHashAnyone;
+
+  /*
   if (hashCodeType !== 0x01 && hashCodeType !== 0x00) {
     console.info(`Spending tx index=${spendingIndex} txData=`);
     console.info(packTx(spending).toString("hex"));
     console.info(`pkScript =`, sourcePkScript.toString("hex"));
     throw new Error(`This hashCodeType=${hashCodeType} is not supported yet`);
   }
+  */
+
+  //console.info(spending);
 
   const txNew: BitcoinTransaction = {
     ...spending,
@@ -107,6 +119,7 @@ export function check_P2PKH(
       if (index !== spendingIndex) {
         return {
           ...txIn,
+          sequence: isSigHashNone ? 0 : txIn.sequence,
           script: Buffer.alloc(0) as SignatureScript,
         };
       } else {
@@ -117,6 +130,7 @@ export function check_P2PKH(
         };
       }
     }),
+    txOut: isSigHashNone ? [] : spending.txOut,
   };
 
   const dataToVerify = sha256(
