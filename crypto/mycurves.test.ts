@@ -26,7 +26,7 @@ describe(`Scripting`, () => {
 
     const checkResult = check_signature({
       curve: Secp256k1,
-      publicKey: uncompressPublicKey(Secp256k1, result.pubKey),
+      publicKey: uncompressPublicKey(Secp256k1, result.pubKeyCompressed),
       msgHash,
       r: BigInt("0x" + result.r.toString("hex")),
       s: BigInt("0x" + result.s.toString("hex")),
