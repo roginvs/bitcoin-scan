@@ -896,7 +896,7 @@ Algoritm:
     }
 
     for (const [lastBlockSelector, onBlockCatchup] of catchupTasks) {
-      debug(
+      info(
         `Start to catch-up from ` +
           (lastBlockSelector
             ? typeof lastBlockSelector === "number"
@@ -942,14 +942,14 @@ Algoritm:
           break;
         }
 
-        debug(
+        info(
           `Catching up block ${dumpBuf(block.hash)} id=${cathingUpBlockIndex}`
         );
         onBlockCatchup(block, cathingUpBlockIndex);
 
         cathingUpBlockIndex++;
       }
-      debug(`Done with catch up, now ready to accept new blocks`);
+      info(`Done with this catch up`);
     }
 
     catchupTasks = null;
