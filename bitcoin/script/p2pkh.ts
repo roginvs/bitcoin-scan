@@ -1,16 +1,16 @@
 import { createPublicKey, verify } from "crypto";
-import {
-  asn1parse,
-  create_spki_der_from_pubkey,
-  repackSignature,
-} from "./asn1";
+import { create_spki_der_from_pubkey, repackSignature } from "./asn1";
 import { ripemd160, sha256 } from "../utils/hashes";
 import { packTx } from "../protocol/messages.create";
 import { BitcoinTransaction } from "../protocol/messages.parse";
 import { PkScript, SignatureScript } from "../protocol/messages.types";
 import { joinBuffers } from "../utils/joinBuffer";
-import { ECDSASignatureValidatedListener } from "./types";
 import { compressPublicKey } from "../protocol/compressPublicKey";
+import { extract_sig_r_and_s_from_der } from "./extract_sig_r_and_s_from_der";
+import {
+  msgHashIfSighashIsOutOfBounds,
+  verifySignatureIfSighashSingleIsOutOfBounds,
+} from "./p2pkh.sighashsingleoutofbounds";
 
 export function isSourceScriptP2PKH(sourcePkScript: PkScript) {
   if (sourcePkScript.length !== 0x14 + 5) {
@@ -156,10 +156,41 @@ export function check_P2PKH(
     format: "der",
   });
 
+  const [r, s] = extract_sig_r_and_s_from_der(signatureDer);
+
+  const pubKeyCompressed = compressPublicKey(pubKey);
+  if (!pubKeyCompressed) {
+    throw new Error(`Failed to compress public key`);
+  }
+
+  if (isSigHashSingleOutputOutOfBounds) {
+    const verifyResult = verifySignatureIfSighashSingleIsOutOfBounds(
+      pubKey,
+      signatureDer
+    );
+    if (!verifyResult) {
+      throw new Error(`SIGHASH_SINGLE out-of-bounds and still wrong signature`);
+    }
+    return {
+      r,
+      s,
+      // TODO: We save messages but it is enough to save hashes. Change to save hashes
+      msg: msgHashIfSighashIsOutOfBounds,
+      pubKeyCompressed,
+    };
+  }
+
   const verifyResult = verify(undefined, dataToVerify, pub, signatureDer);
-  if (!verifyResult) {
-    {
-      /*
+  if (verifyResult) {
+    return {
+      r,
+      s,
+      msg: dataToVerify,
+      pubKeyCompressed,
+    };
+  }
+
+  /*
       // This is an example how to verify using openssl command line tool
 
       fs.writeFileSync("tmp/data", dataToVerify);
@@ -173,67 +204,32 @@ export function check_P2PKH(
       // openssl dgst -verify pubkey -signature sig2 -keyform der data
       fs.writeFileSync("tmp/sig2", repackSignature(signatureDer));
       */
-    }
 
-    const verifyResultIfSignatureRepacked = verify(
-      undefined,
-      dataToVerify,
-      pub,
-      repackSignature(signatureDer)
-    );
-    if (verifyResultIfSignatureRepacked) {
-      // ok, just an issue with DER encoding
-    } else {
-      console.info(`isSigHashNone=${isSigHashNone}`);
-      console.info(
-        `isSigHashSingle=${isSigHashSingle} isSigHashSingleOutputOutOfBounds=${isSigHashSingleOutputOutOfBounds}`
-      );
-      console.info(`isSigHashAnyone=${isSigHashAnyone}`);
-      console.info(`isSigHashAll=${isSigHashAll}`);
-      console.info(`hashCodeType=${hashCodeType}`);
-      console.info(`spendingIndex=${spendingIndex} `);
-      console.info(`Spending tx`);
-      console.info(packTx(spending).toString("hex"));
-      console.info(`pkScript =`, sourcePkScript.toString("hex"));
-      throw new Error(`Signature verification failed`);
-    }
+  const verifyResultIfSignatureRepacked = verify(
+    undefined,
+    dataToVerify,
+    pub,
+    repackSignature(signatureDer)
+  );
+  if (verifyResultIfSignatureRepacked) {
+    return {
+      r,
+      s,
+      msg: dataToVerify,
+      pubKeyCompressed,
+    };
   }
 
-  let r: Buffer;
-  let s: Buffer;
-
-  const [asn1, rest] = asn1parse(signatureDer);
-  if (rest.length > 0) {
-    // Well, some transactions have signatures with data after asn1
-    // throw new Error(`Some data is left in asn`);
-  }
-  if (!Array.isArray(asn1)) {
-    throw new Error(`Not an array in the asn`);
-  }
-  if ((asn1[0] as any).type !== "integer") {
-    throw new Error(`First value is not a integer in asn`);
-  }
-  r = (asn1[0] as any).value;
-  if (!(r instanceof Buffer)) {
-    throw new Error(`Internal error: not a buffer`);
-  }
-  if ((asn1[1] as any).type !== "integer") {
-    throw new Error(`Second value is not a integer in asn`);
-  }
-  s = (asn1[1] as any).value;
-  if (!(r instanceof Buffer)) {
-    throw new Error(`Internal error: not a buffer`);
-  }
-
-  const pubKeyCompressed = compressPublicKey(pubKey);
-  if (!pubKeyCompressed) {
-    throw new Error(`Failed to compress public key`);
-  }
-
-  return {
-    r,
-    s,
-    msg: dataToVerify,
-    pubKeyCompressed,
-  };
+  console.info(`isSigHashNone=${isSigHashNone}`);
+  console.info(
+    `isSigHashSingle=${isSigHashSingle} isSigHashSingleOutputOutOfBounds=${isSigHashSingleOutputOutOfBounds}`
+  );
+  console.info(`isSigHashAnyone=${isSigHashAnyone}`);
+  console.info(`isSigHashAll=${isSigHashAll}`);
+  console.info(`hashCodeType=${hashCodeType}`);
+  console.info(`spendingIndex=${spendingIndex} `);
+  console.info(`Spending tx`);
+  console.info(packTx(spending).toString("hex"));
+  console.info(`pkScript =`, sourcePkScript.toString("hex"));
+  throw new Error(`Signature verification failed`);
 }
