@@ -317,7 +317,7 @@ describe(`Scripting`, () => {
     }
   });
 
-  it(`Verifies hashCodeType = 0x03 index=1`, () => {
+  it(`Verifies hashCodeType = 0x03 when outputs counts is less than input index`, () => {
     const result = check_P2PKH(
       readTx(
         Buffer.from(
