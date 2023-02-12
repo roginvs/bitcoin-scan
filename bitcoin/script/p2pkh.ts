@@ -228,7 +228,9 @@ export function check_P2PKH(
   console.info(`isSigHashAll=${isSigHashAll}`);
   console.info(`hashCodeType=${hashCodeType}`);
   console.info(`spendingIndex=${spendingIndex} `);
-  console.info(`Spending tx`);
+  console.info(
+    `Spending tx id = ` + Buffer.from(spending.txid).reverse().toString("hex")
+  );
   console.info(packTx(spending).toString("hex"));
   console.info(`pkScript =`, sourcePkScript.toString("hex"));
   throw new Error(`Signature verification failed`);
