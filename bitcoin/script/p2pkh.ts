@@ -95,10 +95,8 @@ export function check_P2PKH(
   }
 
   const isSigHashNone = (hashCodeType & 0x1f) === 0x00000002;
-  const isSigHashSingle =
-    !isSigHashNone && (hashCodeType & 0x1f) === 0x00000003;
-  const isSigHashAnyone =
-    !isSigHashNone && !isSigHashSingle && !!(hashCodeType & 0x00000080);
+  const isSigHashSingle = (hashCodeType & 0x1f) === 0x00000003;
+  const isSigHashAnyone = !!(hashCodeType & 0x00000080);
   const isSigHashAll = !isSigHashNone && !isSigHashSingle && !isSigHashAnyone;
 
   const isSigHashSingleOutputOutOfBounds =
