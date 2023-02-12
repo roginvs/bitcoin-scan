@@ -106,26 +106,37 @@ export function check_P2PKH(
     isWitness: false,
     txIn: spending.txIn
       .map((txIn, index) => {
-        if (index !== spendingIndex) {
-          if (isSigHashAnyone) {
-            return null;
-          }
-          return {
-            ...txIn,
-            sequence: isSigHashNone ? 0 : txIn.sequence,
-            script: Buffer.alloc(0) as SignatureScript,
-          };
-        } else {
+        if (index === spendingIndex) {
           return {
             ...txIn,
             // We do not check OP_CODESEPARATORS here
             script: sourcePkScript as Buffer as SignatureScript,
           };
         }
+        if (isSigHashAnyone) {
+          return null;
+        }
+        return {
+          ...txIn,
+          sequence: isSigHashNone || isSigHashSingle ? 0 : txIn.sequence,
+          script: Buffer.alloc(0) as SignatureScript,
+        };
       })
       .filter((x) => x)
       .map((x) => x!),
-    txOut: isSigHashNone ? [] : spending.txOut,
+    txOut: isSigHashNone
+      ? []
+      : isSigHashSingle
+      ? spending.txOut.slice(0, spendingIndex + 1).map((txOut, index) => {
+          if (index === spendingIndex) {
+            return txOut;
+          }
+          return {
+            script: Buffer.alloc(0) as PkScript,
+            value: BigInt("0xFFFFFFFFFFFFFFFF"),
+          };
+        })
+      : spending.txOut,
   };
 
   const dataToVerify = sha256(
