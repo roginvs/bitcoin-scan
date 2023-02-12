@@ -58,7 +58,7 @@ export function isSignatureScriptLooksLikeP2PKH(inputScript: SignatureScript) {
   if (inputScript.length !== 1 + signatureAndHashTypeLen + 1 + pubkeyLen) {
     return "some data is left on input script";
   }
-  const signatureDer = signatureAndHashType.slice(
+  const signatureDer = signatureAndHashType.subarray(
     0,
     signatureAndHashType.length - 1
   );
