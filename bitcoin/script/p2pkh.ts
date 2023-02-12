@@ -101,6 +101,9 @@ export function check_P2PKH(
     !isSigHashNone && !isSigHashSingle && !!(hashCodeType & 0x00000080);
   const isSigHashAll = !isSigHashNone && !isSigHashSingle && !isSigHashAnyone;
 
+  const isSigHashSingleOutputOutOfBounds =
+    isSigHashSingle && spendingIndex >= spending.txOut.length;
+
   const txNew: BitcoinTransaction = {
     ...spending,
     isWitness: false,
@@ -182,10 +185,11 @@ export function check_P2PKH(
       // ok, just an issue with DER encoding
     } else {
       console.info(`isSigHashNone=${isSigHashNone}`);
-      console.info(`isSigHashSingle=${isSigHashSingle}`);
+      console.info(
+        `isSigHashSingle=${isSigHashSingle} isSigHashSingleOutputOutOfBounds=${isSigHashSingleOutputOutOfBounds}`
+      );
       console.info(`isSigHashAnyone=${isSigHashAnyone}`);
       console.info(`isSigHashAll=${isSigHashAll}`);
-
       console.info(`hashCodeType=${hashCodeType}`);
       console.info(`spendingIndex=${spendingIndex} `);
       console.info(`Spending tx`);
