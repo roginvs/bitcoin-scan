@@ -181,12 +181,10 @@ export function check_P2PKH(
     if (verifyResultIfSignatureRepacked) {
       // ok, just an issue with DER encoding
     } else {
-      console.info(
-        isSigHashNone,
-        isSigHashSingle,
-        isSigHashAnyone,
-        isSigHashAll
-      );
+      console.info(`isSigHashNone=${isSigHashNone}`);
+      console.info(`isSigHashSingle=${isSigHashSingle}`);
+      console.info(`isSigHashAnyone=${isSigHashAnyone}`);
+      console.info(`isSigHashAll=${isSigHashAll}`);
 
       console.info(`hashCodeType=${hashCodeType}`);
       console.info(`spendingIndex=${spendingIndex} `);
