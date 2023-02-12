@@ -347,7 +347,7 @@ describe(`Scripting`, () => {
           "hex"
         ) as TransactionPayload
       )[0],
-      1,
+      0,
       Buffer.from(
         "76a914a86e8ee2a05a44613904e18132e49b2448adc4e688ac",
         "hex"
