@@ -55,7 +55,7 @@ export function packVarInt(value: number) {
   } else {
     const b = Buffer.alloc(9);
     b[0] = 0xff;
-    b.writeBigInt64LE(BigInt(value), 1);
+    b.writeBigUInt64LE(BigInt(value), 1);
     return b;
   }
 }
@@ -146,7 +146,7 @@ export function packTxIn(txin: BitcoinTransactionIn) {
 }
 export function packTxOut(txout: BitcoinTransactionOut) {
   const value = Buffer.alloc(8);
-  value.writeBigInt64LE(txout.value);
+  value.writeBigUInt64LE(txout.value);
   const pkScriptLen = packVarInt(txout.script.length);
   return joinBuffers(value, pkScriptLen, txout.script);
 }
