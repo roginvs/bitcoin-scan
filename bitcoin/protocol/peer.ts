@@ -137,6 +137,11 @@ function createPeer(
        *             <---------
        *                      [handshare is done]
        * [handshake is done]
+       *
+       *
+       * TODO: Looks like in this implementation
+       *   we do not care did we get "verack" for outgoing connection
+       *
        */
       function handshakeIsDone() {
         clearWatchdog("initial connection");
@@ -177,12 +182,13 @@ function createPeer(
           `${me.id} version=${version.version} startHeight=${version.startHeight} ` +
             `${version.userAgent} ${version.services.join(",")}`
         );
-        client.write(createVerackMessage());
 
         if (isOutgoing) {
+          client.write(createVerackMessage());
           handshakeIsDone();
         } else {
           client.write(createVersionMessage(lastKnownBlock));
+          client.write(createVerackMessage());
         }
       } else if (command === "alert") {
         // do nothing
