@@ -2,6 +2,7 @@ import { genesisBlockHash } from "../protocol/consts";
 
 import {
   buildMessage,
+  createAddrMessage,
   createGetdataMessage,
   createGetheadersMessage,
   createNotfoundMessage,
@@ -59,7 +60,8 @@ function dumpBuf(buf: Buffer) {
 function getBootstrapPeers() {
   const peersString = process.env.NODE_BOOTSTRAP_PEERS;
   if (!peersString) {
-    throw new Error(`No NODE_BOOTSTRAP_PEERS in env`);
+    warn(`No NODE_BOOTSTRAP_PEERS in env!`);
+    return [];
   }
   const peers = peersString
     .split(",")
@@ -214,10 +216,12 @@ Algoritm:
         if (canFetchBlocks) {
           // Do nothing, we will get new peers from headers later
         } else {
-          // It means we do not have any peers more. We will not get any new peers
-          // So the best is to terminate
-          if (!isTerminated) {
-            throw new Error(`No candidates for initial blockheaders download`);
+          if (!isTerminated && !incomingServer) {
+            // It means we do not have any peers more. We will not get any new peers
+            // So the best is to terminate
+            throw new Error(
+              `No candidates for initial blockheaders download and no incoming server`
+            );
           }
         }
       }
@@ -269,6 +273,8 @@ Algoritm:
       onGetData(peer, payload);
     } else if (cmd === "mempool") {
       warn(`Got mempool request`);
+    } else if (cmd === "getaddr") {
+      onGetAddr(peer);
     } else {
       debug(`${peer.id} unknown message ${cmd}`);
     }
@@ -312,22 +318,40 @@ Algoritm:
       break;
     }
   }
+
   function onGetData(peer: PeerConnection, payload: MessagePayload) {
     const inventories = readGetdataPayload(payload);
     const notFoundInventories: InventoryItem[] = [];
     for (const inv of inventories) {
+      const TX_COUNT_FIRST_BYTE_OFFSET = 80;
       if (inv[0] === HashType.MSG_BLOCK) {
         const block = getSavedBlockRaw(inv[1], true)?.[0];
-        if (block) {
+        if (block && block[TX_COUNT_FIRST_BYTE_OFFSET] !== 0) {
+          debug(`${peer.id} wants MSG_BLOCK ${dumpBuf(inv[1])} and we have it`);
           peer.send(buildMessage("block", block as Buffer as MessagePayload));
         } else {
+          debug(
+            `${peer.id} wants MSG_BLOCK ${dumpBuf(
+              inv[1]
+            )} and we do not have it`
+          );
           notFoundInventories.push(inv);
         }
       } else if (inv[0] === HashType.MSG_WITNESS_BLOCK) {
         const block = getSavedBlockRaw(inv[1])?.[0];
-        if (block) {
+        if (block && block[TX_COUNT_FIRST_BYTE_OFFSET] !== 0) {
+          debug(
+            `${peer.id} wants MSG_WITNESS_BLOCK ${dumpBuf(
+              inv[1]
+            )} and we have it`
+          );
           peer.send(buildMessage("block", block as Buffer as MessagePayload));
         } else {
+          debug(
+            `${peer.id} wants MSG_WITNESS_BLOCK ${dumpBuf(
+              inv[1]
+            )} and we do not have it`
+          );
           notFoundInventories.push(inv);
         }
       } else {
@@ -533,6 +557,22 @@ Algoritm:
 
       addrCount--;
     }
+  }
+
+  function onGetAddr(peer: PeerConnection) {
+    // Let's return some trash data to make peer node happy
+    // So TODO the rest
+    peer.send(
+      createAddrMessage([
+        {
+          host: "127.0.0.1",
+          port: 8333,
+          ipFamily: 4,
+          services: ["NODE_NETWORK"],
+          time: new Date(),
+        },
+      ])
+    );
   }
 
   function onBlockMessage(peer: PeerConnection, payload: BlockPayload) {
@@ -887,6 +927,12 @@ Algoritm:
     incomingServer.listen(listeningPort);
   } else {
     info(`Not accepting incoming connections`);
+  }
+
+  if (!incomingServer && bootstrapPeers.length === 0) {
+    throw new Error(
+      `There is no bootstrap peers and this node is not listening for incoming connections`
+    );
   }
 
   let catchupTasks:

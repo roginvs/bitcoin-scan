@@ -1,9 +1,13 @@
 import { bitcoinMessageMagic, protocolVersion } from "./consts";
 import { sha256 } from "../utils/hashes";
 import {
+  BitcoinAddr,
+  BitcoinAddrWithTime,
   BitcoinTransaction,
   BitcoinTransactionIn,
   BitcoinTransactionOut,
+  BitcoinService,
+  servicesData,
 } from "./messages.parse";
 import {
   BitcoinMessage,
@@ -190,4 +194,48 @@ export function packTx(tx: BitcoinTransaction) {
     ...witness,
     lockTime
   ) as TransactionPayload;
+}
+
+export function packServices(services: BitcoinService[]) {
+  const out = Buffer.alloc(8, 0);
+  let val = 0;
+  for (const [n, service] of servicesData) {
+    if (services.includes(service)) {
+      val |= n;
+    }
+  }
+  out.writeUInt32LE(val, 0);
+  return out;
+}
+
+export function packAddr(address: BitcoinAddr) {
+  const services = packServices(address.services);
+  const ipaddr = Buffer.alloc(16, 0);
+  if (address.ipFamily === 4) {
+    Buffer.from("00000000000000000000FFFF", "hex").copy(ipaddr);
+    for (const [i, o] of address.host.split(".").entries()) {
+      ipaddr[12 + i] = parseInt(o);
+    }
+  } else if (address.ipFamily === 6) {
+    throw new Error("Too lazy to write this code");
+  } else {
+    const n: never = address.ipFamily;
+  }
+  const port = Buffer.alloc(2);
+  port.writeUInt16BE(address.port);
+  return joinBuffers(services, ipaddr, port);
+}
+export function packAddrWithTime(address: BitcoinAddrWithTime) {
+  const time = Buffer.alloc(4);
+  time.writeUInt32LE(new Date(address.time).getTime() / 1000);
+  return joinBuffers(time, packAddr(address));
+}
+
+export function createAddrMessage(addresses: BitcoinAddrWithTime[]) {
+  const count = packVarInt(addresses.length);
+  const payload = joinBuffers(
+    count,
+    ...addresses.map((addr) => packAddrWithTime(addr))
+  ) as MessagePayload;
+  return buildMessage("addr", payload);
 }
