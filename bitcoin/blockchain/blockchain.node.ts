@@ -215,10 +215,12 @@ Algoritm:
         if (canFetchBlocks) {
           // Do nothing, we will get new peers from headers later
         } else {
-          // It means we do not have any peers more. We will not get any new peers
-          // So the best is to terminate
-          if (!isTerminated) {
-            throw new Error(`No candidates for initial blockheaders download`);
+          if (!isTerminated && !incomingServer) {
+            // It means we do not have any peers more. We will not get any new peers
+            // So the best is to terminate
+            throw new Error(
+              `No candidates for initial blockheaders download and no incoming server`
+            );
           }
         }
       }
