@@ -3,10 +3,11 @@ import { sha256 } from "../utils/hashes";
 import {
   buildMessage,
   createGetdataMessage,
+  packAddrWithTime,
   packTx,
   packVarStr,
 } from "./messages.create";
-import { parseMessage, readTx } from "./messages.parse";
+import { parseMessage, readAddrWithTime, readTx } from "./messages.parse";
 import { HashType, MessagePayload } from "./messages.types";
 import { sourceTxRaw, spendingTxRaw } from "./testdata";
 import { joinBuffers } from "../utils/joinBuffer";
@@ -126,5 +127,22 @@ describe("Bitcoin messages", () => {
         expect(packed.toString("hex")).toBe(txRaw.toString("hex"));
       }
     });
+  });
+
+  it(`Address pack/unpack`, () => {
+    const demoAddrWithTime = Buffer.from(
+      "C5ACEC63090000000000000000000000000000000000FFFF121415FFBDDE",
+      "hex"
+    );
+    const [parsed, rest] = readAddrWithTime(demoAddrWithTime);
+    expect(rest.length).toBe(0);
+    expect(parsed.time.toISOString()).toBe("2023-02-15T09:58:29.000Z");
+    expect(parsed.services).toStrictEqual(["NODE_NETWORK", "NODE_WITNESS"]);
+    expect(parsed.host).toBe("18.20.21.255");
+    expect(parsed.port).toBe(48606);
+
+    expect(packAddrWithTime(parsed).toString("hex")).toBe(
+      demoAddrWithTime.toString("hex")
+    );
   });
 });
