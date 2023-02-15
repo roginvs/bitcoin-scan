@@ -59,7 +59,8 @@ function dumpBuf(buf: Buffer) {
 function getBootstrapPeers() {
   const peersString = process.env.NODE_BOOTSTRAP_PEERS;
   if (!peersString) {
-    throw new Error(`No NODE_BOOTSTRAP_PEERS in env`);
+    warn(`No NODE_BOOTSTRAP_PEERS in env!`);
+    return [];
   }
   const peers = peersString
     .split(",")
@@ -887,6 +888,12 @@ Algoritm:
     incomingServer.listen(listeningPort);
   } else {
     info(`Not accepting incoming connections`);
+  }
+
+  if (!incomingServer && bootstrapPeers.length === 0) {
+    throw new Error(
+      `There is no bootstrap peers and this node is not listening for incoming connections`
+    );
   }
 
   let catchupTasks:
