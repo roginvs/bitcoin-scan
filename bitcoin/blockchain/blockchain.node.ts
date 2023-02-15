@@ -327,15 +327,31 @@ Algoritm:
       if (inv[0] === HashType.MSG_BLOCK) {
         const block = getSavedBlockRaw(inv[1], true)?.[0];
         if (block && block[TX_COUNT_FIRST_BYTE_OFFSET] !== 0) {
+          debug(`${peer.id} wants MSG_BLOCK ${dumpBuf(inv[1])} and we have it`);
           peer.send(buildMessage("block", block as Buffer as MessagePayload));
         } else {
+          debug(
+            `${peer.id} wants MSG_BLOCK ${dumpBuf(
+              inv[1]
+            )} and we do not have it`
+          );
           notFoundInventories.push(inv);
         }
       } else if (inv[0] === HashType.MSG_WITNESS_BLOCK) {
         const block = getSavedBlockRaw(inv[1])?.[0];
         if (block && block[TX_COUNT_FIRST_BYTE_OFFSET] !== 0) {
+          debug(
+            `${peer.id} wants MSG_WITNESS_BLOCK ${dumpBuf(
+              inv[1]
+            )} and we have it`
+          );
           peer.send(buildMessage("block", block as Buffer as MessagePayload));
         } else {
+          debug(
+            `${peer.id} wants MSG_WITNESS_BLOCK ${dumpBuf(
+              inv[1]
+            )} and we do not have it`
+          );
           notFoundInventories.push(inv);
         }
       } else {
