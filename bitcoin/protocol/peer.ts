@@ -130,10 +130,12 @@ function createPeer(
        * outgoing              !outgoing == incoming
        *
        * version     ------>
-       *             <------   verack
        *             <------   version
-       *                       [handshare is done]
-       * verack      ------>
+       *
+       *             <------------- verack
+       * verack      ------>   /
+       *             <---------
+       *                      [handshare is done]
        * [handshake is done]
        */
       function handshakeIsDone() {
