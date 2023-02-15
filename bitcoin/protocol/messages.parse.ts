@@ -75,19 +75,21 @@ export function readVarInt(buf: Buffer) {
   return [count, buf.subarray(startAt)] as const;
 }
 
+export const servicesData = [
+  [1, "NODE_NETWORK"],
+  [2, "NODE_GETUTXO"],
+  [4, "NODE_BLOOM"],
+  [8, "NODE_WITNESS"],
+  [16, "NODE_XTHIN"],
+  [64, "NODE_COMPACT_FILTERS"],
+  [1024, "NODE_NETWORK_LIMITED"],
+] as const;
+export type BitcoinService = typeof servicesData[number][1];
+
 /** Accepts buf with 8 bytes of services */
-function parseServices(payload: Buffer) {
+function parseServices(payload: Buffer): BitcoinService[] {
   const n = payload.readUInt32LE(0);
-  const data = [
-    [1, "NODE_NETWORK"],
-    [2, "NODE_GETUTXO"],
-    [4, "NODE_BLOOM"],
-    [8, "NODE_WITNESS"],
-    [16, "NODE_XTHIN"],
-    [64, "NODE_COMPACT_FILTERS"],
-    [1024, "NODE_NETWORK_LIMITED"],
-  ] as const;
-  return data.filter(([nn, s]) => nn & n).map(([n, s]) => s);
+  return servicesData.filter(([nn, s]) => nn & n).map(([n, s]) => s);
 }
 
 export function parseVersion(payload: MessagePayload) {
@@ -471,6 +473,7 @@ export function readAddr(payload: Buffer) {
     payload.subarray(8 + 16 + 2),
   ] as const;
 }
+export type BitcoinAddr = ReturnType<typeof readAddr>[0];
 
 export function readAddrWithTime(buf: Buffer) {
   const time = new Date(buf.readUint32LE() * 1000);
@@ -483,6 +486,7 @@ export function readAddrWithTime(buf: Buffer) {
     rest,
   ] as const;
 }
+export type BitcoinAddrWithTime = ReturnType<typeof readAddrWithTime>[0];
 
 export function readGetheadersMessage(buffer: MessagePayload) {
   let buf: Buffer = buffer;
