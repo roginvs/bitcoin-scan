@@ -323,16 +323,17 @@ Algoritm:
     const inventories = readGetdataPayload(payload);
     const notFoundInventories: InventoryItem[] = [];
     for (const inv of inventories) {
+      const TX_COUNT_FIRST_BYTE_OFFSET = 80;
       if (inv[0] === HashType.MSG_BLOCK) {
         const block = getSavedBlockRaw(inv[1], true)?.[0];
-        if (block) {
+        if (block && block[TX_COUNT_FIRST_BYTE_OFFSET] !== 0) {
           peer.send(buildMessage("block", block as Buffer as MessagePayload));
         } else {
           notFoundInventories.push(inv);
         }
       } else if (inv[0] === HashType.MSG_WITNESS_BLOCK) {
         const block = getSavedBlockRaw(inv[1])?.[0];
-        if (block) {
+        if (block && block[TX_COUNT_FIRST_BYTE_OFFSET] !== 0) {
           peer.send(buildMessage("block", block as Buffer as MessagePayload));
         } else {
           notFoundInventories.push(inv);
