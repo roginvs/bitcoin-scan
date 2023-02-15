@@ -2,6 +2,7 @@ import { genesisBlockHash } from "../protocol/consts";
 
 import {
   buildMessage,
+  createAddrMessage,
   createGetdataMessage,
   createGetheadersMessage,
   createNotfoundMessage,
@@ -272,6 +273,8 @@ Algoritm:
       onGetData(peer, payload);
     } else if (cmd === "mempool") {
       warn(`Got mempool request`);
+    } else if (cmd === "getaddr") {
+      onGetAddr(peer);
     } else {
       debug(`${peer.id} unknown message ${cmd}`);
     }
@@ -315,6 +318,7 @@ Algoritm:
       break;
     }
   }
+
   function onGetData(peer: PeerConnection, payload: MessagePayload) {
     const inventories = readGetdataPayload(payload);
     const notFoundInventories: InventoryItem[] = [];
@@ -536,6 +540,22 @@ Algoritm:
 
       addrCount--;
     }
+  }
+
+  function onGetAddr(peer: PeerConnection) {
+    // Let's return some trash data to make peer node happy
+    // So TODO the rest
+    peer.send(
+      createAddrMessage([
+        {
+          host: "127.0.0.1",
+          port: 8333,
+          ipFamily: 4,
+          services: ["NODE_NETWORK"],
+          time: new Date(),
+        },
+      ])
+    );
   }
 
   function onBlockMessage(peer: PeerConnection, payload: BlockPayload) {
