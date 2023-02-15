@@ -231,7 +231,11 @@ export function packAddrWithTime(address: BitcoinAddrWithTime) {
   return joinBuffers(time, packAddr(address));
 }
 
-export function buildAddrMessage(addresses: BitcoinAddrWithTime[]) {
+export function createAddrMessage(addresses: BitcoinAddrWithTime[]) {
   const count = packVarInt(addresses.length);
-  return joinBuffers(count, ...addresses.map((addr) => packAddrWithTime(addr)));
+  const payload = joinBuffers(
+    count,
+    ...addresses.map((addr) => packAddrWithTime(addr))
+  ) as MessagePayload;
+  return buildMessage("addr", payload);
 }
