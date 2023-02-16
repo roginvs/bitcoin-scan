@@ -4,8 +4,9 @@ import { TransactionPayload } from "../protocol/messages.types";
 
 export function getTxSize(tx: TransactionPayload | BitcoinTransaction) {
   const txFullRaw = tx instanceof Buffer ? tx : packTx(tx);
+  const txParsed = tx instanceof Buffer ? readTx(tx)[0] : tx;
   const txNoWitness = packTx({
-    ...(tx instanceof Buffer ? readTx(tx)[0] : tx),
+    ...txParsed,
     isWitness: false,
   });
   const size =
@@ -16,6 +17,7 @@ export function getTxSize(tx: TransactionPayload | BitcoinTransaction) {
       : txNoWitness.length;
   const weight =
     txNoWitness.length * 4 + (txFullRaw.length - txNoWitness.length);
+
   return {
     size,
     weight,
