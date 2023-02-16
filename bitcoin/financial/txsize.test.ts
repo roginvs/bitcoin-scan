@@ -11,7 +11,7 @@ describe(`Get tx size`, () => {
       //size is demoTx.length,
       size: 410,
       weight: 1310,
-      vbytes: 327.5,
+      vbytes: Math.ceil(327.5),
     });
   });
 
@@ -33,7 +33,7 @@ describe(`Get tx size`, () => {
       //size is demoTx.length,
       size: 218,
       weight: 542,
-      vbytes: 135.5,
+      vbytes: Math.ceil(135.5),
     });
   });
 });

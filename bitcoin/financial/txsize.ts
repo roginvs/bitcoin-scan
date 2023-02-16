@@ -22,6 +22,6 @@ export function getTxSize(tx: TransactionPayload | BitcoinTransaction) {
     size,
     weight,
     // noWitnessSize: txNoWitness.length,
-    vbytes: weight / 4,
+    vbytes: Math.ceil(weight / 4),
   };
 }
