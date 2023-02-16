@@ -202,7 +202,7 @@ const signatureDer = (() => {
 })();
 const signatureWithHashType = Buffer.concat([
   signatureDer,
-  Buffer.from([0x01, 0, 0, 0]),
+  Buffer.from([0x01]),
 ]);
 
 spendingTx.txIn[0].witness![0] = signatureWithHashType as WitnessStackItem;
