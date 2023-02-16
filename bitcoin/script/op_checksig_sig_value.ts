@@ -17,6 +17,7 @@ export function getOpChecksigSignatureValue(
   sourcePkScript: PkScript,
   /**
    * We accept number to be able to contact exactly the same number
+   * 0x01 is SIGHASH_ALL default
    */
   hashCodeType: number | ReturnType<typeof readHashCodeType>
 ) {
