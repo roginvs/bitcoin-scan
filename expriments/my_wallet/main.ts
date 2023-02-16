@@ -135,16 +135,20 @@ const spendingTx: BitcoinTransaction = {
 
   txid: Buffer.alloc(0) as TransactionHash,
   wtxid: Buffer.alloc(0) as TransactionHash,
-  // We might want to clone buffer here to prevent memory leak.
-  // If we read big block and keep reference to one tx then
-  // subarray of the buffer will still point into block raw data
   payload: Buffer.alloc(0) as TransactionPayload,
 };
 
 const dataToSig = getOpChecksigSignatureValue(
   spendingTx,
   0,
-  spending.pkscript,
+  Buffer.concat([
+    // OP_DUP OP_HASH160
+    Buffer.from("76a9", "hex"),
+    // Hash itself
+    spending.pkscript.subarray(1),
+    // OP_EQUALVERIFY OP_CHECKSIG
+    Buffer.from("88ac", "hex"),
+  ]) as PkScript,
   0x01
 );
 
