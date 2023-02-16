@@ -14,6 +14,11 @@ export function bitcoinAddressP2WSHromPKScript(pkscript: PkScript) {
   return encode("bc", 0, [...scriptHash]);
 }
 
+export function getP2WSHpkscriptFromRealPkScript(pkscript: PkScript) {
+  const scriptHash = sha256(pkscript);
+  return Buffer.concat([Buffer.from("0020", "hex"), scriptHash]) as PkScript;
+}
+
 export function bitcoinAddressP2WSHromPublicKey(pubKey: Buffer) {
   checkPublicKey(pubKey);
   const script = Buffer.concat([
