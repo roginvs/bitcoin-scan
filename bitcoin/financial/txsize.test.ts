@@ -8,8 +8,10 @@ describe(`Get tx size`, () => {
       "hex"
     ) as TransactionPayload;
     expect(getTxSize(demoTx)).toStrictEqual({
+      //size is demoTx.length,
       size: 410,
       weight: 1310,
+      noWitnessSize: 300,
     });
   });
 });

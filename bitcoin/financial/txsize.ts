@@ -16,5 +16,5 @@ export function getTxSize(tx: TransactionPayload | BitcoinTransaction) {
       : txNoWitness.length;
   const weight =
     txNoWitness.length * 4 + (txFullRaw.length - txNoWitness.length);
-  return { size, weight };
+  return { size, weight, noWitnessSize: txNoWitness.length };
 }
