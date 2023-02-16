@@ -10,7 +10,14 @@ openssl aes-256-cbc -d -pbkdf2 -in wallet.enc.pem -out wallet.decccc.pem
 
 */
 
-import { createPrivateKey, createPublicKey, randomBytes, sign } from "crypto";
+import {
+  createPrivateKey,
+  createPublicKey,
+  randomBytes,
+  sign,
+  Verify,
+  verify,
+} from "crypto";
 import * as fs from "fs";
 import { compressPublicKey } from "../../bitcoin/protocol/compressPublicKey";
 import { packTx } from "../../bitcoin/protocol/messages.create";
@@ -187,11 +194,15 @@ const signatureDer = (() => {
 
   const s = sig.s > Secp256k1.n / BigInt(2) ? Secp256k1.n - sig.s : sig.s;
 
-  return packAsn1PairOfIntegers(bigintToBuf(sig.r), bigintToBuf(s));
+  const sigDer = packAsn1PairOfIntegers(bigintToBuf(sig.r), bigintToBuf(s));
+  if (!verify(undefined, dataToSig, myPublicKeyObject, sigDer)) {
+    throw new Error("Something wrong with signatures");
+  }
+  return sigDer;
 })();
 const signatureWithHashType = Buffer.concat([
   signatureDer,
-  Buffer.from([0x01]),
+  Buffer.from([0x01, 0, 0, 0]),
 ]);
 
 spendingTx.txIn[0].witness![0] = signatureWithHashType as WitnessStackItem;
