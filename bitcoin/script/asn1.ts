@@ -95,8 +95,13 @@ export function asn1parse(buf: Buffer): [Asn1, Buffer] {
       type: "bitstring",
       value: data.subarray(1),
     };
+  } else if (type === 0x04) {
+    result = {
+      type: "octetstring",
+      value: data,
+    };
   } else {
-    throw new Error(`Unknown type ${type.toString(16)}`);
+    throw new Error(`Unknown type 0x${type.toString(16)}`);
   }
 
   const rest = buf.subarray(2 + len);
