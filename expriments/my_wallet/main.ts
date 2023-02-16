@@ -15,6 +15,7 @@ import * as fs from "fs";
 import { compressPublicKey } from "../../bitcoin/protocol/compressPublicKey";
 import { asn1parse } from "../../bitcoin/script/asn1";
 import { bitcoinAddressP2WPKHromPublicKey } from "../../bitcoin/utils/bech32/address";
+import { ripemd160, sha256 } from "../../bitcoin/utils/hashes";
 
 const myPrivKeyObject = createPrivateKey({
   key: fs.readFileSync(__dirname + "/wallet.pem"),
@@ -43,5 +44,8 @@ const myPublicKey = (() => {
 })();
 
 console.info("Public key = ", myPublicKey.toString("hex"));
+console.info(
+  `Public key hash = ${ripemd160(sha256(myPublicKey)).toString("hex")}`
+);
 const p2wpkh = bitcoinAddressP2WPKHromPublicKey(myPublicKey);
 console.info(`Address = ${p2wpkh}`);
