@@ -148,4 +148,10 @@ spendingTx.txIn[0].witness![0] = signature as WitnessStackItem;
 
 // console.info(`Spending tx`, spendingTx);
 console.info("Spending tx raw:");
-console.info(packTx(spendingTx).toString("hex"));
+const spendingTxRaw = packTx(spendingTx);
+console.info(spendingTxRaw.toString("hex"));
+console.info(
+  `Spending tx hash = ${Buffer.from(readTx(spendingTxRaw)[0].txid)
+    .reverse()
+    .toString("hex")}`
+);
