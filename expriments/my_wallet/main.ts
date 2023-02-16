@@ -10,7 +10,7 @@ openssl aes-256-cbc -d -pbkdf2 -in wallet.enc.pem -out wallet.decccc.pem
 
 */
 
-import { createPrivateKey, createPublicKey, sign } from "crypto";
+import { createPrivateKey, createPublicKey, randomBytes, sign } from "crypto";
 import * as fs from "fs";
 import { compressPublicKey } from "../../bitcoin/protocol/compressPublicKey";
 import { packTx } from "../../bitcoin/protocol/messages.create";
@@ -25,13 +25,15 @@ import {
   TransactionPayload,
   WitnessStackItem,
 } from "../../bitcoin/protocol/messages.types";
-import { asn1parse } from "../../bitcoin/script/asn1";
+import { asn1parse, packAsn1PairOfIntegers } from "../../bitcoin/script/asn1";
 import { getOpChecksigSignatureValue } from "../../bitcoin/script/op_checksig_sig_value";
 import {
   bitcoinAddressP2WPKHromPublicKey,
   getP2WSHpkscriptFromRealPkScript,
 } from "../../bitcoin/utils/bech32/address";
 import { ripemd160, sha256 } from "../../bitcoin/utils/hashes";
+import { Secp256k1 } from "../../my-elliptic-curves/curves.named";
+import { signature } from "../../my-elliptic-curves/ecdsa";
 
 const myPrivKeyObject = createPrivateKey({
   key: fs.readFileSync(__dirname + "/wallet.pem"),
@@ -139,12 +141,60 @@ const dataToSig = getOpChecksigSignatureValue(
   0x01
 );
 
-const signature = Buffer.concat([
-  sign(undefined, dataToSig, myPrivKeyObject),
+const signatureDer = (() => {
+  // I'v used
+  // sign(undefined, dataToSig, myPrivKeyObject)
+  // but it gave SCRIPT_ERR_SIG_HIGH_S error in bitcoin network
+
+  let k = BigInt("0x" + randomBytes(32).toString("hex"));
+  if (k >= Secp256k1.n || k <= BigInt(1)) {
+    throw new Error(`Not this time LOL`);
+  }
+
+  const privateKey = BigInt(
+    "0x" +
+      myPrivKeyObject
+        .export({
+          format: "der",
+          type: "sec1",
+        })
+        .subarray(7, 7 + 32)
+        .toString("hex")
+  );
+
+  const sig = signature({
+    curve: Secp256k1,
+    k,
+    msgHash: BigInt("0x" + sha256(dataToSig).toString("hex")),
+    privateKey,
+  });
+
+  function bigintToBuf(n: BigInt, len: number = 32) {
+    let s = n.toString(16);
+    if (s.length % 2 != 0) {
+      s = "0" + s;
+    }
+    if (s.length / 2 > len) {
+      throw new Error(`Length is too small`);
+    }
+    const prefix = "0".repeat(len * 2 - s.length);
+    s = prefix + s;
+    if (s.length !== len * 2) {
+      throw new Error(`Internal error`);
+    }
+    return Buffer.from(s, "hex");
+  }
+
+  const s = sig.s > Secp256k1.n / BigInt(2) ? Secp256k1.n - sig.s : sig.s;
+
+  return packAsn1PairOfIntegers(bigintToBuf(sig.r), bigintToBuf(s));
+})();
+const signatureWithHashType = Buffer.concat([
+  signatureDer,
   Buffer.from([0x01]),
 ]);
 
-spendingTx.txIn[0].witness![0] = signature as WitnessStackItem;
+spendingTx.txIn[0].witness![0] = signatureWithHashType as WitnessStackItem;
 
 // console.info(`Spending tx`, spendingTx);
 console.info("Spending tx raw:");
