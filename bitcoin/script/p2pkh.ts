@@ -11,6 +11,10 @@ import {
   msgHashIfSighashIsOutOfBounds,
   verifySignatureIfSighashSingleIsOutOfBounds,
 } from "./p2pkh.sighashsingleoutofbounds";
+import {
+  getOpChecksigSignatureValue,
+  readHashCodeType,
+} from "./op_checksig_sig_value";
 
 export function isSourceScriptP2PKH(sourcePkScript: PkScript) {
   if (sourcePkScript.length !== 0x14 + 5) {
@@ -62,11 +66,12 @@ export function isSignatureScriptLooksLikeP2PKH(inputScript: SignatureScript) {
     0,
     signatureAndHashType.length - 1
   );
-  const hashCodeType = signatureAndHashType[signatureAndHashType.length - 1];
+  const hashCodeTypeNumber =
+    signatureAndHashType[signatureAndHashType.length - 1];
   return {
     pubKey,
     signatureDer,
-    hashCodeType,
+    hashCodeTypeNumber,
   };
 }
 
@@ -88,65 +93,11 @@ export function check_P2PKH(
   if (typeof inputScriptParsed === "string") {
     return inputScriptParsed;
   }
-  const { pubKey, signatureDer, hashCodeType } = inputScriptParsed;
+  const { pubKey, signatureDer, hashCodeTypeNumber } = inputScriptParsed;
   const pubkeyHashObserved = ripemd160(sha256(pubKey));
   if (!pubkeyHashExpected.equals(pubkeyHashObserved)) {
     throw new Error("Public key hashes are not equal");
   }
-
-  const isSigHashNone = (hashCodeType & 0x1f) === 0x00000002;
-  const isSigHashSingle = (hashCodeType & 0x1f) === 0x00000003;
-  const isSigHashAnyone = !!(hashCodeType & 0x00000080);
-  const isSigHashAll = !isSigHashNone && !isSigHashSingle && !isSigHashAnyone;
-
-  const isSigHashSingleOutputOutOfBounds =
-    isSigHashSingle && spendingIndex >= spending.txOut.length;
-
-  const txNew: BitcoinTransaction = {
-    ...spending,
-    isWitness: false,
-    txIn: spending.txIn
-      .map((txIn, index) => {
-        if (index === spendingIndex) {
-          return {
-            ...txIn,
-            // We do not check OP_CODESEPARATORS here
-            script: sourcePkScript as Buffer as SignatureScript,
-          };
-        }
-        if (isSigHashAnyone) {
-          return null;
-        }
-        return {
-          ...txIn,
-          sequence: isSigHashNone || isSigHashSingle ? 0 : txIn.sequence,
-          script: Buffer.alloc(0) as SignatureScript,
-        };
-      })
-      .filter((x) => x)
-      .map((x) => x!),
-    txOut: isSigHashNone
-      ? []
-      : isSigHashSingle
-      ? spending.txOut.slice(0, spendingIndex + 1).map((txOut, index) => {
-          if (index === spendingIndex) {
-            return txOut;
-          }
-          return {
-            script: Buffer.alloc(0) as PkScript,
-            value: BigInt("0xFFFFFFFFFFFFFFFF"),
-          };
-        })
-      : spending.txOut,
-  };
-
-  const dataToVerify = sha256(
-    joinBuffers(
-      packTx(txNew),
-      // hashTypeCode
-      Buffer.from([hashCodeType, 0, 0, 0])
-    )
-  );
 
   const pub = createPublicKey({
     key: create_spki_der_from_pubkey(pubKey),
@@ -160,6 +111,10 @@ export function check_P2PKH(
   if (!pubKeyCompressed) {
     throw new Error(`Failed to compress public key`);
   }
+
+  const hashCodeType = readHashCodeType(hashCodeTypeNumber);
+  const isSigHashSingleOutputOutOfBounds =
+    hashCodeType.isSigHashSingle && spendingIndex >= spending.txOut.length;
 
   if (isSigHashSingleOutputOutOfBounds) {
     const verifyResult = verifySignatureIfSighashSingleIsOutOfBounds(
@@ -177,6 +132,13 @@ export function check_P2PKH(
       pubKeyCompressed,
     };
   }
+
+  const dataToVerify = getOpChecksigSignatureValue(
+    spending,
+    spendingIndex,
+    sourcePkScript,
+    hashCodeTypeNumber
+  );
 
   const verifyResult = verify(undefined, dataToVerify, pub, signatureDer);
   if (verifyResult) {
@@ -218,13 +180,11 @@ export function check_P2PKH(
     };
   }
 
-  console.info(`isSigHashNone=${isSigHashNone}`);
+  console.info(hashCodeType);
   console.info(
-    `isSigHashSingle=${isSigHashSingle} isSigHashSingleOutputOutOfBounds=${isSigHashSingleOutputOutOfBounds}`
+    `isSigHashSingleOutputOutOfBounds=${isSigHashSingleOutputOutOfBounds}`
   );
-  console.info(`isSigHashAnyone=${isSigHashAnyone}`);
-  console.info(`isSigHashAll=${isSigHashAll}`);
-  console.info(`hashCodeType=${hashCodeType}`);
+
   console.info(`spendingIndex=${spendingIndex} `);
   console.info(
     `Spending tx id = ` + Buffer.from(spending.txid).reverse().toString("hex")
