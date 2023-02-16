@@ -1,4 +1,4 @@
-import { base58decode, base58encode, bitcoinAddressFromP2PKH } from "./base58";
+import { base58decode, base58encode } from "./base58";
 
 const testData = {
   "0000030405": "1121kY",
@@ -15,17 +15,5 @@ describe(`base58decode`, () => {
   for (const [output, input] of Object.entries(testData)) {
     it(`Decodes ${input} into ${output}`, () =>
       expect(base58decode(input).toString("hex").toUpperCase()).toBe(output));
-  }
-});
-describe(`Encode address`, () => {
-  const testData = {
-    "9c13abeaa29473787191861f62952f651ce6edac":
-      "1FEFyjGTFbc128EXz298mRd2PsPGhobkWe",
-  };
-  for (const [input, output] of Object.entries(testData)) {
-    const pubkeyHash = Buffer.from(input, "hex");
-    it(`Public key ${input} is ${output}`, () => {
-      expect(bitcoinAddressFromP2PKH(pubkeyHash)).toBe(output);
-    });
   }
 });

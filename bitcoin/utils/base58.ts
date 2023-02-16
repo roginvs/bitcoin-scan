@@ -18,14 +18,6 @@ export function base58encode(data: Buffer) {
   return output.split("").reverse().join("");
 }
 
-export function bitcoinAddressFromP2PKH(pubKeyHash: Buffer) {
-  const withNetworkId = joinBuffers(Buffer.from("00", "hex"), pubKeyHash);
-  const hash = sha256(sha256(withNetworkId));
-
-  const base256 = joinBuffers(withNetworkId, hash.subarray(0, 4));
-  return base58encode(base256);
-}
-
 export function base58decode(data: string) {
   let out = BigInt(0);
   for (const [pos, digit] of data.split("").reverse().entries()) {
