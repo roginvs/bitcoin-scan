@@ -33,7 +33,7 @@ import {
   WitnessStackItem,
 } from "../../bitcoin/protocol/messages.types";
 import { asn1parse, packAsn1PairOfIntegers } from "../../bitcoin/script/asn1";
-import { getOpChecksigSignatureValue } from "../../bitcoin/script/op_checksig_sig_value";
+import { getOpChecksigSignatureValue } from "../../bitcoin/script/op_checksig_sigvalue";
 import {
   bitcoinAddressP2WPKHromPublicKey,
   getP2WSHpkscriptFromRealPkScript,
@@ -143,7 +143,7 @@ const dataToSig = getOpChecksigSignatureValue(
   0,
   Buffer.concat([
     // OP_DUP OP_HASH160
-    Buffer.from("76a9", "hex"),
+    Buffer.from("1976a9", "hex"),
     // Hash itself
     spending.pkscript.subarray(1),
     // OP_EQUALVERIFY OP_CHECKSIG

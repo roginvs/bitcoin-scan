@@ -11,7 +11,7 @@ import {
   msgHashIfSighashIsOutOfBounds,
   verifySignatureIfSighashSingleIsOutOfBounds,
 } from "./p2pkh.sighashsingleoutofbounds";
-import { getOpChecksigSignatureValue } from "./op_checksig_sig_value";
+import { getOpChecksigSignatureValue } from "./op_checksig_sigvalue";
 import { readHashCodeType } from "./hashCode";
 
 export function isSourceScriptP2PKH(sourcePkScript: PkScript) {
