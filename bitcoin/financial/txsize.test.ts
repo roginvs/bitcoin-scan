@@ -11,7 +11,29 @@ describe(`Get tx size`, () => {
       //size is demoTx.length,
       size: 410,
       weight: 1310,
-      noWitnessSize: 300,
+      vbytes: 327.5,
+    });
+  });
+
+  it(`Demo tx 2`, () => {
+    const demoTx = Buffer.from(
+      `0100000000010115e180dc28a2327e687facc33f10f2a20da717e5548406f7ae8b4c8
+      11072f85603000000171600141d7cd6c75c2e86f4cbf98eaed221b30bd9a0b928ffff
+      ffff019caef505000000001976a9141d7cd6c75c2e86f4cbf98eaed221b30bd9a0b92
+      888ac02483045022100f764287d3e99b1474da9bec7f7ed236d6c81e793b20c4b5aa1
+      f3051b9a7daa63022016a198031d5554dbb855bdbe8534776a4be6958bd8d530dc001
+      c32b828f6f0ab0121038262a6c6cec93c2d3ecd6c6072efea86d02ff8e3328bbd0242
+      b20af3425990ac00000000`
+        .split("\n")
+        .join("")
+        .replace(/\s+/g, ""),
+      "hex"
+    ) as TransactionPayload;
+    expect(getTxSize(demoTx)).toStrictEqual({
+      //size is demoTx.length,
+      size: 218,
+      weight: 542,
+      vbytes: 135.5,
     });
   });
 });
