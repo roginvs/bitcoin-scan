@@ -173,13 +173,30 @@ export function readScript(script: Buffer) {
   return out;
 }
 
+function printScript(script: string[]) {
+  let out = "";
+  let ident = 0;
+  for (const item of script) {
+    if (item === "OP_ENDIF" || item === "OP_ELSE") {
+      ident -= 1;
+    }
+    out = out + new Array(ident).fill("  ").join("") + item + "\n";
+    if (item === "OP_IF" || item === "OP_NOTIF" || item === "OP_ELSE") {
+      ident += 1;
+    }
+  }
+  return out;
+}
+
 console.info(
-  readScript(
-    Buffer.from(
-      "210337b852d288f9f21038bc1aa170372cf7557843e354cbebee0e308e3697735e06ac6476a91406e3c55d036a8e7687f9b834a1b7036b761d410a88ad0396d70bb1672102faff9c96e623c34a6508927de3ba461d7855df6c606d34a8921783c76848da3fad82012088a914887396b4564f3d2f46ae6dd5158244ab4c1bec528768",
-      "hex"
+  printScript(
+    readScript(
+      Buffer.from(
+        "210337b852d288f9f21038bc1aa170372cf7557843e354cbebee0e308e3697735e06ac6476a91406e3c55d036a8e7687f9b834a1b7036b761d410a88ad0396d70bb1672102faff9c96e623c34a6508927de3ba461d7855df6c606d34a8921783c76848da3fad82012088a914887396b4564f3d2f46ae6dd5158244ab4c1bec528768",
+        "hex"
+      )
     )
-  ).join(" ")
+  )
 );
 /*
 <maybe some hash>
