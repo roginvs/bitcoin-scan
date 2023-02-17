@@ -129,6 +129,9 @@ function packInventories(inventories: InventoryItem[]) {
 export function createGetdataMessage(inventories: InventoryItem[]) {
   return buildMessage("getdata", packInventories(inventories));
 }
+export function createInvMessage(inventories: InventoryItem[]) {
+  return buildMessage("inv", packInventories(inventories));
+}
 export function createNotfoundMessage(inventories: InventoryItem[]) {
   return buildMessage("notfound", packInventories(inventories));
 }

@@ -5,12 +5,14 @@ import {
   createAddrMessage,
   createGetdataMessage,
   createGetheadersMessage,
+  createInvMessage,
   createNotfoundMessage,
   packTx,
   packVarInt,
 } from "../protocol/messages.create";
 import {
   BitcoinBlock,
+  BitcoinTransaction,
   readAddrWithTime,
   readBlock,
   readGetdataPayload,
@@ -352,6 +354,13 @@ Algoritm:
               inv[1]
             )} and we do not have it`
           );
+          notFoundInventories.push(inv);
+        }
+      } else if (inv[0] === HashType.MSG_WITNESS_TX) {
+        const tx = mempool.get(inv[1].toString("hex"));
+        if (tx) {
+          peer.send(buildMessage("tx", packTx(tx) as Buffer as MessagePayload));
+        } else {
           notFoundInventories.push(inv);
         }
       } else {
@@ -1020,6 +1029,14 @@ Algoritm:
     catchupTasks = null;
   }
 
+  const mempool = new Map<string, BitcoinTransaction>();
+  function addTxToMempool(tx: BitcoinTransaction) {
+    mempool.set(tx.txid.toString("hex"), tx);
+    peers.forEach((peer) => {
+      peer.send(createInvMessage([[HashType.MSG_WITNESS_TX, tx.txid]]));
+    });
+  }
+
   function stop() {
     info(`Terminating`);
     isTerminated = true;
@@ -1037,6 +1054,7 @@ Algoritm:
     onBeforeBlockSaved: buildSubscriber(beforeBlockSavedListeners),
     onAfterBlockSaved: buildSubscriber(afterBlockSavedListeners),
     catchUpBlocks,
+    addTxToMempool,
     stop,
   };
 
