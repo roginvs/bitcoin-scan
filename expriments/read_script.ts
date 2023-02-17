@@ -173,9 +173,9 @@ export function readScript(script: Buffer) {
   return out;
 }
 
-export function printScript(script: string[]) {
+export function printScript(script: string[], initialIdent = 0) {
   let out = "";
-  let ident = 0;
+  let ident = initialIdent;
   for (const item of script) {
     if (item === "OP_ENDIF" || item === "OP_ELSE") {
       ident -= 1;

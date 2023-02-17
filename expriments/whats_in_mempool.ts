@@ -121,7 +121,7 @@ function onData(data: {
         console.info(
           `Something interesting with tx=${tx.hash} input=${input.index}`
         );
-        console.info(printScript(isInteresting));
+        console.info(printScript(isInteresting, 1));
       }
     }
   }
