@@ -173,7 +173,7 @@ export function readScript(script: Buffer) {
   return out;
 }
 
-function printScript(script: string[]) {
+export function printScript(script: string[]) {
   let out = "";
   let ident = 0;
   for (const item of script) {
@@ -188,6 +188,7 @@ function printScript(script: string[]) {
   return out;
 }
 
+/*
 console.info(
   printScript(
     readScript(
@@ -198,7 +199,7 @@ console.info(
     )
   )
 );
-/*
+
 <maybe some hash>
 sig
 sig
