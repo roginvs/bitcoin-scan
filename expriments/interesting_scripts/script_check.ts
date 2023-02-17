@@ -1,132 +1,9 @@
-import https from "https";
-import { readVarInt } from "../bitcoin/protocol/messages.parse";
 import {
   PkScript,
   SignatureScript,
-  TransactionHash,
   WitnessStackItem,
-} from "../bitcoin/protocol/messages.types";
-import { printScript, readScript } from "./read_script";
-
-const url = "https://blockchain.info/unconfirmed-transactions?format=json";
-
-https.get(url, (res) => {
-  let body = "";
-
-  res.on("data", (chunk) => {
-    body += chunk;
-  });
-
-  res.on("end", () => {
-    const json = JSON.parse(body);
-    onData(json);
-  });
-});
-
-function onData(data: {
-  txs: {
-    hash: TransactionHash;
-    ver: number;
-    vin_sz: number;
-    vout_sz: number;
-    size: number;
-    weight: number;
-    fee: number;
-    relayed_by: string;
-    lock_time: number;
-    tx_index: number;
-    double_spend: boolean;
-    time: number;
-    block_index: null | number;
-    block_height: null | number;
-    inputs: [
-      {
-        sequence: number;
-        // Need to parse it, hex
-        witness: string;
-        // hex
-        script: string;
-        index: number;
-        prev_out: {
-          addr: string;
-          n: number;
-          script: string;
-          spending_outpoints: [
-            {
-              n: number;
-              tx_index: number;
-            }
-          ];
-          spent: boolean;
-          tx_index: number;
-          type: number;
-          value: number;
-        };
-      }
-    ];
-    out: [
-      {
-        type: number;
-        spent: boolean;
-        value: number;
-        spending_outpoints: [];
-        n: number;
-        tx_index: number;
-        script: string;
-        addr: string;
-      }
-    ];
-  }[];
-}) {
-  console.info("Data fetched, parsing...");
-  for (const tx of data.txs) {
-    for (const input of tx.inputs) {
-      const witness =
-        input.witness.length > 0
-          ? (() => {
-              let witnesses: WitnessStackItem[] = [];
-              let witnessesCount;
-              let buf = Buffer.from(input.witness, "hex");
-              [witnessesCount, buf] = readVarInt(buf);
-              for (let ii = 0; ii < witnessesCount; ii++) {
-                let witnessItemLen;
-                [witnessItemLen, buf] = readVarInt(buf);
-                const witnessItem = buf.subarray(
-                  0,
-                  witnessItemLen
-                ) as WitnessStackItem;
-                buf = buf.subarray(witnessItemLen);
-                witnesses.push(witnessItem);
-              }
-              return witnesses;
-            })()
-          : [];
-
-      const pkScript = Buffer.from(input.prev_out.script, "hex") as PkScript;
-      const scriptSig = Buffer.from(input.script, "hex") as SignatureScript;
-      const isInteresting = isSomethingInteresting(
-        pkScript,
-        scriptSig,
-        witness
-      );
-      if (isInteresting === null) {
-        // nothing interesting
-      } else if (typeof isInteresting === "string") {
-        console.info(
-          `ERROR ${isInteresting} with tx=${tx.hash} input=${input.index}`
-        );
-        console.info(input);
-        console.info("");
-      } else {
-        console.info(
-          `Something interesting with tx=${tx.hash} input=${input.index}`
-        );
-        console.info(printScript(isInteresting, 1));
-      }
-    }
-  }
-  console.info("Done");
-}
+} from "../../bitcoin/protocol/messages.types";
+import { readScript } from "./read_script";
 
 function is_p2pk(buf: Buffer) {
   // P2PK: <pub key> OP_CHECKSIG
@@ -244,11 +121,15 @@ function is_script_sig_pushes_only(scriptSig: SignatureScript) {
   return stack;
 }
 
-function isSomethingInteresting(
-  pkScript: PkScript,
-  scriptSig: SignatureScript,
-  witness: WitnessStackItem[]
-) {
+export function isSomethingInteresting({
+  pkScript,
+  scriptSig,
+  witness,
+}: {
+  pkScript: PkScript;
+  scriptSig: SignatureScript;
+  witness: WitnessStackItem[];
+}) {
   if (!is_standard(pkScript)) {
     console.info(pkScript, is_standard(pkScript));
     console.info(is_p2pk(pkScript));
