@@ -20,6 +20,9 @@ export function p2wpkhProgramForOpChecksig(keyHash: Buffer) {
     Buffer.from("88ac", "hex"),
   ]) as PkScript;
 }
+/**
+ * Check BIP-0143 for more details
+ */
 export function getOpChecksigSignatureValueWitness(
   spending: BitcoinTransaction,
   spendingIndex: number,
