@@ -3,7 +3,7 @@ import { createBitcoinBlocksNode } from "../../bitcoin/blockchain/blockchain.nod
 import { createTransaction } from "./createTx";
 import { createLOLTransaction } from "./createTxFromLol";
 
-const demoTx = createLOLTransaction();
+const demoTx = createTransaction();
 
 function startNode() {
   const node = createBitcoinBlocksNode();
@@ -15,4 +15,4 @@ function startNode() {
   node.addTxToMempool(demoTx.parsed);
 }
 
-startNode();
+// startNode();
