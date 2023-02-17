@@ -35,6 +35,10 @@ import {
 import { asn1parse, packAsn1PairOfIntegers } from "../../bitcoin/script/asn1";
 import { getOpChecksigSignatureValue } from "../../bitcoin/script/op_checksig_sigvalue";
 import {
+  getOpChecksigSignatureValueWitness,
+  p2wpkhProgramForOpChecksig,
+} from "../../bitcoin/script/op_checksig_sigvalue_witness";
+import {
   bitcoinAddressP2WPKHromPublicKey,
   getP2WSHpkscriptFromRealPkScript,
 } from "../../bitcoin/utils/bech32/address";
@@ -138,17 +142,13 @@ const spendingTx: BitcoinTransaction = {
   payload: Buffer.alloc(0) as TransactionPayload,
 };
 
-const dataToSig = getOpChecksigSignatureValue(
+const dataToSig = getOpChecksigSignatureValueWitness(
   spendingTx,
   0,
-  Buffer.concat([
-    // OP_DUP OP_HASH160
-    Buffer.from("1976a9", "hex"),
-    // Hash itself
-    spending.pkscript.subarray(1),
-    // OP_EQUALVERIFY OP_CHECKSIG
-    Buffer.from("88ac", "hex"),
-  ]) as PkScript,
+  p2wpkhProgramForOpChecksig(
+    Buffer.from("9cfad00d405130ea4e8a4d5d381a5c8a4642fa2e", "hex")
+  ),
+  spending.value,
   0x01
 );
 
