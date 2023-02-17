@@ -6,6 +6,7 @@ import {
 } from "./blockchain_info_types";
 import { convertInput } from "./converter";
 import { fetchJson } from "./fetch";
+import { isThisKindOfScriptAlreadyKnown } from "./knownScript";
 import { printScript, readScript } from "./read_script";
 import { isSomethingInteresting } from "./script_check";
 
@@ -20,7 +21,7 @@ function checkTx(tx: BlockchainInfoTx) {
       );
       console.info(input);
       console.info("");
-    } else {
+    } else if (!isThisKindOfScriptAlreadyKnown(isInteresting)) {
       console.info(
         `Something interesting with tx=${tx.hash} input=${input.index}`
       );
