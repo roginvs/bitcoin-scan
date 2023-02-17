@@ -15,4 +15,4 @@ function startNode() {
   node.addTxToMempool(demoTx.parsed);
 }
 
-// startNode();
+startNode();
