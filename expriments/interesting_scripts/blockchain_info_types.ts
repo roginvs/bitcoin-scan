@@ -51,6 +51,28 @@ export interface BlockchainInfoTx {
     }
   ];
 }
-export interface UnconfimedTransactions {
+export interface BlockchainInfoApiUnspentTranscation {
   txs: BlockchainInfoTx[];
+}
+
+export interface BlockchainInfoBlock {
+  hash: string;
+  ver: number;
+  prev_block: string;
+  mrkl_root: string;
+  time: number;
+  bits: number;
+  next_block: [string];
+  fee: number;
+  nonce: number;
+  n_tx: number;
+  size: number;
+  block_index: number;
+  main_chain: true;
+  height: number;
+  weight: number;
+  tx: BlockchainInfoTx[];
+}
+export interface BlockchainInfoApiBlocks {
+  blocks: BlockchainInfoBlock[];
 }
