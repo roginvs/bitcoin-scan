@@ -5,7 +5,7 @@ import {
 } from "../protocol/messages.parse";
 import { PkScript } from "../protocol/messages.types";
 import { dsha256, sha256 } from "../utils/hashes";
-import { readHashCodeType } from "./hashCode";
+import { packHashCodeType, readHashCodeType } from "./hashCode";
 
 /**
  * If it is P2WPKH then script is implied as this one
@@ -40,49 +40,87 @@ export function getOpChecksigSignatureValueWitness(
       ? readHashCodeType(hashCodeType)
       : hashCodeType;
 
-  const nVersion = packUint32(spending.version);
+  const bufs: Buffer[] = [];
 
-  const hashPrevouts = !hashCode.isSigHashAnyone
-    ? dsha256(
-        Buffer.concat([
-          ...spending.txIn.flatMap((txIn) => [
-            txIn.outpointHash,
-            packUint32(txIn.outpointIndex),
-          ]),
-        ])
-      )
-    : Buffer.alloc(32, 0);
+  bufs.push(packUint32(spending.version));
 
-  const hashSequence =
-    !hashCode.isSigHashAnyone &&
-    !hashCode.isSigHashSingle &&
-    !hashCode.isSigHashNone
+  {
+    const hashPrevouts = !hashCode.isSigHashAnyone
       ? dsha256(
-          Buffer.concat(spending.txIn.map((txIn) => packUint32(txIn.sequence)))
+          Buffer.concat([
+            ...spending.txIn.flatMap((txIn) => [
+              txIn.outpointHash,
+              packUint32(txIn.outpointIndex),
+            ]),
+          ])
         )
       : Buffer.alloc(32, 0);
+    bufs.push(hashPrevouts);
+  }
+  {
+    const hashSequence =
+      !hashCode.isSigHashAnyone &&
+      !hashCode.isSigHashSingle &&
+      !hashCode.isSigHashNone
+        ? dsha256(
+            Buffer.concat(
+              spending.txIn.map((txIn) => packUint32(txIn.sequence))
+            )
+          )
+        : Buffer.alloc(32, 0);
+    bufs.push(hashSequence);
+  }
 
-  const hashOutputs =
-    !hashCode.isSigHashSingle && !hashCode.isSigHashNone
-      ? dsha256(Buffer.concat(spending.txOut.map((txOut) => packTxOut(txOut))))
-      : hashCode.isSigHashSingle && spendingIndex < spending.txOut.length
-      ? dsha256(packTxOut(spending.txOut[spendingIndex]))
-      : Buffer.alloc(32, 0);
+  {
+    const prevOut = Buffer.concat([
+      spending.txIn[spendingIndex].outpointHash,
+      packUint32(spending.txIn[spendingIndex].outpointIndex),
+    ]);
+    bufs.push(prevOut);
+  }
 
-  const prevOut = Buffer.concat([
-    spending.txIn[spendingIndex].outpointHash,
-    packUint32(spending.txIn[spendingIndex].outpointIndex),
-  ]);
+  {
+    const scriptCode = Buffer.concat([
+      packVarInt(sourcePkScript.length),
+      sourcePkScript,
+    ]);
+    bufs.push(scriptCode);
+  }
 
-  const scriptCode = Buffer.concat([
-    packVarInt(sourcePkScript.length),
-    sourcePkScript,
-  ]);
+  {
+    const amount = Buffer.alloc(8);
+    amount.writeBigUInt64LE(sourceAmount);
+    bufs.push(amount);
+  }
 
-  const amount = Buffer.alloc(8);
-  amount.writeBigUInt64LE(sourceAmount);
+  {
+    const nSequence = packUint32(spending.txIn[spendingIndex].sequence);
+    bufs.push(nSequence);
+  }
 
-  console.info(scriptCode.toString("hex"));
-  // TODO
-  return Buffer.from("sdasd");
+  {
+    const hashOutputs =
+      !hashCode.isSigHashSingle && !hashCode.isSigHashNone
+        ? dsha256(
+            Buffer.concat(spending.txOut.map((txOut) => packTxOut(txOut)))
+          )
+        : hashCode.isSigHashSingle && spendingIndex < spending.txOut.length
+        ? dsha256(packTxOut(spending.txOut[spendingIndex]))
+        : Buffer.alloc(32, 0);
+    bufs.push(hashOutputs);
+  }
+
+  bufs.push(packUint32(spending.lockTime));
+  bufs.push(
+    packUint32(
+      typeof hashCodeType === "number"
+        ? hashCodeType
+        : packHashCodeType(hashCodeType)
+    )
+  );
+
+  const buf = Buffer.concat(bufs);
+
+  const hash = sha256(buf);
+  return hash;
 }

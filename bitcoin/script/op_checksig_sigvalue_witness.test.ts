@@ -1,7 +1,8 @@
-import { createPrivateKey, createPublicKey } from "crypto";
+import { createPrivateKey, createPublicKey, verify } from "crypto";
 import { compressPublicKey } from "../protocol/compressPublicKey";
 import { readTx } from "../protocol/messages.parse";
 import { PkScript, TransactionPayload } from "../protocol/messages.types";
+import { sha256 } from "../utils/hashes";
 import {
   getOpChecksigSignatureValueWitness,
   p2wpkhProgramForOpChecksig,
@@ -73,19 +74,72 @@ describe("getOpChecksigSignatureValueWitness", () => {
 
   it("getOpChecksigSignatureValueWitness", () => {
     expect(
-      getOpChecksigSignatureValueWitness(
-        tx,
-        // Input 1 is witness
-        1,
-        p2wpkhProgramForOpChecksig(
-          Buffer.from("1d0f172a0ecb48aee1be1f2687d2963ae33f71a1", "hex")
-        ),
-        // Amount
-        BigInt(6 * 100000000),
-        // SIGHASH_ALL
-        0x01
+      sha256(
+        getOpChecksigSignatureValueWitness(
+          tx,
+          // Input 1 is witness
+          1,
+          p2wpkhProgramForOpChecksig(
+            Buffer.from("1d0f172a0ecb48aee1be1f2687d2963ae33f71a1", "hex")
+          ),
+          // Amount
+          BigInt(6 * 100000000),
+          // SIGHASH_ALL
+          0x01
+        )
       ).toString("hex")
     ).toBe("c37af31116d1b27caf68aae9e3ac82f1477929014d5b917657d0eb49478cb670");
+  });
+
+  it(`bip-0143 check hashing on signature`, () => {
+    const demoPrivateKey = Buffer.from(
+      "619c335025c7f4012e556c2a58b2506e30b8511b53ade95ea316fd8c3286feb9",
+      "hex"
+    );
+    const demoPrivKeySec = Buffer.from(
+      "300E0201010400" + demoPrivateKey.toString("hex") + "a00706052b8104000a",
+      "hex"
+    );
+
+    const diff = demoPrivateKey.length;
+    demoPrivKeySec[1] += diff;
+    demoPrivKeySec[6] += diff;
+
+    const demoPrivKey = createPrivateKey({
+      key: demoPrivKeySec,
+      format: "der",
+      type: "sec1",
+    });
+    const demoPublicKey = createPublicKey(demoPrivKey);
+    const demoPublicKeySpki = demoPublicKey.export({
+      format: "der",
+      type: "spki",
+    });
+
+    const demoPublicKeyUncompressed = demoPublicKeySpki.subarray(
+      20 + 2 + 1,
+      20 + 2 + 1 + 66
+    );
+    expect(compressPublicKey(demoPublicKeyUncompressed)?.toString("hex")).toBe(
+      "025476c2e83188368da1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee6357"
+    );
+
+    const signatureDer = Buffer.from(
+      "304402203609e17b84f6a7d30c80bfa610b5b4542f32a8a0d5447a12fb1366d7f01cc44a0220573a954c4518331561406f90300e8f3358f51928d43c212a8caed02de67eebee",
+      "hex"
+    );
+
+    const firstHashOfTx = Buffer.from(
+      "c304d56804b24a6801a77803281a497f5526e20f14e65df1006887fc57f0ee39",
+      "hex"
+    );
+
+    expect(sha256(firstHashOfTx).toString("hex")).toBe(
+      "c37af31116d1b27caf68aae9e3ac82f1477929014d5b917657d0eb49478cb670"
+    );
+    expect(
+      verify(null, firstHashOfTx, demoPublicKey, signatureDer)
+    ).toBeTruthy();
   });
   /*
 
