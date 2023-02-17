@@ -1,19 +1,16 @@
 import "dotenv-defaults/config";
 import { createBitcoinBlocksNode } from "../../bitcoin/blockchain/blockchain.node";
 import { createTransaction } from "./createTx";
+import { createLOLTransaction } from "./createTxFromLol";
 
-const node = createBitcoinBlocksNode();
+const demoTx = createLOLTransaction();
 
-process.on("SIGINT", () => {
-  console.info("Received SIGINT, terminating");
-  node.stop();
-});
+function startNode() {
+  const node = createBitcoinBlocksNode();
 
-const demoTx = createTransaction();
-console.info(
-  `Transaction id = ${Buffer.from(demoTx.parsed.txid)
-    .reverse()
-    .toString("hex")}`
-);
-console.info(demoTx.parsed);
-node.addTxToMempool(demoTx.parsed);
+  process.on("SIGINT", () => {
+    console.info("Received SIGINT, terminating");
+    node.stop();
+  });
+  node.addTxToMempool(demoTx.parsed);
+}

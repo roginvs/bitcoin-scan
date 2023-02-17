@@ -211,12 +211,17 @@ export function createTransaction() {
 
   spendingTx.txIn[0].witness![0] = signatureWithHashType as WitnessStackItem;
 
-  // console.info(`Spending tx`, spendingTx);
-  // console.info("Spending tx raw:");
   const spendingTxRaw = packTx(spendingTx);
+  const spendingTxRepacked = readTx(spendingTxRaw)[0];
+  console.info(
+    `Spending tx id `,
+    Buffer.from(spendingTxRepacked.txid).reverse().toString("hex")
+  );
+  console.info("Spending tx raw:\n" + spendingTxRaw.toString("hex"));
+
   return {
     raw: spendingTxRaw,
     // To calculate txid
-    parsed: readTx(spendingTxRaw)[0],
+    parsed: spendingTxRepacked,
   };
 }
