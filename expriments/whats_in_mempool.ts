@@ -1,5 +1,12 @@
 import https from "https";
-import { PkScript, TransactionHash } from "../bitcoin/protocol/messages.types";
+import { readVarInt } from "../bitcoin/protocol/messages.parse";
+import {
+  PkScript,
+  SignatureScript,
+  TransactionHash,
+  WitnessStackItem,
+} from "../bitcoin/protocol/messages.types";
+import { printScript, readScript } from "./read_script";
 
 const url = "https://blockchain.info/unconfirmed-transactions?format=json";
 
@@ -74,50 +81,95 @@ function onData(data: {
   console.info("====");
   for (const tx of data.txs) {
     for (const input of tx.inputs) {
-      const pkScript = Buffer.from(input.prev_out.script, "hex") as PkScript;
+      const witness =
+        input.witness.length > 0
+          ? (() => {
+              let witnesses: WitnessStackItem[] = [];
+              let witnessesCount;
+              let buf = Buffer.from(input.witness, "hex");
+              [witnessesCount, buf] = readVarInt(buf);
+              for (let ii = 0; ii < witnessesCount; ii++) {
+                let witnessItemLen;
+                [witnessItemLen, buf] = readVarInt(buf);
+                const witnessItem = buf.subarray(
+                  0,
+                  witnessItemLen
+                ) as WitnessStackItem;
+                buf = buf.subarray(witnessItemLen);
+                witnesses.push(witnessItem);
+              }
+              return witnesses;
+            })()
+          : [];
 
-      if (pkScript[0] === 0) {
-        if (pkScript.length === 22 || pkScript.length === 34) {
-          // ok, witness 0
-        } else {
-          console.info(tx);
-          throw new Error(` Unknown witness 0`);
-        }
-      } else if (pkScript[0] === 0x51) {
-        if (pkScript.length === 34) {
-          // ok, witness 1
-        } else {
-          console.info(tx);
-          throw new Error(` Unknown witness 1`);
-        }
-      } else if (
-        pkScript.length === 23 &&
-        pkScript[0] === 0xa9 &&
-        pkScript[1] === 0x14 &&
-        pkScript[pkScript.length - 1] == 0x87
-      ) {
-        // P2SH: OP_HASH160 <data> OP_EQUAL
-      } else if (
-        pkScript.length === 1 + 33 + 1 &&
-        pkScript[0] === 0x33 &&
-        pkScript[pkScript.length - 1] === 0xac
-      ) {
-        // P2PK: <pub key> OP_CHECKSIG
-      } else if (
-        pkScript.length === 25 &&
-        pkScript[0] === 0x76 &&
-        pkScript[1] === 0xa9 &&
-        pkScript[2] === 20 &&
-        pkScript[pkScript.length - 2] === 0x88 &&
-        pkScript[pkScript.length - 1] === 0xac
-      ) {
-        // P2PKH:OP_DUP OP_HASH160 <20-byte pubkey hash> OP_EQUALVERIFY OP_CHECKSIG
-      } else {
-        console.info(tx);
-        console.info(input);
-        console.info("");
-      }
+      const pkScript = Buffer.from(input.prev_out.script, "hex") as PkScript;
     }
   }
   console.info("ok");
+}
+
+function is_p2pk(buf: Buffer) {
+  // P2PK: <pub key> OP_CHECKSIG
+  return (
+    buf.length === 1 + 33 + 1 && buf[0] === 0x33 && buf[buf.length - 1] === 0xac
+  );
+}
+function is_p2sh(buf: Buffer) {
+  // P2SH: OP_HASH160 <data> OP_EQUAL
+  return (
+    buf.length === 23 &&
+    buf[0] === 0xa9 &&
+    buf[1] === 0x14 &&
+    buf[buf.length - 1] == 0x87
+  );
+}
+function is_p2pkh(buf: Buffer) {
+  return (
+    buf.length === 25 &&
+    buf[0] === 0x76 &&
+    buf[1] === 0xa9 &&
+    buf[2] === 20 &&
+    buf[buf.length - 2] === 0x88 &&
+    buf[buf.length - 1] === 0xac
+  );
+}
+function is_witness_0_p2wpkh(buf: Buffer) {
+  return buf[0] === 0 && buf[0] === 160 / 8 && buf.length === 22;
+}
+function is_witness_0_p2wsh(buf: Buffer) {
+  return buf[0] === 0 && buf[0] === 256 / 8 && buf.length === 34;
+}
+function is_witness_1(buf: Buffer) {
+  return buf[0] === 0x51 && buf[1] === 0x20 && buf.length === 34;
+}
+function is_null(buf: Buffer) {
+  return buf[0] === 0x6a; // OP_RETURN
+}
+function is_multisig(buf: Buffer) {
+  const script = readScript(buf);
+  if (script[script.length - 1] !== "OP_CHECKSIG") {
+    return false;
+  }
+  if (script[script.length - 2].match(/^OP_(\d+)&/)) {
+    return false;
+  }
+  if (script[0].match(/^OP_(\d+)&/)) {
+    return false;
+  }
+  if (script.slice(1, 2).some((x) => x.startsWith("OP_"))) {
+    return false;
+  }
+  return true;
+}
+function isSomethingInteresting(
+  pkScript: PkScript,
+  scriptSig: SignatureScript,
+  witness: WitnessStackItem[]
+) {
+  const scriptSigItems = readScript(scriptSig).map((x) => {
+    if (x.startsWith("OP")) {
+      throw new Error(`Not a push in scriptSig`);
+    }
+    return Buffer.from(x, "hex");
+  });
 }
