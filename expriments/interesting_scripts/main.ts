@@ -36,7 +36,7 @@ function checkUnconfirmed() {
     for (const tx of data.txs) {
       checkTx(tx);
     }
-    console.info("Done");
+    console.info(`Done ${data.txs.length} transactions`);
   });
 }
 
@@ -53,10 +53,12 @@ async function checkBlock(height: number) {
     for (const tx of block.tx.slice(1)) {
       checkTx(tx);
     }
+    console.info(`Done ${block.tx.length - 1} transactions (no coinbase)`);
   }
   return data.blocks.map((block) => block.height);
 }
 
+/*
 (async () => {
   let i = 776947 + 2;
   while (true) {
@@ -67,3 +69,5 @@ async function checkBlock(height: number) {
     i++;
   }
 })();
+*/
+checkUnconfirmed();
