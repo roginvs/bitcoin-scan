@@ -38,7 +38,7 @@ import { bigintToBuf } from "../../scanner/bigIntToBuf";
 
 const myPrivKeyObject = createPrivateKey({
   key: (() => {
-    const privateKey = Buffer.from("AA".repeat(32), "hex");
+    const privateKey = Buffer.from("00".repeat(31) + "01", "hex");
     const privKeySec1 = Buffer.from(
       "300E0201010400" + privateKey.toString("hex") + "a00706052b8104000a",
       "hex"
