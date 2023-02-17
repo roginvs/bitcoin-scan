@@ -33,6 +33,7 @@ import {
   WitnessStackItem,
 } from "../../bitcoin/protocol/messages.types";
 import { asn1parse, packAsn1PairOfIntegers } from "../../bitcoin/script/asn1";
+import { extract_sig_r_and_s_from_der } from "../../bitcoin/script/extract_sig_r_and_s_from_der";
 import { getOpChecksigSignatureValue } from "../../bitcoin/script/op_checksig_sigvalue";
 import {
   getOpChecksigSignatureValueWitness,
@@ -45,6 +46,7 @@ import {
 import { ripemd160, sha256 } from "../../bitcoin/utils/hashes";
 import { Secp256k1 } from "../../my-elliptic-curves/curves.named";
 import { signature } from "../../my-elliptic-curves/ecdsa";
+import { bigintToBuf } from "../../scanner/bigIntToBuf";
 
 const myPrivKeyObject = createPrivateKey({
   key: fs.readFileSync(__dirname + "/wallet.pem"),
@@ -152,11 +154,7 @@ const dataToSig = getOpChecksigSignatureValueWitness(
   0x01
 );
 
-const signatureDer = (() => {
-  // I'v used
-  // sign(undefined, dataToSig, myPrivKeyObject)
-  // but it gave SCRIPT_ERR_SIG_HIGH_S error in bitcoin network
-
+const signatureDerMyImplementation = (() => {
   let k = BigInt("0x" + randomBytes(32).toString("hex"));
   if (k >= Secp256k1.n || k <= BigInt(1)) {
     throw new Error(`Not this time LOL`);
@@ -180,22 +178,6 @@ const signatureDer = (() => {
     privateKey,
   });
 
-  function bigintToBuf(n: BigInt, len: number = 32) {
-    let s = n.toString(16);
-    if (s.length % 2 != 0) {
-      s = "0" + s;
-    }
-    if (s.length / 2 > len) {
-      throw new Error(`Length is too small`);
-    }
-    const prefix = "0".repeat(len * 2 - s.length);
-    s = prefix + s;
-    if (s.length !== len * 2) {
-      throw new Error(`Internal error`);
-    }
-    return Buffer.from(s, "hex");
-  }
-
   const s = sig.s > Secp256k1.n / BigInt(2) ? Secp256k1.n - sig.s : sig.s;
 
   const sigDer = packAsn1PairOfIntegers(bigintToBuf(sig.r), bigintToBuf(s));
@@ -204,6 +186,24 @@ const signatureDer = (() => {
   }
   return sigDer;
 })();
+
+const signatureDer = (() => {
+  const sigDer = sign(undefined, dataToSig, myPrivKeyObject);
+  const [r, s] = extract_sig_r_and_s_from_der(sigDer);
+  const sInt = BigInt("0x" + s.toString("hex"));
+  if (sInt < Secp256k1.n / BigInt(2)) {
+    return sigDer;
+  }
+
+  const sNew = Secp256k1.n - sInt;
+
+  const sigDerNew = packAsn1PairOfIntegers(r, bigintToBuf(sNew));
+  if (!verify(undefined, dataToSig, myPublicKeyObject, sigDerNew)) {
+    throw new Error("Something wrong with signatures");
+  }
+  return sigDerNew;
+})();
+
 const signatureWithHashType = Buffer.concat([
   signatureDer,
   Buffer.from([0x01]),

@@ -5,22 +5,7 @@ import { Secp256k1 } from "../my-elliptic-curves/curves.named";
 import { signature } from "../my-elliptic-curves/ecdsa";
 import { createSignaturesAnalyzer } from "./signaturesAnalyzer";
 import { modulo_power_point } from "../my-elliptic-curves/curves";
-
-function bigintToBuf(n: BigInt, len: number = 32) {
-  let s = n.toString(16);
-  if (s.length % 2 != 0) {
-    s = "0" + s;
-  }
-  if (s.length / 2 > len) {
-    throw new Error(`Length is too small`);
-  }
-  const prefix = "0".repeat(len * 2 - s.length);
-  s = prefix + s;
-  if (s.length !== len * 2) {
-    throw new Error(`Internal error`);
-  }
-  return Buffer.from(s, "hex");
-}
+import { bigintToBuf } from "./bigIntToBuf";
 
 describe(`Signatures analyzer`, () => {
   const myPrivKeyBuf = Buffer.from("Aaabbbbccccddd332123", "hex");
