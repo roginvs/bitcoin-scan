@@ -71,18 +71,18 @@ describe("getOpChecksigSignatureValueWitness", () => {
     ),
   };
 
-  console.info(
-    getCompressedPublicKeyFromPrivateKey(input1.privateKey)?.toString("hex")
-  );
-
   it("getOpChecksigSignatureValueWitness", () => {
     expect(
       getOpChecksigSignatureValueWitness(
         tx,
-        0,
+        // Input 1 is witness
+        1,
         p2wpkhProgramForOpChecksig(
           Buffer.from("1d0f172a0ecb48aee1be1f2687d2963ae33f71a1", "hex")
         ),
+        // Amount
+        BigInt(6 * 100000000),
+        // SIGHASH_ALL
         0x01
       ).toString("hex")
     ).toBe("c37af31116d1b27caf68aae9e3ac82f1477929014d5b917657d0eb49478cb670");

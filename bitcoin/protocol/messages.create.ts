@@ -72,7 +72,7 @@ export function packVarStr(str: string) {
   return out;
 }
 
-function packUint32(val: number) {
+export function packUint32(val: number) {
   const buf = Buffer.alloc(4);
   buf.writeUInt32LE(val);
   return buf;

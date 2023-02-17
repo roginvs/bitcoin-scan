@@ -9,3 +9,7 @@ export function ripemd160(data: BinaryLike) {
   const hash = createHash("ripemd160").update(data).digest();
   return hash;
 }
+
+export function dsha256(data: BinaryLike) {
+  return sha256(sha256(data));
+}
