@@ -174,6 +174,16 @@ Algoritm:
     if (canFetchBlocks) {
       givePeersTasksToDownloadBlocks();
     }
+
+    if (mempool.size > 0) {
+      // Just send everything we know.
+      // TODO: Send max 50000 items
+      peer.send(
+        createInvMessage(
+          [...mempool.values()].map((v) => [HashType.MSG_WITNESS_TX, v.txid])
+        )
+      );
+    }
   }
 
   function performInitialHeadersDownload(peer: PeerConnection) {
