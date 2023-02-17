@@ -42,15 +42,28 @@ function checkUnconfirmed() {
 
 async function checkBlock(height: number) {
   const url = `https://blockchain.info/block-height/${height}?format=json `;
-  const data = JSON.parse(
-    fs.readFileSync(__dirname + "/776947.json").toString()
-  ) as BlockchainInfoApiBlocks;
+  // const data = JSON.parse(
+  //   fs.readFileSync(__dirname + "/776947.json").toString()
+  // ) as BlockchainInfoApiBlocks;
+  console.info(`Fetching ${url}`);
+  const data = (await fetchJson(url)) as BlockchainInfoApiBlocks;
+
   for (const block of data.blocks) {
     console.info(`Checking block ${block.height}`);
     for (const tx of block.tx.slice(1)) {
       checkTx(tx);
     }
   }
+  return data.blocks.map((block) => block.height);
 }
 
-checkBlock(776947);
+(async () => {
+  let i = 776947 + 2;
+  while (true) {
+    const blocks = await checkBlock(i);
+    if (blocks.length === 0) {
+      break;
+    }
+    i++;
+  }
+})();
