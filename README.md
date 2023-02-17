@@ -49,3 +49,5 @@ https://bitnodes.io/nodes/?q=Finland
 https://developer.bitcoin.org/devguide/contracts.html
 
 https://github.com/bitcoin/bips/blob/master/README.mediawiki
+
+https://btcinformation.org/en/developer-guide#block-chain-overview
