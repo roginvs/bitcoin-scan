@@ -170,10 +170,13 @@ function is_multisig(buf: Buffer) {
   if (script[script.length - 1] !== "OP_CHECKMULTISIG") {
     return false;
   }
-  if (!script[script.length - 2].match(/^OP_(\d+)$/)) {
+  if (
+    script[script.length - 2] !== "OP_TRUE" &&
+    !script[script.length - 2].match(/^OP_(\d+)$/)
+  ) {
     return false;
   }
-  if (!script[0].match(/^OP_(\d+)$/)) {
+  if (script[0] !== "OP_TRUE" && !script[0].match(/^OP_(\d+)$/)) {
     return false;
   }
   if (script.slice(1, 2).some((x) => x.startsWith("OP_"))) {
