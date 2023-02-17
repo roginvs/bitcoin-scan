@@ -369,8 +369,16 @@ Algoritm:
       } else if (inv[0] === HashType.MSG_WITNESS_TX) {
         const tx = mempool.get(inv[1].toString("hex"));
         if (tx) {
+          debug(
+            `${peer.id} wants MSG_WITNESS_TX ${dumpBuf(inv[1])} and we have it`
+          );
           peer.send(buildMessage("tx", packTx(tx) as Buffer as MessagePayload));
         } else {
+          debug(
+            `${peer.id} wants MSG_WITNESS_TX ${dumpBuf(
+              inv[1]
+            )} and we do not have it`
+          );
           notFoundInventories.push(inv);
         }
       } else {
