@@ -29,6 +29,7 @@ import {
   InventoryItem,
   MessagePayload,
   TransactionHash,
+  TransactionPayload,
 } from "../protocol/messages.types";
 import {
   createIncomingPeer,
@@ -181,16 +182,6 @@ Algoritm:
     if (canFetchBlocks) {
       givePeersTasksToDownloadBlocks();
     }
-
-    if (mempool.size > 0) {
-      // Just send everything we know.
-      // TODO: Send max 50000 items
-      peer.send(
-        createInvMessage(
-          [...mempool.values()].map((v) => [HashType.MSG_WITNESS_TX, v.txid])
-        )
-      );
-    }
   }
 
   function performInitialHeadersDownload(peer: PeerConnection) {
@@ -291,9 +282,11 @@ Algoritm:
     } else if (cmd === "getdata") {
       onGetData(peer, payload);
     } else if (cmd === "mempool") {
-      warn(`Got mempool request`);
+      onMempool(peer);
     } else if (cmd === "getaddr") {
       onGetAddr(peer);
+    } else if (cmd === "tx") {
+      onTx(peer, payload as Buffer as TransactionPayload);
     } else {
       debug(`${peer.id} unknown message ${cmd}`);
     }
@@ -374,12 +367,14 @@ Algoritm:
           notFoundInventories.push(inv);
         }
       } else if (inv[0] === HashType.MSG_WITNESS_TX) {
-        const tx = mempool.get(inv[1].toString("hex"));
-        if (tx) {
+        const txData = storage.getMempoolTx(inv[1]);
+        if (txData) {
           debug(
             `${peer.id} wants MSG_WITNESS_TX ${dumpBuf(inv[1])} and we have it`
           );
-          peer.send(buildMessage("tx", packTx(tx) as Buffer as MessagePayload));
+          peer.send(
+            buildMessage("tx", txData.payload as Buffer as MessagePayload)
+          );
         } else {
           debug(
             `${peer.id} wants MSG_WITNESS_TX ${dumpBuf(
@@ -434,18 +429,18 @@ Algoritm:
         }
       }
     }
-    for (const inv of data) {
-      if (inv[0] !== HashType.MSG_TX) {
-        continue;
-      }
-      const txId = inv[1];
-      if (!storage.isMempoolTxExists(txId)) {
-        // debug(`${peer.id} announce tx ${dumpBuf(txId)}`);
-        // TODO: Maybe we fetching the same txid from some other peer
-      }
-    }
-    if (data.filter((inv) => inv[0] === HashType.MSG_WITNESS_TX).length > 0) {
-      warn(`${peer.id} provided inv with MSG_WITNESS_TX`);
+
+    const unknownMempoolTxes = data.filter(
+      (inv) =>
+        inv[0] === HashType.MSG_WITNESS_TX && !storage.isMempoolTxExists(inv[1])
+    );
+    if (unknownMempoolTxes.length > 0) {
+      // We are sending getdata for each peer which announced knowledge of this tx
+      // Not very good but ok
+      debug(
+        `${peer.id} sending getdata request for MSG_WITNESS_TX with ${unknownMempoolTxes.length} items`
+      );
+      peer.send(createGetdataMessage(unknownMempoolTxes));
     }
   }
 
@@ -607,6 +602,21 @@ Algoritm:
         },
       ])
     );
+  }
+
+  function onMempool(peer: PeerConnection) {
+    debug(`${peer.id} send "mempool" request`);
+    const mempoolTxes = [...storage.getAllMempoolTransactionIds()];
+    while (mempoolTxes.length > 0) {
+      const MAX_INV_ITEMS = 50000;
+      const thisPack = mempoolTxes.slice(0, MAX_INV_ITEMS);
+      mempoolTxes.splice(0, thisPack.length);
+      peer.send(
+        createInvMessage(
+          [...thisPack.values()].map((v) => [HashType.MSG_WITNESS_TX, v.txid])
+        )
+      );
+    }
   }
 
   function onBlockMessage(peer: PeerConnection, payload: BlockPayload) {
@@ -798,6 +808,7 @@ Algoritm:
       );
     if (blocksWithoutTransactionsData.length === 0) {
       debug(`Blocks: no more blocks without data`);
+      askAllPeersToSendMempoolInv();
       return;
     }
     const blocksToDownload = blocksWithoutTransactionsData.filter(
@@ -853,6 +864,31 @@ Algoritm:
         "get-block-" + blockInfo.hash.toString("hex"),
         10 * 60 * 1000
       );
+    }
+  }
+
+  function askAllPeersToSendMempoolInv() {
+    info(`Asking all ${peers} peers for mempool txes`);
+    peers.forEach((peer) =>
+      peer.send(buildMessage("mempool", Buffer.alloc(0) as MessagePayload))
+    );
+  }
+
+  function onTx(peer: PeerConnection, payload: TransactionPayload) {
+    const [tx, rest] = readTx(payload);
+    if (rest.length !== 0) {
+      warn(`${peer.id} send too much data for tx`);
+      peer.close();
+      return;
+    }
+
+    if (!storage.isMempoolTxExists(tx.txid)) {
+      debug(`${peer.id} provided mempool tx = ${dumpBuf(tx.txid)}`);
+      // This function announces this txid to the same peer but ok
+      addTxToMempool(tx);
+    } else {
+      // We have tx with such id
+      // Even if witness txid differs we still keep existing one
     }
   }
 
@@ -1060,12 +1096,32 @@ Algoritm:
     catchupTasks = null;
   }
 
-  const mempool = new Map<string, BitcoinTransaction>();
-  function addTxToMempool(tx: BitcoinTransaction) {
-    mempool.set(tx.txid.toString("hex"), tx);
+  const onMempoolTxListeners: ((tx: BitcoinTransaction) => void)[] = [];
+  function addTxToMempoolFilterPeer(
+    tx: BitcoinTransaction,
+    skipThisPeerAnnounce?: PeerConnection
+  ) {
+    // TODO: Calculate fee
+    storage.addMempoolTransaction(tx.txid, packTx(tx), 0);
+
+    onMempoolTxListeners.forEach((cb) => cb(tx));
+
     peers.forEach((peer) => {
-      peer.send(createInvMessage([[HashType.MSG_WITNESS_TX, tx.txid]]));
+      if (peer !== skipThisPeerAnnounce) {
+        peer.send(createInvMessage([[HashType.MSG_WITNESS_TX, tx.txid]]));
+      }
     });
+  }
+
+  function addTxToMempool(tx: BitcoinTransaction) {
+    addTxToMempoolFilterPeer(tx);
+  }
+
+  function getAllMempoolTxes() {
+    return storage
+      .getAllMempoolTransactionIds()
+      .map((tx) => storage.getMempoolTx(tx.txid))
+      .map((txData) => readTx(txData.payload)[0]);
   }
 
   const onStopListeners: (() => void)[] = [];
@@ -1090,9 +1146,11 @@ Algoritm:
     onBeforeBlockSaved: buildSubscriber(beforeBlockSavedListeners),
     onAfterBlockSaved: buildSubscriber(afterBlockSavedListeners),
     catchUpBlocks,
-    addTxToMempool,
     stop,
     onStop: buildSubscriber(onStopListeners),
+    addTxToMempool,
+    onMempoolTx: buildSubscriber(onMempoolTxListeners),
+    getAllMempoolTxes,
   };
 
   return me;

@@ -198,12 +198,9 @@ export function createNodeStorage(isMemory = false) {
   ) {
     addMempoolTransactionSql.run(txid, payload, fee);
   }
-  function getAllMempoolTransactions() {
-    return sql
-      .prepare(`select txid, payload from mempool_transactions`)
-      .all() as {
+  function getAllMempoolTransactionIds() {
+    return sql.prepare(`select txid from mempool_transactions`).all() as {
       txid: TransactionHash;
-      payload: TransactionPayload;
     }[];
   }
   function pruneMempoolTransactions(
@@ -229,6 +226,16 @@ export function createNodeStorage(isMemory = false) {
     return isMempoolTxExistsSql.get(txid).count > 0;
   }
 
+  const getMempoolTxSql = sql.prepare(
+    "select txid, payload from mempool_transactions where txid = ?"
+  );
+  function getMempoolTx(txid: TransactionHash) {
+    return getMempoolTxSql.get(txid) as {
+      txid: TransactionHash;
+      payload: TransactionPayload;
+    };
+  }
+
   return {
     getLastKnownBlocksHashes,
     pushNewBlockHeader,
@@ -240,9 +247,10 @@ export function createNodeStorage(isMemory = false) {
     getBlocksHeaders,
     getBlockTransactions,
     addMempoolTransaction,
-    getAllMempoolTransactions,
+    getAllMempoolTransactionIds,
     pruneMempoolTransactions,
     isMempoolTxExists,
+    getMempoolTx,
     close: () => sql.close(),
   };
 }
