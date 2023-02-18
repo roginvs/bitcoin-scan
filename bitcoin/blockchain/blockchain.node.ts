@@ -122,6 +122,9 @@ Algoritm:
   /** We can fetch blocks when we have updated blockchain from at least one peer */
   let canFetchBlocks = false;
 
+  /** Ask "mempool" from peers only when all blocks are downloaded */
+  let canFetchFullMempool = false;
+
   // Usually height is consideres as starting from zero
   // So that's why we add 1 here
   const minimumBlockIdWithData = ((Number(
@@ -181,6 +184,10 @@ Algoritm:
     }
     if (canFetchBlocks) {
       givePeersTasksToDownloadBlocks();
+    }
+    if (canFetchFullMempool) {
+      info(`${peer.id} requesting "mempool" because peer is connected`);
+      peer.send(buildMessage("mempool", Buffer.alloc(0) as MessagePayload));
     }
   }
 
@@ -808,7 +815,7 @@ Algoritm:
       );
     if (blocksWithoutTransactionsData.length === 0) {
       debug(`Blocks: no more blocks without data`);
-      askAllPeersToSendMempoolInv();
+      setReadyToAskMempool();
       return;
     }
     const blocksToDownload = blocksWithoutTransactionsData.filter(
@@ -867,11 +874,12 @@ Algoritm:
     }
   }
 
-  function askAllPeersToSendMempoolInv() {
-    info(`Asking all ${peers.length} peers for mempool txes`);
-    peers.forEach((peer) =>
-      peer.send(buildMessage("mempool", Buffer.alloc(0) as MessagePayload))
-    );
+  function setReadyToAskMempool() {
+    canFetchFullMempool = true;
+    peers.forEach((peer) => {
+      info(`${peer.id} requesting "mempool" because we are ready to do this`);
+      peer.send(buildMessage("mempool", Buffer.alloc(0) as MessagePayload));
+    });
   }
 
   function onTx(peer: PeerConnection, payload: TransactionPayload) {
