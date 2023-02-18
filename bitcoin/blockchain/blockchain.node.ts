@@ -612,7 +612,7 @@ Algoritm:
   }
 
   function onMempool(peer: PeerConnection) {
-    debug(`${peer.id} send "mempool" request`);
+    debug(`${peer.id} sent "mempool" request`);
     const mempoolTxes = [...storage.getAllMempoolTransactionIds()];
     while (mempoolTxes.length > 0) {
       const MAX_INV_ITEMS = 50000;
@@ -878,6 +878,7 @@ Algoritm:
     if (canFetchFullMempool) {
       return;
     }
+    return;
     canFetchFullMempool = true;
     peers.forEach((peer) => {
       info(`${peer.id} requesting "mempool" because we are ready to do this`);
