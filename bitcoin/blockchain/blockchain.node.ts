@@ -85,6 +85,7 @@ export function createBitcoinNode() {
   const storage = createNodeStorage();
 
   let isTerminated = false;
+
   /*
 
 Algoritm:
@@ -119,6 +120,12 @@ Algoritm:
 
   /** We can fetch blocks when we have updated blockchain from at least one peer */
   let canFetchBlocks = false;
+
+  // Usually height is consideres as starting from zero
+  // So that's why we add 1 here
+  const minimumBlockIdWithData = ((Number(
+    process.env.NODE_DOWNLOAD_BLOCKS_ONLY_FROM_HEIGHT
+  ) || 0) + 1) as BlockDbId;
 
   // Fething only one block from the peer at time.
   // Blocks are big enough, no need to request simultaneously multiple blocks
@@ -655,7 +662,7 @@ Algoritm:
     peer.clearWatchdog("get-block-" + expectingBlockHash.toString("hex"));
 
     const storageExpectingBlock = storage
-      .getBlockWithoutTransactionsInfo(1)
+      .getBlockWithoutTransactionsInfo(1, minimumBlockIdWithData)
       .shift();
     if (!storageExpectingBlock) {
       throw new Error(
@@ -688,7 +695,10 @@ Algoritm:
         peer.id,
       ]);
     }
-    if (storage.getBlockWithoutTransactionsInfo(1).length === 0) {
+    if (
+      storage.getBlockWithoutTransactionsInfo(1, minimumBlockIdWithData)
+        .length === 0
+    ) {
       info(`Blocks: all blocks downloaded`);
     }
     givePeersTasksToDownloadBlocks();
@@ -704,7 +714,7 @@ Algoritm:
   function flushBlockBufferIfPossible() {
     while (true) {
       const nextExpectingBlock = storage
-        .getBlockWithoutTransactionsInfo(1)
+        .getBlockWithoutTransactionsInfo(1, minimumBlockIdWithData)
         .shift();
       if (!nextExpectingBlock) {
         break;
@@ -782,7 +792,10 @@ Algoritm:
       return;
     }
     const blocksWithoutTransactionsData =
-      storage.getBlockWithoutTransactionsInfo(MAX_BUFFERED_BLOCKS);
+      storage.getBlockWithoutTransactionsInfo(
+        MAX_BUFFERED_BLOCKS,
+        minimumBlockIdWithData
+      );
     if (blocksWithoutTransactionsData.length === 0) {
       debug(`Blocks: no more blocks without data`);
       return;
@@ -914,7 +927,7 @@ Algoritm:
   {
     const startingLastKnownBlockDbId = storage.getLastKnownBlockDbId();
     const startingLastBlockDbIdWithData = storage
-      .getBlockWithoutTransactionsInfo(1)
+      .getBlockWithoutTransactionsInfo(1, minimumBlockIdWithData)
       .shift()?.id;
     info(
       `Bitcoin node created, starting height=${

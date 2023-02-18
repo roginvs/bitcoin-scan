@@ -129,16 +129,19 @@ export function createNodeStorage(isMemory = false) {
     }
   });
 
-  function getBlockWithoutTransactionsInfo(n = 10) {
+  function getBlockWithoutTransactionsInfo(
+    limitAmount: number,
+    minId: BlockDbId
+  ) {
     return sql
       .prepare(
         `
       select id, hash from headerschain where id > (
-      select ifnull(max(block_numeric_id),0) from block_transactions
-      ) order by id limit ?
+        select ifnull(max(block_numeric_id),0) from block_transactions
+      ) and id >= ? order by id limit ?
     `
       )
-      .all(n)
+      .all(minId, limitAmount)
       .map((row) => ({ id: row.id as BlockDbId, hash: row.hash as BlockHash }));
   }
 

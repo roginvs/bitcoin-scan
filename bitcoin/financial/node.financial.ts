@@ -1,7 +1,6 @@
 import { createLogger } from "../../logger/logger";
 import { createBitcoinNode } from "../blockchain/blockchain.node";
 import { BlockId } from "../node";
-import { genesisBlockHash } from "../protocol/consts";
 import { BitcoinBlock } from "../protocol/messages.parse";
 import { ECDSASignatureValidatedListener } from "../script/types";
 import { buildSubscriber } from "../subscriber";
