@@ -10,6 +10,8 @@ process.on("SIGINT", () => {
 });
 
 node.onMempoolTx((tx) => {
-  console.info(`NEW MEMPOOL TX ${tx.txid.toString("hex")}`);
-  console.info(`Total mempool length = ${node.getAllMempoolTxes().length}`);
+  console.info(
+    `New mempool ${Buffer.from(tx.txid).reverse().toString("hex")} ` +
+      `Total mempool length = ${node.getAllMempoolTxes().length}`
+  );
 });

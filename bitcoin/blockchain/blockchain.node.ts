@@ -404,6 +404,21 @@ Algoritm:
 
   function onInvMessage(peer: PeerConnection, payload: MessagePayload) {
     const data = readInvPayload(payload);
+
+    debug(
+      `${peer.id} Got inv with ${data.length} items ` +
+        `MSG_BLOCK=${
+          data.filter((inv) => inv[0] === HashType.MSG_BLOCK).length
+        } ` +
+        `MSG_WITNESS_BLOCK=${
+          data.filter((inv) => inv[0] === HashType.MSG_WITNESS_BLOCK).length
+        } ` +
+        `MSG_TX=${data.filter((inv) => inv[0] === HashType.MSG_TX).length} ` +
+        `MSG_WITNESS_TX=${
+          data.filter((inv) => inv[0] === HashType.MSG_WITNESS_TX).length
+        }`
+    );
+
     const isHaveBlockInv = data.some(
       (inv) =>
         inv[0] === HashType.MSG_BLOCK || inv[0] === HashType.MSG_WITNESS_BLOCK
@@ -439,7 +454,8 @@ Algoritm:
 
     const unknownMempoolTxes = data.filter(
       (inv) =>
-        inv[0] === HashType.MSG_WITNESS_TX && !storage.isMempoolTxExists(inv[1])
+        (inv[0] === HashType.MSG_WITNESS_TX || inv[0] === HashType.MSG_TX) &&
+        !storage.isMempoolTxExists(inv[1])
     );
     if (unknownMempoolTxes.length > 0) {
       // We are sending getdata for each peer which announced knowledge of this tx
@@ -878,7 +894,6 @@ Algoritm:
     if (canFetchFullMempool) {
       return;
     }
-    return;
     canFetchFullMempool = true;
     peers.forEach((peer) => {
       info(`${peer.id} requesting "mempool" because we are ready to do this`);
