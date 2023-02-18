@@ -875,6 +875,9 @@ Algoritm:
   }
 
   function setReadyToAskMempool() {
+    if (canFetchFullMempool) {
+      return;
+    }
     canFetchFullMempool = true;
     peers.forEach((peer) => {
       info(`${peer.id} requesting "mempool" because we are ready to do this`);
