@@ -79,7 +79,7 @@ function getBootstrapPeers() {
   return peers;
 }
 
-export function createBitcoinBlocksNode() {
+export function createBitcoinNode() {
   const bootstrapPeers = getBootstrapPeers();
 
   const storage = createNodeStorage();
@@ -1055,18 +1055,23 @@ Algoritm:
     });
   }
 
+  const onStopListeners: (() => void)[] = [];
+
   function stop() {
+    if (isTerminated) {
+      return;
+    }
     info(`Terminating`);
     isTerminated = true;
+
+    onStopListeners.forEach((cb) => cb());
+
     storage.close();
     peers.forEach((peer) => peer.close());
     incomingServer?.close();
   }
 
   const me = {
-    destroy() {
-      throw new Error(`Not implemented`);
-    },
     getSavedBlock,
     removeOldBlocksData,
     onBeforeBlockSaved: buildSubscriber(beforeBlockSavedListeners),
@@ -1074,6 +1079,7 @@ Algoritm:
     catchUpBlocks,
     addTxToMempool,
     stop,
+    onStop: buildSubscriber(onStopListeners),
   };
 
   return me;

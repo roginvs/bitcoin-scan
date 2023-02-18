@@ -1,5 +1,5 @@
 import "dotenv-defaults/config";
-import { createBitcoinNode, BlockId } from "../bitcoin/node";
+import { createBitcoinNode, BlockId, addFinancial } from "../bitcoin/node";
 import { BitcoinBlock } from "../bitcoin/protocol/messages.parse";
 import { createLogger } from "../logger/logger";
 import { createSignaturesAnalyzer } from "./signaturesAnalyzer";
@@ -9,8 +9,10 @@ const analyzer = createSignaturesAnalyzer();
 debug("Analyzer created");
 
 const node = createBitcoinNode();
+const financial = addFinancial(node);
 
-node.onValidatedSignature((sigInfo) => analyzer.ecdsaSignature(sigInfo));
+financial.onValidatedSignature((sigInfo) => analyzer.ecdsaSignature(sigInfo));
+
 node.onAfterBlockSaved(() => {
   info(
     `Block was saved. Status: signaturesSaved=${analyzer.signaturesSaved} keysFound=${analyzer.keysFound}`

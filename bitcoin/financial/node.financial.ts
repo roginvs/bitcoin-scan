@@ -1,5 +1,5 @@
 import { createLogger } from "../../logger/logger";
-import { createBitcoinBlocksNode } from "../blockchain/blockchain.node";
+import { createBitcoinNode } from "../blockchain/blockchain.node";
 import { BlockId } from "../node";
 import { genesisBlockHash } from "../protocol/consts";
 import { BitcoinBlock } from "../protocol/messages.parse";
@@ -17,7 +17,7 @@ function dumpBuf(buf: Buffer) {
   return str.slice(0, 8) + "-" + str.slice(-8);
 }
 
-export function addFinancial(node: ReturnType<typeof createBitcoinBlocksNode>) {
+export function addFinancial(node: ReturnType<typeof createBitcoinNode>) {
   const storage = createFinancialStorage();
 
   const onValidatedSignature: ECDSASignatureValidatedListener[] = [];
@@ -104,13 +104,11 @@ export function addFinancial(node: ReturnType<typeof createBitcoinBlocksNode>) {
 
   node.catchUpBlocks(storage.getLastProcessedBlockId(), processBlock);
 
+  node.onStop(() => {
+    info(`Terminating financial`);
+    storage.close();
+  });
   return {
-    ...node,
     onValidatedSignature: buildSubscriber(onValidatedSignature),
-    stop: () => {
-      info(`Terminating`);
-      node.stop();
-      storage.close();
-    },
   };
 }
