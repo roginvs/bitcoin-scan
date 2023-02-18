@@ -868,7 +868,7 @@ Algoritm:
   }
 
   function askAllPeersToSendMempoolInv() {
-    info(`Asking all ${peers} peers for mempool txes`);
+    info(`Asking all ${peers.length} peers for mempool txes`);
     peers.forEach((peer) =>
       peer.send(buildMessage("mempool", Buffer.alloc(0) as MessagePayload))
     );
