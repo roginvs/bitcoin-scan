@@ -1148,13 +1148,19 @@ Algoritm:
 
   function onRejectMessage(peer: PeerConnection, payload: MessagePayload) {
     const reject = readRejectMessage(payload);
-    warn(
-      `${peer.id} REJECTED ${reject.message} code=${
-        reject.code
-      } reason=0x${reject.reason.toString(16)} ` +
-        `data = ${reject.data.toString("hex")} ` +
-        `dataRev = ${Buffer.from(reject.data).reverse().toString("hex")}`
-    );
+
+    const rejectStr =
+      `${peer.id} REJECTED ${reject.message} code=0x${reject.code.toString(
+        16
+      )} reason=${reject.reason} ` +
+      `data = ${reject.data.toString("hex")} ` +
+      `dataRev = ${Buffer.from(reject.data).reverse().toString("hex")}`;
+
+    if (reject.reason === "min relay fee not met") {
+      debug(rejectStr);
+    } else {
+      warn(rejectStr);
+    }
   }
 
   const onMempoolTxListeners: ((tx: BitcoinTransaction) => void)[] = [];
