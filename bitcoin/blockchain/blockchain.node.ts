@@ -19,6 +19,7 @@ import {
   readGetheadersMessage,
   readInvPayload,
   readNotFoundPayload,
+  readRejectMessage,
   readTx,
   readVarInt,
 } from "../protocol/messages.parse";
@@ -294,6 +295,8 @@ Algoritm:
       onGetAddr(peer);
     } else if (cmd === "tx") {
       onTx(peer, payload as Buffer as TransactionPayload);
+    } else if (cmd === "reject") {
+      onRejectMessage(peer, payload);
     } else {
       debug(`${peer.id} unknown message ${cmd}`);
     }
@@ -1121,6 +1124,15 @@ Algoritm:
     }
 
     catchupTasks = null;
+  }
+
+  function onRejectMessage(peer: PeerConnection, payload: MessagePayload) {
+    const reject = readRejectMessage(payload);
+    debug(
+      `${peer.id} REJECTED ${reject.message} code=${reject.code} reason=${reject.reason} ` +
+        `data=${reject.data.toString("hex")} ` +
+        `dataRev=${Buffer.from(reject.data).reverse().toString("hex")}`
+    );
   }
 
   const onMempoolTxListeners: ((tx: BitcoinTransaction) => void)[] = [];

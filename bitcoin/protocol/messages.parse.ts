@@ -511,3 +511,29 @@ export function readGetheadersMessage(buffer: MessagePayload) {
     buf,
   ] as const;
 }
+
+export function readRejectMessage(buffer: MessagePayload) {
+  let buf: Buffer = buffer;
+
+  let messageLen = 0;
+  [messageLen, buf] = readVarInt(buf);
+  const message = buf.subarray(0, messageLen).toString();
+  buf = buf.subarray(messageLen);
+
+  const code = buf[0];
+  buf = buf.subarray(1);
+
+  let reasonLen = 0;
+  [reasonLen, buf] = readVarInt(buf);
+  const reason = buf.subarray(0, reasonLen).toString();
+  buf = buf.subarray(reasonLen);
+
+  const data = buf;
+
+  return {
+    message,
+    code,
+    reason,
+    data,
+  };
+}
