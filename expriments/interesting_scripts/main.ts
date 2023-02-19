@@ -67,6 +67,7 @@ async function checkBlock(height: number) {
       break;
     }
     i++;
+    break;
   }
 })();
 
