@@ -21,7 +21,7 @@ function normalizeScriptText(scriptText: string) {
   return zeroScriptPushes(script).join(" ");
 }
 
-const EXTENSION = ".txt";
+const EXTENSION = ".bs";
 export function createInterestingScriptStorage() {
   const currentFiles = fs
     .readdirSync(__dirname + "/data/")
