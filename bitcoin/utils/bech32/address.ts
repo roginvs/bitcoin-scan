@@ -14,7 +14,7 @@ export function bitcoin_address_P2WSH_from_pk_script(pkscript: PkScript) {
   return encode("bc", 0, [...scriptHash]);
 }
 
-/** This is what you should store in the outpoint */
+/** This is what you should store in the outpoint  */
 export function get_P2WSH_pk_script_from_real_pk_script(
   pkscript: PkScript
 ): PkScript {
