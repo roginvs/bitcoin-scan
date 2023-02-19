@@ -27,9 +27,9 @@ import {
   p2wpkhProgramForOpChecksig,
 } from "../../bitcoin/script/op_checksig_sigvalue_witness";
 import {
-  bitcoinAddressP2WPKHromPublicKey,
-  bitcoinAddressP2WSHromPKScript,
-  getP2WSHpkscriptFromRealPkScript,
+  bitcoin_address_P2WPKH_from_public_key,
+  bitcoin_address_P2WSH_from_pk_script,
+  get_P2WSH_pk_script_from_real_pk_script,
 } from "../../bitcoin/utils/bech32/address";
 import { ripemd160, sha256 } from "../../bitcoin/utils/hashes";
 import { Secp256k1 } from "../../my-elliptic-curves/curves.named";
@@ -78,7 +78,7 @@ console.info(
   `Public key hash = ${ripemd160(sha256(myPublicKey)).toString("hex")}`
 );
 
-const p2wpkh = bitcoinAddressP2WSHromPKScript(
+const p2wpkh = bitcoin_address_P2WSH_from_pk_script(
   Buffer.from("AC", "hex") as PkScript
 );
 console.info(`Address 0xAC = ${p2wpkh}`);

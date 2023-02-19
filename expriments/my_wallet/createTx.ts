@@ -40,8 +40,8 @@ import {
   p2wpkhProgramForOpChecksig,
 } from "../../bitcoin/script/op_checksig_sigvalue_witness";
 import {
-  bitcoinAddressP2WPKHromPublicKey,
-  getP2WSHpkscriptFromRealPkScript,
+  bitcoin_address_P2WPKH_from_public_key,
+  get_P2WSH_pk_script_from_real_pk_script,
 } from "../../bitcoin/utils/bech32/address";
 import { ripemd160, sha256 } from "../../bitcoin/utils/hashes";
 import { Secp256k1 } from "../../my-elliptic-curves/curves.named";
@@ -78,7 +78,7 @@ console.info("Public key = ", myPublicKey.toString("hex"));
 console.info(
   `Public key hash = ${ripemd160(sha256(myPublicKey)).toString("hex")}`
 );
-const p2wpkh = bitcoinAddressP2WPKHromPublicKey(myPublicKey);
+const p2wpkh = bitcoin_address_P2WPKH_from_public_key(myPublicKey);
 console.info(`Address = ${p2wpkh}`);
 
 // console.info(
@@ -106,7 +106,7 @@ export function createTransaction() {
     ) as PkScript,
   };
 
-  const lolOutpoint = getP2WSHpkscriptFromRealPkScript(
+  const lolOutpoint = get_P2WSH_pk_script_from_real_pk_script(
     Buffer.from("AC", "hex") as PkScript
   );
 

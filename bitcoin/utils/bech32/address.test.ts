@@ -1,9 +1,9 @@
 import { PkScript } from "../../protocol/messages.types";
 import {
-  bitcoinAddressP2WPKHromPublicKey,
-  bitcoinAddressP2WSHromPKScript,
-  bitcoinAddressP2WSHromPublicKey,
-  getP2WSHpkscriptFromRealPkScript,
+  bitcoin_address_P2WPKH_from_public_key,
+  bitcoin_address_P2WSH_from_pk_script,
+  bitcoin_address_P2WSH_from_public_key,
+  get_P2WSH_pk_script_from_real_pk_script,
 } from "./address";
 
 describe("Testing address encoding", () => {
@@ -15,13 +15,13 @@ describe("Testing address encoding", () => {
   );
 
   it(`p2wpkh`, () => {
-    expect(bitcoinAddressP2WPKHromPublicKey(pubKey)).toBe(
+    expect(bitcoin_address_P2WPKH_from_public_key(pubKey)).toBe(
       "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
     );
   });
 
   it(`p2wsh`, () => {
-    expect(bitcoinAddressP2WSHromPublicKey(pubKey)).toBe(
+    expect(bitcoin_address_P2WSH_from_public_key(pubKey)).toBe(
       "bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3"
     );
   });
@@ -32,13 +32,13 @@ describe("Testing address encoding", () => {
   ) as PkScript;
   it(`bitcoinAddressP2WSHromPKScript`, () => {
     expect(
-      bitcoinAddressP2WSHromPKScript(demoPkScriptFromLatestItemInWitness)
+      bitcoin_address_P2WSH_from_pk_script(demoPkScriptFromLatestItemInWitness)
     ).toBe("bc1qg95x3ll3caqs65z6tmy9x2xe5y32wnwhygf9n0msv6jjptzuly9snrxtfu");
   });
 
   it(`getP2WSHpkscriptFromRealPkScript`, () => {
     expect(
-      getP2WSHpkscriptFromRealPkScript(
+      get_P2WSH_pk_script_from_real_pk_script(
         demoPkScriptFromLatestItemInWitness
       ).toString("hex")
     ).toBe(
