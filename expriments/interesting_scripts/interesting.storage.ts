@@ -38,7 +38,12 @@ export function createInterestingScriptStorage() {
     return normalizeScriptText(scriptData);
   });
 
-  function isThisScriptInterstingAndNew(script: string[]) {
+  function isThisScriptInterstingAndNew(
+    script: string[],
+    blockHash: string,
+    txHash: string,
+    inputSequence: number
+  ) {
     const zeroedPacked = zeroScriptPushes(script).join(" ");
     if (currentScriptsAsStrings.indexOf(zeroedPacked) > -1) {
       return false;
@@ -48,12 +53,13 @@ export function createInterestingScriptStorage() {
     const scriptFileName =
       ("0".repeat(numLen) + currentIndex.toString()).slice(-numLen) + EXTENSION;
 
+    const infoHeader = `#block-${blockHash}\n#txHash-${txHash}\n#input-${inputSequence}\n\n`;
     console.info(`New script index=${currentIndex} fName=${scriptFileName}`);
-    console.info(printScript(script, 1));
+    console.info(infoHeader + printScript(script, 1));
 
     fs.writeFileSync(
       __dirname + "/data/" + scriptFileName,
-      printScript(script)
+      infoHeader + printScript(script)
     );
     currentIndex++;
 

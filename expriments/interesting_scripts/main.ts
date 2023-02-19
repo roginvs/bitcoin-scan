@@ -11,7 +11,7 @@ import { isSomethingInteresting } from "./script_check";
 
 const { isThisScriptInterstingAndNew } = createInterestingScriptStorage();
 
-function checkTx(tx: BlockchainInfoTx) {
+function checkTx(tx: BlockchainInfoTx, blockHash: string) {
   for (const input of tx.inputs) {
     const isInteresting = isSomethingInteresting(convertInput(input));
     if (isInteresting === null) {
@@ -23,7 +23,12 @@ function checkTx(tx: BlockchainInfoTx) {
       console.info(input);
       console.info("");
     } else {
-      const isNew = isThisScriptInterstingAndNew(isInteresting);
+      const isNew = isThisScriptInterstingAndNew(
+        isInteresting,
+        blockHash,
+        tx.hash,
+        input.sequence
+      );
       if (isNew !== false) {
         // Do nothing, we already print in storage
       }
@@ -35,7 +40,7 @@ function checkUnconfirmed() {
   return fetchJson(url).then((data: BlockchainInfoApiUnspentTranscation) => {
     console.info("Data fetched, parsing...");
     for (const tx of data.txs) {
-      checkTx(tx);
+      checkTx(tx, "<unconfirmed>");
     }
     console.info(`Done ${data.txs.length} transactions`);
   });
@@ -52,7 +57,7 @@ async function checkBlock(height: number) {
   for (const block of data.blocks) {
     console.info(`Checking block ${block.height}`);
     for (const tx of block.tx.slice(1)) {
-      checkTx(tx);
+      checkTx(tx, block.hash);
     }
     console.info(`Done ${block.tx.length - 1} transactions (no coinbase)`);
   }
@@ -60,13 +65,15 @@ async function checkBlock(height: number) {
 }
 
 (async () => {
-  let i = 776966;
+  // let i = 776947 + 0;
+  let i = 776947 + 0;
   while (true) {
     const blocks = await checkBlock(i);
     if (blocks.length === 0) {
       console.info(`No blocks at height ${i}`);
       break;
     }
+
     i++;
   }
 })();

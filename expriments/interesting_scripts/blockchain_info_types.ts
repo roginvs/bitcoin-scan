@@ -23,7 +23,7 @@ export interface BlockchainInfoTxInput {
 }
 
 export interface BlockchainInfoTx {
-  hash: Buffer;
+  hash: string;
   ver: number;
   vin_sz: number;
   vout_sz: number;
