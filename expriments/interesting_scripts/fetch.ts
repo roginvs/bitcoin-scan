@@ -21,3 +21,14 @@ export function fetchJson(url: string) {
     });
   });
 }
+
+export async function fetchJsonNoFail(url: string) {
+  while (true) {
+    const data = await fetchJson(url).catch((e) => null);
+    if (data !== null) {
+      return data;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+    console.info(`Retrying...`);
+  }
+}

@@ -1,14 +1,15 @@
-import * as fs from "fs";
 import {
   BlockchainInfoApiBlocks,
   BlockchainInfoApiUnspentTranscation,
   BlockchainInfoTx,
 } from "./blockchain_info_types";
 import { convertInput } from "./converter";
-import { fetchJson } from "./fetch";
-import { isThisKindOfScriptAlreadyKnown } from "./knownScript";
+import { fetchJson, fetchJsonNoFail } from "./fetch";
+import { createInterestingScriptStorage } from "./interesting.storage";
 import { printScript, readScript } from "./read_script";
 import { isSomethingInteresting } from "./script_check";
+
+const { isThisScriptInterstingAndNew } = createInterestingScriptStorage();
 
 function checkTx(tx: BlockchainInfoTx) {
   for (const input of tx.inputs) {
@@ -21,11 +22,11 @@ function checkTx(tx: BlockchainInfoTx) {
       );
       console.info(input);
       console.info("");
-    } else if (!isThisKindOfScriptAlreadyKnown(isInteresting)) {
-      console.info(
-        `Something interesting with tx=${tx.hash} input=${input.index}`
-      );
-      console.info(printScript(isInteresting, 1));
+    } else {
+      const isNew = isThisScriptInterstingAndNew(isInteresting);
+      if (isNew !== false) {
+        // Do nothing, we already print in storage
+      }
     }
   }
 }
@@ -46,7 +47,7 @@ async function checkBlock(height: number) {
   //   fs.readFileSync(__dirname + "/776947.json").toString()
   // ) as BlockchainInfoApiBlocks;
   console.info(`Fetching ${url}`);
-  const data = (await fetchJson(url)) as BlockchainInfoApiBlocks;
+  const data: BlockchainInfoApiBlocks = await fetchJsonNoFail(url);
 
   for (const block of data.blocks) {
     console.info(`Checking block ${block.height}`);
