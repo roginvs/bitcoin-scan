@@ -21,10 +21,13 @@ export function getOpChecksigSignatureValue(
    */
   hashCodeType: number | ReturnType<typeof readHashCodeType>
 ) {
-  const { isSigHashNone, isSigHashSingle, isSigHashAnyone } =
-    typeof hashCodeType === "number"
-      ? readHashCodeType(hashCodeType)
-      : hashCodeType;
+  const {
+    isSigHashNone,
+    isSigHashSingle,
+    isSigHashAnyoneCanPay: isSigHashAnyone,
+  } = typeof hashCodeType === "number"
+    ? readHashCodeType(hashCodeType)
+    : hashCodeType;
 
   const txNew: BitcoinTransaction = {
     ...spending,

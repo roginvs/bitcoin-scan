@@ -48,7 +48,7 @@ export function getOpChecksigSignatureValueWitness(
   bufs.push(packUint32(spending.version));
 
   {
-    const hashPrevouts = !hashCode.isSigHashAnyone
+    const hashPrevouts = !hashCode.isSigHashAnyoneCanPay
       ? dsha256(
           Buffer.concat([
             ...spending.txIn.flatMap((txIn) => [
@@ -62,7 +62,7 @@ export function getOpChecksigSignatureValueWitness(
   }
   {
     const hashSequence =
-      !hashCode.isSigHashAnyone &&
+      !hashCode.isSigHashAnyoneCanPay &&
       !hashCode.isSigHashSingle &&
       !hashCode.isSigHashNone
         ? dsha256(
