@@ -30,6 +30,7 @@ export function get_P2WPKH_pk_script_from_public_key(
   return Buffer.concat([Buffer.from("0014", "hex"), hash]) as PkScript;
 }
 
+/** Creates a script with this public key */
 export function bitcoin_address_P2WSH_from_public_key(pubKey: Buffer) {
   checkPublicKey(pubKey);
   const script = Buffer.concat([
