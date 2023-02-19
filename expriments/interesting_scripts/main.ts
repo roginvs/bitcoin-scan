@@ -59,9 +59,8 @@ async function checkBlock(height: number) {
   return data.blocks.map((block) => block.height);
 }
 
-/*
 (async () => {
-  let i = 776947 + 2;
+  let i = 776947 + 0;
   while (true) {
     const blocks = await checkBlock(i);
     if (blocks.length === 0) {
@@ -70,5 +69,5 @@ async function checkBlock(height: number) {
     i++;
   }
 })();
-*/
-checkUnconfirmed();
+
+// checkUnconfirmed();
