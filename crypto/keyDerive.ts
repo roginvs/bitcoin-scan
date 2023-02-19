@@ -5,7 +5,7 @@ import { ripemd160, sha256 } from "../bitcoin/utils/hashes";
 import { Secp256k1 } from "../my-elliptic-curves/curves.named";
 import { get_private_key_if_diff_k_is_known_verified } from "../my-elliptic-curves/ecdsa";
 import { uncompressPublicKey } from "../my-elliptic-curves/uncompressPublicKey";
-import { bitcoinAddressP2PKHFromPublicKey } from "../bitcoin/utils/adresses";
+import { bitcoin_address_P2PKH_from_public_key } from "../bitcoin/utils/adresses";
 
 export interface SignatureInfo {
   compressed_public_key: Buffer;
@@ -57,11 +57,11 @@ export function derivePrivateKeyFromPair(a: SignatureInfo, b: SignatureInfo) {
     throw new Error(`Internal error, LOL WHAT, why my key is not recovered`);
   }
 
-  const walletStringComp = bitcoinAddressP2PKHFromPublicKey(
+  const walletStringComp = bitcoin_address_P2PKH_from_public_key(
     a.compressed_public_key
   );
 
-  const walletStringUncomp = bitcoinAddressP2PKHFromPublicKey(
+  const walletStringUncomp = bitcoin_address_P2PKH_from_public_key(
     getUncompressedPublicKeyFromPrivateKey(privateKeyBuf)
   );
 
