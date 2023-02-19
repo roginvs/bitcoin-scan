@@ -756,7 +756,16 @@ Algoritm:
     beforeBlockSavedListeners.forEach((cb) => cb(block, blockDbId));
     storage.saveBlockTransactions(block.hash, block.transactions);
     afterBlockSavedListeners.forEach((cb) => cb(block, blockDbId));
+
+    const mempoolBefore = storage.getAllMempoolTransactionIds().length;
     storage.pruneMempoolTransactions(block.transactions.map((tx) => tx.txid));
+    const mempoolAfter = storage.getAllMempoolTransactionIds().length;
+    if (mempoolAfter !== mempoolBefore) {
+      debug(
+        `MEMPOOL cleanup, removed ${mempoolBefore - mempoolAfter} items ` +
+          `was=${mempoolBefore} now=${mempoolAfter}`
+      );
+    }
   }
 
   function flushBlockBufferIfPossible() {
