@@ -12,7 +12,7 @@ import { isSomethingInteresting } from "./script_check";
 const { isThisScriptInterstingAndNew } = createInterestingScriptStorage();
 
 function checkTx(tx: BlockchainInfoTx, blockHash: string) {
-  for (const input of tx.inputs) {
+  for (const [inputIndex, input] of tx.inputs.entries()) {
     const isInteresting = isSomethingInteresting(convertInput(input));
     if (isInteresting === null) {
       // nothing interesting
@@ -27,7 +27,7 @@ function checkTx(tx: BlockchainInfoTx, blockHash: string) {
         isInteresting,
         blockHash,
         tx.hash,
-        input.sequence
+        inputIndex
       );
       if (isNew !== false) {
         // Do nothing, we already print in storage
