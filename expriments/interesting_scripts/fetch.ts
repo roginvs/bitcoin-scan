@@ -12,8 +12,12 @@ export function fetchJson(url: string) {
       });
 
       res.on("end", () => {
-        const json = JSON.parse(body);
-        resolve(json);
+        try {
+          const json = JSON.parse(body);
+          resolve(json);
+        } catch (e) {
+          reject(e);
+        }
       });
       res.on("error", (e) => {
         reject(e);
