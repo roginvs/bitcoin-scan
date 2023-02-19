@@ -466,7 +466,19 @@ Algoritm:
       debug(
         `${peer.id} sending getdata request for MSG_WITNESS_TX with ${unknownMempoolTxes.length} items`
       );
-      peer.send(createGetdataMessage(unknownMempoolTxes));
+      peer.send(
+        createGetdataMessage(
+          unknownMempoolTxes.map((inv) => {
+            if (inv[0] === HashType.MSG_WITNESS_TX) {
+              return inv;
+            } else if (inv[0] === HashType.MSG_TX) {
+              return [HashType.MSG_WITNESS_TX, inv[1]];
+            } else {
+              throw new Error(`Internal error: must be only txes`);
+            }
+          })
+        )
+      );
     }
   }
 
