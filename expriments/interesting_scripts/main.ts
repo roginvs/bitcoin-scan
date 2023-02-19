@@ -55,7 +55,9 @@ async function checkBlock(height: number) {
   const data: BlockchainInfoApiBlocks = await fetchJsonNoFail(url);
 
   for (const block of data.blocks) {
-    console.info(`Checking block ${block.height}`);
+    console.info(
+      `Checking block ${block.height} date=${new Date(block.time * 1000)}`
+    );
     for (const tx of block.tx.slice(1)) {
       checkTx(tx, block.hash);
     }
