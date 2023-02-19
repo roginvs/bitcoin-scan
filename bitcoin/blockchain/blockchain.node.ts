@@ -1128,7 +1128,7 @@ Algoritm:
 
   function onRejectMessage(peer: PeerConnection, payload: MessagePayload) {
     const reject = readRejectMessage(payload);
-    debug(
+    warn(
       `${peer.id} REJECTED ${reject.message} code=${reject.code} reason=${reject.reason} ` +
         `data=${reject.data.toString("hex")} ` +
         `dataRev=${Buffer.from(reject.data).reverse().toString("hex")}`
