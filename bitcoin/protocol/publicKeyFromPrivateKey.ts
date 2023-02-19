@@ -2,6 +2,12 @@ import { createPrivateKey, createPublicKey } from "crypto";
 import { compressPublicKey } from "./compressPublicKey";
 
 export function getCompressedPublicKeyFromPrivateKey(privateKey: Buffer) {
+  if (privateKey.length !== 32) {
+    throw new Error(`Wrong lenght for private key`);
+  }
+  if (privateKey.equals(Buffer.alloc(32, 0))) {
+    throw new Error(`Private key is zeroes!`);
+  }
   const privKeySec1 = Buffer.from(
     "300E0201010400" + privateKey.toString("hex") + "a00706052b8104000a",
     "hex"
