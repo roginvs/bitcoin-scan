@@ -69,6 +69,7 @@ async function checkBlock(height: number) {
 (async () => {
   // let i = 776947 + 0;
   let i = 776947 + 0;
+  //i = 777347;
   while (true) {
     const blocks = await checkBlock(i);
     if (blocks.length === 0) {
@@ -76,7 +77,7 @@ async function checkBlock(height: number) {
       break;
     }
 
-    i++;
+    i--;
   }
 })();
 
