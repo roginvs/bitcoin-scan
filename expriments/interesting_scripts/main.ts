@@ -67,8 +67,8 @@ async function checkBlock(height: number) {
 }
 
 (async () => {
-  // Already scanned blocks from 775190 to 777347
-  let i = 775190;
+  // Already scanned blocks from 774496 to 777347
+  let i = 774496;
 
   while (true) {
     const blocks = await checkBlock(i);
