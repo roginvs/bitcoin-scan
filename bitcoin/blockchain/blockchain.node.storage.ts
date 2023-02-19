@@ -205,7 +205,7 @@ export function createNodeStorage(isMemory = false) {
   }
   function pruneMempoolTransactions(
     txids: TransactionHash[],
-    expiredThreshold = 24 * 3
+    expiredThresholdHours = 24 * 5
   ) {
     const removeTxById = sql.prepare(
       `delete from mempool_transactions where txid = ?`
@@ -217,7 +217,7 @@ export function createNodeStorage(isMemory = false) {
       delete from mempool_transactions where created_at < STRFTIME('%s') - ?
     `
       )
-      .run(expiredThreshold * 60 * 60);
+      .run(expiredThresholdHours * 60 * 60);
   }
   const isMempoolTxExistsSql = sql.prepare(
     "select count(*) as count from mempool_transactions where txid = ?"
