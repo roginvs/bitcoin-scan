@@ -22,6 +22,14 @@ export function get_P2WSH_pk_script_from_real_pk_script(
   return Buffer.concat([Buffer.from("0020", "hex"), scriptHash]) as PkScript;
 }
 
+/** This is what you should store in the outpoint  */
+export function get_P2WPKH_pk_script_from_public_key(
+  publicKey: Buffer
+): PkScript {
+  const hash = ripemd160(sha256(publicKey));
+  return Buffer.concat([Buffer.from("0014", "hex"), hash]) as PkScript;
+}
+
 export function bitcoin_address_P2WSH_from_public_key(pubKey: Buffer) {
   checkPublicKey(pubKey);
   const script = Buffer.concat([

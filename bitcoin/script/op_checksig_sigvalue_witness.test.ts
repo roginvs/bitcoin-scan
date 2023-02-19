@@ -8,30 +8,6 @@ import {
   p2wpkhProgramForOpChecksig,
 } from "./op_checksig_sigvalue_witness";
 
-function getCompressedPublicKeyFromPrivateKey(privateKey: Buffer) {
-  const privKeySec1 = Buffer.from(
-    "300E0201010400" + privateKey.toString("hex") + "a00706052b8104000a",
-    "hex"
-  );
-
-  const diff = privateKey.length;
-  privKeySec1[1] += diff;
-  privKeySec1[6] += diff;
-
-  const myPrivKey = createPrivateKey({
-    key: privKeySec1,
-    format: "der",
-    type: "sec1",
-  });
-  const myPublicKey = createPublicKey(myPrivKey);
-  const myPublicKeySpki = myPublicKey.export({ format: "der", type: "spki" });
-  const myPublicKeyUncompressed = myPublicKeySpki.subarray(
-    20 + 2 + 1,
-    20 + 2 + 1 + 66
-  );
-  return compressPublicKey(myPublicKeyUncompressed);
-}
-
 describe("getOpChecksigSignatureValueWitness", () => {
   const txRaw = Buffer.from(
     "0100000002fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f0000000000eeffffffef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000000ffffffff02202cb206000000001976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac9093510d000000001976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac11000000",
