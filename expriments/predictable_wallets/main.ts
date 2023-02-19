@@ -101,7 +101,7 @@ function addPublickeyWallets(privKey: Buffer) {
     addScriptWallets(script, " PKH", secret);
   }
   {
-    // OP_CHECKSIG, OP_CHECKSIGVERIFY, OP_CHECKSIG + OP_VERIFY
+    // <public key> (OP_CHECKSIG | OP_CHECKSIGVERIFY | OP_CHECKSIG OP_VERIFY)
     for (const ending of ["ac", "ad", "ac69"]) {
       if (publicKey.length !== 33) {
         throw new Error(`Internal error`);
