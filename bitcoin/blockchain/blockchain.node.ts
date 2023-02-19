@@ -935,8 +935,7 @@ Algoritm:
 
     if (!storage.isMempoolTxExists(tx.txid)) {
       debug(`${peer.id} provided mempool tx = ${dumpBuf(tx.txid)}`);
-      // This function announces this txid to the same peer but ok
-      addTxToMempool(tx);
+      addTxToMempoolFilterPeer(tx, peer);
     } else {
       // We have tx with such id
       // Even if witness txid differs we still keep existing one
@@ -1150,9 +1149,11 @@ Algoritm:
   function onRejectMessage(peer: PeerConnection, payload: MessagePayload) {
     const reject = readRejectMessage(payload);
     warn(
-      `${peer.id} REJECTED ${reject.message} code=${reject.code} reason=${reject.reason} ` +
-        `data=${reject.data.toString("hex")} ` +
-        `dataRev=${Buffer.from(reject.data).reverse().toString("hex")}`
+      `${peer.id} REJECTED ${reject.message} code=${
+        reject.code
+      } reason=0x${reject.reason.toString(16)} ` +
+        `data = ${reject.data.toString("hex")} ` +
+        `dataRev = ${Buffer.from(reject.data).reverse().toString("hex")}`
     );
   }
 
@@ -1161,7 +1162,7 @@ Algoritm:
     tx: BitcoinTransaction,
     skipThisPeerAnnounce?: PeerConnection
   ) {
-    // TODO: Calculate fee
+    // TODO: Calculate fee, check is it enough
     storage.addMempoolTransaction(tx.txid, packTx(tx), 0);
 
     onMempoolTxListeners.forEach((cb) => cb(tx));
