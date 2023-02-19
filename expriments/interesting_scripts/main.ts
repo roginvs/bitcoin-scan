@@ -64,10 +64,10 @@ async function checkBlock(height: number) {
   while (true) {
     const blocks = await checkBlock(i);
     if (blocks.length === 0) {
+      console.info(`No blocks at height ${i}`);
       break;
     }
     i++;
-    break;
   }
 })();
 
