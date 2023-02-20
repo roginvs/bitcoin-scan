@@ -44,17 +44,18 @@ export function and(a: number, b: number) {
 
 export function sha256(data: ArrayBuffer) {
   const chunks = padMessage(data);
-  const hash = new DataView(new ArrayBuffer(32));
-  hash.setUint32(0, 0x6a09e667, true);
-  hash.setUint32(4, 0xbb67ae85, true);
-  hash.setUint32(8, 0x3c6ef372, true);
-  hash.setUint32(12, 0xa54ff53a, true);
-  hash.setUint32(16, 0x510e527f, true);
-  hash.setUint32(20, 0x9b05688c, true);
-  hash.setUint32(24, 0x1f83d9ab, true);
-  hash.setUint32(28, 0x5be0cd19, true);
+  const hash = new Uint32Array(8);
 
-  const k = new DataView(new ArrayBuffer(64 * 4));
+  hash[0] = 0x6a09e667;
+  hash[1] = 0xbb67ae85;
+  hash[2] = 0x3c6ef372;
+  hash[3] = 0xa54ff53a;
+  hash[4] = 0x510e527f;
+  hash[5] = 0x9b05688c;
+  hash[6] = 0x1f83d9ab;
+  hash[7] = 0x5be0cd19;
+
+  const k = new Uint32Array(64);
 
   for (const [i, val] of [
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
@@ -69,52 +70,47 @@ export function sha256(data: ArrayBuffer) {
     0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
     0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
   ].entries()) {
-    k.setUint32(i * 4, val, true);
+    k[i] = val;
   }
 
-  const w = new DataView(new ArrayBuffer(256));
+  const w = new Uint32Array(64);
 
   let chunkIndex = 0;
   while (chunks.byteLength > 64 * chunkIndex) {
-    const chunk = chunks.slice(64 * chunkIndex, 64 * chunkIndex + 64);
-
-    console.info(
-      `Chunk index=${chunkIndex}`,
-      Buffer.from(chunk).toString("hex")
+    const chunk = new DataView(
+      chunks.slice(64 * chunkIndex, 64 * chunkIndex + 64)
     );
-    new Uint32Array(w.buffer).set(new Uint32Array(chunk), 0);
+
+    for (let i = 0; i < 16; i++) {
+      w[i] = chunk.getUint32(i * 4, false);
+    }
 
     for (let i = 16; i < 64; i++) {
       // s0 := (w[i-15] rightrotate  7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift  3)
       const s0 = xor(
-        rightrotate(w.getUint32((i - 15) * 4, true), 7),
-        rightrotate(w.getUint32((i - 15) * 4, true), 18),
-        rightshift(w.getUint32((i - 15) * 4, true), 3)
+        rightrotate(w[i - 15], 7),
+        rightrotate(w[i - 15], 18),
+        rightshift(w[i - 15], 3)
       );
       // s1 := (w[i-2] rightrotate 17) xor (w[i-2] rightrotate 19) xor (w[i-2] rightshift 10)
       const s1 = xor(
-        rightrotate(w.getUint32((i - 2) * 4, true), 17),
-        rightrotate(w.getUint32((i - 2) * 4, true), 19),
-        rightshift(w.getUint32((i - 2) * 4, true), 10)
+        rightrotate(w[i - 2], 17),
+        rightrotate(w[i - 2], 19),
+        rightshift(w[i - 2], 10)
       );
       // w[i] := w[i-16] + s0 + w[i-7] + s1
-      const w_i =
-        (w.getUint32((i - 16) * 4, true) +
-          s0 +
-          w.getUint32((i - 7) * 4, true) +
-          s1) >>>
-        0;
-      w.setUint32(i * 4, w_i, true);
+      const w_i = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
+      w[i] = w_i;
     }
 
-    let a = hash.getUint32(0, true);
-    let b = hash.getUint32(4, true);
-    let c = hash.getUint32(8, true);
-    let d = hash.getUint32(12, true);
-    let e = hash.getUint32(16, true);
-    let f = hash.getUint32(20, true);
-    let g = hash.getUint32(24, true);
-    let h = hash.getUint32(28, true);
+    let a = hash[0];
+    let b = hash[1];
+    let c = hash[2];
+    let d = hash[3];
+    let e = hash[4];
+    let f = hash[5];
+    let g = hash[6];
+    let h = hash[7];
 
     for (let i = 0; i < 64; i++) {
       // S1 := (e rightrotate 6) xor (e rightrotate 11) xor (e rightrotate 25)
@@ -122,9 +118,7 @@ export function sha256(data: ArrayBuffer) {
       // ch := (e and f) xor ((not e) and g)
       const ch = xor(and(e, f), and(not(e), g));
       // temp1 := h + S1 + ch + k[i] + w[i]
-      const temp1 =
-        (h + s1 + ch + k.getUint32(i * 4, true) + w.getUint32(i * 4, false)) >>>
-        0;
+      const temp1 = (h + s1 + ch + k[i] + w[i]) >>> 0;
       const s0 = xor(rightrotate(a, 2), rightrotate(a, 13), rightrotate(a, 22));
       const maj = xor(and(a, b), and(a, c), and(b, c));
       const temp2 = (s0 + maj) >>> 0;
@@ -138,7 +132,9 @@ export function sha256(data: ArrayBuffer) {
       b = a;
       a = (temp1 + temp2) >>> 0;
 
+      /*
       console.info(
+        `i=${i}`,
         a.toString(16),
         b.toString(16),
         c.toString(16),
@@ -148,13 +144,25 @@ export function sha256(data: ArrayBuffer) {
         g.toString(16),
         h.toString(16)
       );
+      */
     }
 
-    // console.info(Buffer.from(w.buffer).toString("hex"));
+    // console.info(`hash[0] =${hash[0].toString(16)} a=${a.toString(16)}`);
+    hash[0] = hash[0] + a;
+    hash[1] = hash[1] + b;
+    hash[2] = hash[2] + c;
+    hash[3] = hash[3] + d;
+    hash[4] = hash[4] + e;
+    hash[5] = hash[5] + f;
+    hash[6] = hash[6] + g;
+    hash[7] = hash[7] + h;
 
     chunkIndex++;
   }
 
-  return k.buffer;
-  //return hash.buffer;
+  const out = new DataView(new ArrayBuffer(8 * 4));
+  for (let i = 0; i < 8; i++) {
+    out.setUint32(i * 4, hash[i], false);
+  }
+  return out.buffer;
 }

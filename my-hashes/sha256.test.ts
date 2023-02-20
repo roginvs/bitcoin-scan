@@ -56,7 +56,7 @@ describe("sha256 functions", () => {
   describe("sha256", () => {
     it("asd", () => {
       expect(Buffer.from(sha256(Buffer.from("abc"))).toString("hex")).toBe(
-        "asd"
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
       );
     });
   });
