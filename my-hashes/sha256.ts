@@ -44,20 +44,12 @@ export function and(a: number, b: number) {
 
 export function sha256(data: ArrayBuffer) {
   const chunks = padMessage(data);
-  const hash = new Uint32Array(8);
+  const hash = [
+    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c,
+    0x1f83d9ab, 0x5be0cd19,
+  ];
 
-  hash[0] = 0x6a09e667;
-  hash[1] = 0xbb67ae85;
-  hash[2] = 0x3c6ef372;
-  hash[3] = 0xa54ff53a;
-  hash[4] = 0x510e527f;
-  hash[5] = 0x9b05688c;
-  hash[6] = 0x1f83d9ab;
-  hash[7] = 0x5be0cd19;
-
-  const k = new Uint32Array(64);
-
-  for (const [i, val] of [
+  const k = [
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
     0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
     0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
@@ -69,11 +61,9 @@ export function sha256(data: ArrayBuffer) {
     0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a,
     0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
     0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
-  ].entries()) {
-    k[i] = val;
-  }
+  ];
 
-  const w = new Uint32Array(64);
+  const w = new Array(64).fill(0);
 
   let chunkIndex = 0;
   while (chunks.byteLength > 64 * chunkIndex) {
@@ -138,14 +128,14 @@ export function sha256(data: ArrayBuffer) {
       a = (temp1 + temp2) >>> 0;
     }
 
-    hash[0] = hash[0] + a;
-    hash[1] = hash[1] + b;
-    hash[2] = hash[2] + c;
-    hash[3] = hash[3] + d;
-    hash[4] = hash[4] + e;
-    hash[5] = hash[5] + f;
-    hash[6] = hash[6] + g;
-    hash[7] = hash[7] + h;
+    hash[0] = (hash[0] + a) >>> 0;
+    hash[1] = (hash[1] + b) >>> 0;
+    hash[2] = (hash[2] + c) >>> 0;
+    hash[3] = (hash[3] + d) >>> 0;
+    hash[4] = (hash[4] + e) >>> 0;
+    hash[5] = (hash[5] + f) >>> 0;
+    hash[6] = (hash[6] + g) >>> 0;
+    hash[7] = (hash[7] + h) >>> 0;
 
     chunkIndex++;
   }
