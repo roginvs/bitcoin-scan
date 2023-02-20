@@ -81,10 +81,12 @@ export function sha256(data: ArrayBuffer) {
       chunks.slice(64 * chunkIndex, 64 * chunkIndex + 64)
     );
 
+    // copy chunk into first 16 words w[0..15] of the message schedule array
     for (let i = 0; i < 16; i++) {
       w[i] = chunk.getUint32(i * 4, false);
     }
 
+    // Extend the first 16 words into the remaining 48 words w[16..63] of the message schedule array:
     for (let i = 16; i < 64; i++) {
       // s0 := (w[i-15] rightrotate  7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift  3)
       const s0 = xor(
@@ -119,8 +121,11 @@ export function sha256(data: ArrayBuffer) {
       const ch = xor(and(e, f), and(not(e), g));
       // temp1 := h + S1 + ch + k[i] + w[i]
       const temp1 = (h + s1 + ch + k[i] + w[i]) >>> 0;
+      // S0 := (a rightrotate 2) xor (a rightrotate 13) xor (a rightrotate 22)
       const s0 = xor(rightrotate(a, 2), rightrotate(a, 13), rightrotate(a, 22));
+      // maj := (a and b) xor (a and c) xor (b and c)
       const maj = xor(and(a, b), and(a, c), and(b, c));
+      // temp2 := S0 + maj
       const temp2 = (s0 + maj) >>> 0;
 
       h = g;
@@ -131,23 +136,8 @@ export function sha256(data: ArrayBuffer) {
       c = b;
       b = a;
       a = (temp1 + temp2) >>> 0;
-
-      /*
-      console.info(
-        `i=${i}`,
-        a.toString(16),
-        b.toString(16),
-        c.toString(16),
-        d.toString(16),
-        e.toString(16),
-        f.toString(16),
-        g.toString(16),
-        h.toString(16)
-      );
-      */
     }
 
-    // console.info(`hash[0] =${hash[0].toString(16)} a=${a.toString(16)}`);
     hash[0] = hash[0] + a;
     hash[1] = hash[1] + b;
     hash[2] = hash[2] + c;
