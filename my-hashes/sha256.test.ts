@@ -54,10 +54,27 @@ describe("sha256 functions", () => {
   });
 
   describe("sha256", () => {
-    it("asd", () => {
-      expect(Buffer.from(sha256(Buffer.from("abc"))).toString("hex")).toBe(
-        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
-      );
-    });
+    const data = [
+      [
+        "abc",
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      ],
+      [
+        "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
+        "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
+      ],
+      ["", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
+      [
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "cd372fb85148700fa88095e3492d3f9f5beb43e555e5ff26d95f5a6adc36f8e6",
+      ],
+    ];
+    for (const [val, hash] of data) {
+      it(`'${val}'`, () => {
+        expect(Buffer.from(sha256(Buffer.from(val))).toString("hex")).toBe(
+          hash
+        );
+      });
+    }
   });
 });
