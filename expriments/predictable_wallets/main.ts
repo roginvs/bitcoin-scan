@@ -97,7 +97,10 @@ function getPublickeyWallets(privKey: Buffer) {
     ]);
   }
   {
-    const witnessScript = get_P2WPKH_pk_script_from_public_key(publicKey);
+    const witnessScript =
+      // No need to prefix with 0x16 because hash is
+      // from the last stack item in scriptSig, not scriptSig itself
+      get_P2WPKH_pk_script_from_public_key(publicKey);
     const p2sh = bitcoin_address_P2SH_from_pk_script(witnessScript);
     walletsInfo.push([p2sh, `P2WPKH+P2SH`, secret]);
   }
