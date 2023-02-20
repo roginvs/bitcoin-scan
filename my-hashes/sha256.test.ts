@@ -13,13 +13,6 @@ describe("sha256 functions", () => {
     expect(binary[63]).toBe(0x18);
     expect(binary.length).toBe(64);
   });
-  describe.skip("sha256", () => {
-    it("asd", () => {
-      expect(Buffer.from(sha256(Buffer.from("abc"))).toString("hex")).toBe(
-        "asd"
-      );
-    });
-  });
 
   const rotateShiftTestData = [
     [0xaabbccdd, 8],
@@ -58,5 +51,13 @@ describe("sha256 functions", () => {
         expect(rightshift(n, bits)).toBe(rightshift_string(n, bits));
       });
     }
+  });
+
+  describe("sha256", () => {
+    it("asd", () => {
+      expect(Buffer.from(sha256(Buffer.from("abc"))).toString("hex")).toBe(
+        "asd"
+      );
+    });
   });
 });

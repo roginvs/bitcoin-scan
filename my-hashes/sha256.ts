@@ -28,6 +28,19 @@ export function rightshift(n: number, bits: number) {
   }
   return n >>> bits;
 }
+export function xor(...args: number[]) {
+  let out = args[0];
+  for (let i = 1; i < args.length; i++) {
+    out = (out ^ args[i]) >>> 0;
+  }
+  return out;
+}
+export function not(a: number) {
+  return ~a >>> 0;
+}
+export function and(a: number, b: number) {
+  return (a & b) >>> 0;
+}
 
 export function sha256(data: ArrayBuffer) {
   const chunks = padMessage(data);
@@ -71,33 +84,74 @@ export function sha256(data: ArrayBuffer) {
     );
     new Uint32Array(w.buffer).set(new Uint32Array(chunk), 0);
 
-    console.info(Buffer.from(w.buffer).toString("hex"));
     for (let i = 16; i < 64; i++) {
-      const s0 =
-        rightrotate(w.getUint32((i - 15) * 4), 7) ^
-        rightrotate(w.getUint32((i - 15) * 4), 18) ^
-        rightshift(w.getUint32((i - 15) * 4), 3);
+      // s0 := (w[i-15] rightrotate  7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift  3)
+      const s0 = xor(
+        rightrotate(w.getUint32((i - 15) * 4, true), 7),
+        rightrotate(w.getUint32((i - 15) * 4, true), 18),
+        rightshift(w.getUint32((i - 15) * 4, true), 3)
+      );
+      // s1 := (w[i-2] rightrotate 17) xor (w[i-2] rightrotate 19) xor (w[i-2] rightshift 10)
+      const s1 = xor(
+        rightrotate(w.getUint32((i - 2) * 4, true), 17),
+        rightrotate(w.getUint32((i - 2) * 4, true), 19),
+        rightshift(w.getUint32((i - 2) * 4, true), 10)
+      );
+      // w[i] := w[i-16] + s0 + w[i-7] + s1
+      const w_i =
+        (w.getUint32((i - 16) * 4, true) +
+          s0 +
+          w.getUint32((i - 7) * 4, true) +
+          s1) >>>
+        0;
+      w.setUint32(i * 4, w_i, true);
     }
 
-    const a = hash.getUint32(0, true);
-    const b = hash.getUint32(4, true);
-    const c = hash.getUint32(8, true);
-    const d = hash.getUint32(12, true);
-    const e = hash.getUint32(16, true);
-    const f = hash.getUint32(20, true);
-    const g = hash.getUint32(24, true);
-    const h = hash.getUint32(28, true);
+    let a = hash.getUint32(0, true);
+    let b = hash.getUint32(4, true);
+    let c = hash.getUint32(8, true);
+    let d = hash.getUint32(12, true);
+    let e = hash.getUint32(16, true);
+    let f = hash.getUint32(20, true);
+    let g = hash.getUint32(24, true);
+    let h = hash.getUint32(28, true);
 
-    console.info(
-      a.toString(16),
-      b.toString(16),
-      c.toString(16),
-      d.toString(16),
-      e.toString(16),
-      f.toString(16),
-      g.toString(16),
-      h.toString(16)
-    );
+    for (let i = 0; i < 64; i++) {
+      // S1 := (e rightrotate 6) xor (e rightrotate 11) xor (e rightrotate 25)
+      const s1 = xor(rightrotate(e, 6), rightrotate(e, 11), rightrotate(e, 25));
+      // ch := (e and f) xor ((not e) and g)
+      const ch = xor(and(e, f), and(not(e), g));
+      // temp1 := h + S1 + ch + k[i] + w[i]
+      const temp1 =
+        (h + s1 + ch + k.getUint32(i * 4, true) + w.getUint32(i * 4, false)) >>>
+        0;
+      const s0 = xor(rightrotate(a, 2), rightrotate(a, 13), rightrotate(a, 22));
+      const maj = xor(and(a, b), and(a, c), and(b, c));
+      const temp2 = (s0 + maj) >>> 0;
+
+      h = g;
+      g = f;
+      f = e;
+      e = (d + temp1) >>> 0;
+      d = c;
+      c = b;
+      b = a;
+      a = (temp1 + temp2) >>> 0;
+
+      console.info(
+        a.toString(16),
+        b.toString(16),
+        c.toString(16),
+        d.toString(16),
+        e.toString(16),
+        f.toString(16),
+        g.toString(16),
+        h.toString(16)
+      );
+    }
+
+    // console.info(Buffer.from(w.buffer).toString("hex"));
+
     chunkIndex++;
   }
 
