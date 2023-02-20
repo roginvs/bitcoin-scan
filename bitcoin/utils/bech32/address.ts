@@ -22,7 +22,12 @@ export function get_P2WSH_pk_script_from_real_pk_script(
   return Buffer.concat([Buffer.from("0020", "hex"), scriptHash]) as PkScript;
 }
 
-/** This is what you should store in the outpoint  */
+/**
+ * This is what you should store in the outpoint/
+ * If you want to use P2SH + P2WPKH then do not forget that script code
+ *   must be in sigScript stack, not sigScript itself. Just prepend it with 0x16 (check BIP-0141)
+ *
+ */
 export function get_P2WPKH_pk_script_from_public_key(
   publicKey: Buffer
 ): PkScript {
