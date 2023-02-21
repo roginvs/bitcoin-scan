@@ -2,11 +2,11 @@
   "name": "user-interface",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "source": "index.html",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "BUILD_TIME=$(date +%s) parcel serve --port 5002 index.html",
-    "build": "BUILD_TIME=$(date +%s) parcel build --public-url ./ index.html"
+    "build": "BUILD_TIME=$(date +%s) parcel build --public-url ./"
   },
   "author": "",
   "license": "ISC",
