@@ -203,4 +203,37 @@ describe("ECDSA with NIST P-256", () => {
     );
     expect(recoveredPublicKey).toStrictEqual(publicKey);
   });
+
+  it(`Cover add 4 cases for recId`, () => {
+    const seenRecId = [false, false, false, false];
+
+    let k = p256.n - BigInt(100000000000000);
+
+    // Well, probability to find such k is quite small
+    // So let's just check that we cover even and odd cases which are first two
+    while (seenRecId.slice(0, 2).some((x) => !x)) {
+      const sig = signature({
+        curve,
+        privateKey,
+        msgHash,
+        k,
+      });
+      if (seenRecId[sig.recId]) {
+        // Ok, this is seen
+      } else {
+        const recoveredPublicKey = recover_public_key_recid(
+          curve,
+          sig.r,
+          sig.s,
+          msgHash,
+          sig.recId
+        );
+        expect(recoveredPublicKey).toStrictEqual(publicKey);
+
+        seenRecId[sig.recId] = true;
+      }
+
+      k++;
+    }
+  });
 });
