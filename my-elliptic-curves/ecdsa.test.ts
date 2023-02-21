@@ -5,6 +5,7 @@ import {
   get_private_key_if_diff_k_is_known,
   get_private_key_if_diff_k_is_known_verified,
   recover_public_key,
+  recover_public_key_recid,
   signature,
 } from "./ecdsa";
 
@@ -187,8 +188,19 @@ describe("ECDSA with NIST P-256", () => {
     ).toBe(true);
   });
 
-  it(`recover_public_key`, () => {
+  it(`recover_public_key when recId is not known`, () => {
     const possiblePublicKeys = recover_public_key(curve, r, s, msgHash);
     expect(possiblePublicKeys).toContainEqual(publicKey);
+  });
+
+  it(`recover_public_key when recId is known`, () => {
+    const recoveredPublicKey = recover_public_key_recid(
+      curve,
+      r,
+      s,
+      msgHash,
+      0
+    );
+    expect(recoveredPublicKey).toStrictEqual(publicKey);
   });
 });

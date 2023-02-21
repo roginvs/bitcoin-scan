@@ -248,7 +248,11 @@ export function recover_public_key_recid(
   r: bigint,
   s: bigint,
   msgHash: bigint,
-  recId: 0 | 1 | 2 | 3
+  /**
+   * last bit zero = is even
+   * rest bits are how many times to add n
+   */
+  recId: number
 ) {
   if (r < BigInt(1) || r > BigInt(curve.n)) {
     return null;
@@ -261,20 +265,20 @@ export function recover_public_key_recid(
   const u1 = curve.n - ((msgHash * r_inverse) % curve.n);
   const u2 = (s * r_inverse) % curve.n;
 
-  let rPoint: Point = null;
-  if (recId === 0 || recId === 1) {
-    rPoint = get_point_from_x(r, curve.a, curve.b, curve.p);
-  } else if (recId === 2 || recId === 3) {
-    rPoint = get_point_from_x(curve.p + r, curve.a, curve.b, curve.p);
-  }
+  let rPoint: Point = get_point_from_x(
+    curve.p * BigInt(recId >>> 1) + r,
+    curve.a,
+    curve.b,
+    curve.p
+  );
   if (!rPoint) {
     throw new Error(`Internal error: got infinity`);
   }
-  if (recId === 0 || recId === 2) {
+  if (recId % 2 === 0) {
     if (rPoint[1] % BigInt(2) !== BigInt(0)) {
       rPoint = get_point_inverse(rPoint, curve.p);
     }
-  } else if (recId === 1 || recId === 3) {
+  } else {
     if (rPoint[1] % BigInt(2) === BigInt(0)) {
       rPoint = get_point_inverse(rPoint, curve.p);
     }
