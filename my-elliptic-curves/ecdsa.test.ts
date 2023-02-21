@@ -39,6 +39,7 @@ describe("ECDSA with NIST P-256", () => {
     ).toStrictEqual({
       r,
       s,
+      recId: 0,
     });
   });
 

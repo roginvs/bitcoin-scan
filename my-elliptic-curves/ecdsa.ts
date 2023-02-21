@@ -24,15 +24,20 @@ export function signature({
   privateKey: bigint;
   msgHash: bigint;
   k: bigint;
-}): Signature {
+}): Signature & { recId: 0 | 1 | 2 | 3 } {
   const kQ = modulo_power_point(curve.G, k, curve.a, curve.p);
   if (!kQ) {
     throw new Error("LOL got infinity, provide better k");
   }
+
+  const isEvenR = kQ[1] % BigInt(2) === BigInt(0);
+  const isRlowerN = kQ[0] < curve.n;
+  const recId = ((isEvenR ? 0 : 1) + (isRlowerN ? 0 : 2)) as 0 | 1 | 2 | 3;
+
   const r = kQ[0] % curve.n;
   const s = (modulo_inverse(k, curve.n) * (msgHash + r * privateKey)) % curve.n;
 
-  return { r, s };
+  return { r, s, recId };
 }
 
 export function check_signature({
