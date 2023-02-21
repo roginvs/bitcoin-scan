@@ -238,12 +238,13 @@ export function get_private_key_if_diff_k_is_known_verified(
   );
 }
 
-export function recover_public_key(
+export function recover_public_key_recid(
   curve: CurveParams,
   r: bigint,
   s: bigint,
-  msgHash: bigint
-): Point[] | null {
+  msgHash: bigint,
+  recId: 0 | 1 | 2 | 3
+) {
   if (r < BigInt(1) || r > BigInt(curve.n)) {
     return null;
   }
@@ -251,50 +252,69 @@ export function recover_public_key(
     return null;
   }
 
-  const points: Point[] = [];
-  let x = r;
-  while (x < curve.p) {
-    const point = get_point_from_x(x, curve.a, curve.b, curve.p);
-    points.push(point);
-    points.push(get_point_inverse(point, curve.p));
-    x += curve.p;
-  }
-
-  points.forEach((p) => {
-    if (!is_on_curve(p, curve.a, curve.b, curve.p)) {
-      throw new Error("Internal error");
-    }
-  });
-
   const r_inverse = modulo_inverse(r, curve.n);
   const u1 = curve.n - ((msgHash * r_inverse) % curve.n);
   const u2 = (s * r_inverse) % curve.n;
 
-  const possiblePublicKeys = points
-    .map((point) => {
-      const Qa = point_add(
-        modulo_power_point(curve.G, u1, curve.a, curve.p),
-        modulo_power_point(point, u2, curve.a, curve.p),
-        curve.a,
-        curve.p
-      );
-      if (!is_on_curve(Qa, curve.a, curve.b, curve.p)) {
-        throw new Error("Internal error");
-      }
-      if (
-        check_signature({
-          curve,
-          msgHash,
-          r,
-          s,
-          publicKey: Qa,
-        })
-      ) {
-        return Qa;
-      } else {
+  let rPoint: Point = null;
+  if (recId === 0 || recId === 1) {
+    rPoint = get_point_from_x(r, curve.a, curve.b, curve.p);
+  } else if (recId === 2 || recId === 3) {
+    rPoint = get_point_from_x(curve.p + r, curve.a, curve.b, curve.p);
+  }
+  if (!rPoint) {
+    throw new Error(`Internal error: got infinity`);
+  }
+  if (recId === 0 || recId === 2) {
+    if (rPoint[1] % BigInt(2) !== BigInt(0)) {
+      rPoint = get_point_inverse(rPoint, curve.p);
+    }
+  } else if (recId === 1 || recId === 3) {
+    if (rPoint[1] % BigInt(2) === BigInt(0)) {
+      rPoint = get_point_inverse(rPoint, curve.p);
+    }
+  }
+
+  const Qa = point_add(
+    modulo_power_point(curve.G, u1, curve.a, curve.p),
+    modulo_power_point(rPoint, u2, curve.a, curve.p),
+    curve.a,
+    curve.p
+  );
+  if (!is_on_curve(Qa, curve.a, curve.b, curve.p)) {
+    throw new Error("Internal error");
+  }
+  if (
+    check_signature({
+      curve,
+      msgHash,
+      r,
+      s,
+      publicKey: Qa,
+    })
+  ) {
+    return Qa;
+  } else {
+    throw new Error(`Internal error!`);
+  }
+}
+
+export function recover_public_key(
+  curve: CurveParams,
+  r: bigint,
+  s: bigint,
+  msgHash: bigint
+): Point[] | null {
+  return ([0, 1, 2, 3] as const)
+    .map((recId) => {
+      try {
+        // In theory this can throw if point R is on curve
+        //   there is no point with x = (Rx+n).
+        // At least, why this can not happen?
+        return recover_public_key_recid(curve, r, s, msgHash, recId);
+      } catch (e) {
         return null;
       }
     })
-    .filter((point) => point);
-  return possiblePublicKeys;
+    .filter((x) => x);
 }
