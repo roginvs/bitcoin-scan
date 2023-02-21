@@ -1,0 +1,4 @@
+wabt
+dist
+.cache
+.parcel-cache

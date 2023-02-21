@@ -1,0 +1,23 @@
+{
+  "name": "user-interface",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "BUILD_TIME=$(date +%s) parcel serve --port 5002 index.html",
+    "build": "BUILD_TIME=$(date +%s) parcel build --public-url ./ index.html"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "parcel": "^2.8.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "process": "^0.11.10"
+  }
+}
