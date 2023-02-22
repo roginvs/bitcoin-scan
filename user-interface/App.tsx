@@ -1,7 +1,5 @@
 import * as React from "react";
 import Container from "react-bootstrap/Container";
-import Button from "react-bootstrap/Button";
-import FloatingLabel from "react-bootstrap/FloatingLabel";
 import Form from "react-bootstrap/Form";
 import { signatureToPublicKey } from "../signature/signatureToPublicKey";
 import { pubkeyToWallet } from "./pubkeyToWallet";
@@ -10,12 +8,13 @@ const DEFAULT_SIGNATURE = `-----BEGIN BITCOIN SIGNED MESSAGE-----
 Welcome to signature check!
 Enter a signed message here
 -----BEGIN BITCOIN SIGNATURE-----
-Address: 19aJFYXVr9wjEm3cfQnJDHW2oyNEY2soWR
+Address: bc1qtcxjyxsm5uk8z6gsf8s322yh64fnms6pgcslz2
 
-ILZq71rK2AIys9yEzkK1U9vavIFLjgRmRMxtqe4k3yNV
+KLZq71rK2AIys9yEzkK1U9vavIFLjgRmRMxtqe4k3yNV
 OVD7WmyS1oYLnxsfk0E/Y1g8mQiWxnBt1U89Zm5E9ks=
 -----END BITCOIN SIGNATURE-----
 `;
+
 export function App() {
   const [sigVal, setSigVal] = React.useState("");
   const [expectedWallet, setExpectedWallet] = React.useState("");
