@@ -28,7 +28,7 @@ describe(`stringToUTF8Array`, () => {
   });
   it(`Wild string 3`, () => {
     const wildString = String.fromCharCode(
-      ...new Array(70000 - 57343).fill(0).map((_, i) => i + 57343 + 1)
+      ...new Array(65535 - 57343 + 1).fill(0).map((_, i) => i + 57343 + 1)
     );
     expect(Buffer.from(stringToUTF8Array(wildString)).toString("hex")).toBe(
       Buffer.from(wildString).toString("hex")
