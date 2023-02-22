@@ -8,9 +8,9 @@ const DEFAULT_SIGNATURE = `-----BEGIN BITCOIN SIGNED MESSAGE-----
 Welcome to signature check!
 Enter a signed message here
 -----BEGIN BITCOIN SIGNATURE-----
-Address: bc1qtcxjyxsm5uk8z6gsf8s322yh64fnms6pgcslz2
+Address: 19aJFYXVr9wjEm3cfQnJDHW2oyNEY2soWR
 
-KLZq71rK2AIys9yEzkK1U9vavIFLjgRmRMxtqe4k3yNV
+ILZq71rK2AIys9yEzkK1U9vavIFLjgRmRMxtqe4k3yNV
 OVD7WmyS1oYLnxsfk0E/Y1g8mQiWxnBt1U89Zm5E9ks=
 -----END BITCOIN SIGNATURE-----
 `;
