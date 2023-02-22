@@ -1,3 +1,6 @@
+import * as React from "react";
+
+/*
 import { signatureToPublicKey } from "../signature/signatureToPublicKey";
 import { pubkeyToWallet } from "./pubkeyToWallet";
 
@@ -15,3 +18,8 @@ if (!pubKey) {
 }
 const wallet = pubkeyToWallet(pubKey?.pubKeyHex, pubKey?.walletType);
 console.info(wallet);
+*/
+
+export function App() {
+  return <div>TEST</div>;
+}
