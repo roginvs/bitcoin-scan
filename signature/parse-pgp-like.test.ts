@@ -1,25 +1,34 @@
 import { readPgpLikePart } from "./parse-pgp-like";
 
 describe("Parse PGP-like", () => {
-  describe(`readPgpLikePart`, () => {
-    const data1 = {
-      header: "BEGIN BITCOIN SIGNED MESSAGE",
-      data: "60213445ca0f7e08b16c6dd0f1172f32a0effba1c74077e408e34b54424ebeda",
-      rest: `-----BEGIN BLA BLA-----   \n\n\n aaa`,
-    };
+  describe(`Single line`, () => {
     const data1raw =
       `-----BEGIN BITCOIN SIGNED MESSAGE-----\n` +
-      `60213445ca0f7e08b16c6dd0f1172f32a0effba1c74077e408e34b54424ebeda\n` +
+      `60213445ca0f7e08b16c6dd0f117\n2f32a0effba1c74077e408e34b54424ebeda\n` +
       `-----BEGIN BLA BLA-----   \n\n\n aaa`;
-    it(`readPgpLikePart with \n`, () => {
-      expect(readPgpLikePart(data1raw)).toStrictEqual(data1);
+
+    const parsed = {
+      header: "BEGIN BITCOIN SIGNED MESSAGE",
+      data: "60213445ca0f7e08b16c6dd0f117\n2f32a0effba1c74077e408e34b54424ebeda",
+      rest: `-----BEGIN BLA BLA-----   \n\n\n aaa`,
+    };
+
+    it(`readPgpLikePart with \\n`, () => {
+      expect(readPgpLikePart(data1raw)).toStrictEqual(parsed);
     });
 
-    it(`readPgpLikePart with \r\n`, () => {
+    it(`readPgpLikePart with \\r\\n`, () => {
       expect(readPgpLikePart(data1raw.split("\n").join("\r\n"))).toStrictEqual({
-        ...data1,
-        rest: data1.rest.split("\n").join("\r\n"),
+        header: parsed.header,
+        data: parsed.data.split("\n").join("\r\n"),
+        rest: parsed.rest.split("\n").join("\r\n"),
       });
+    });
+
+    it(`readPgpLikePart with spaces in the beginning`, () => {
+      expect(readPgpLikePart("   \n  \r\n   " + data1raw)).toStrictEqual(
+        parsed
+      );
     });
   });
 });
