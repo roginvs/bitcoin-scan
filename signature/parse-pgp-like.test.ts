@@ -36,14 +36,14 @@ describe("Parse PGP-like", () => {
       `Version: Bitcoin-qt (1.0)\n` +
       `Address: 1GgszPQqCFqZrU9C6h7AUBbwrH73XGoDXU\n` +
       `\n` +
-      `blabla\nbla\nlol\n` +
+      `blabla\nbla\nlol\r\nkek\n` +
       `-----END BITCOIN SIGNATURE-----\n` +
       "a\r\nb\n";
     expect(
       readPgpLikePart(dataRaw, false, ["Address", "Version"])
     ).toStrictEqual({
       header: "BEGIN BITCOIN SIGNATURE",
-      data: `blabla\nbla\nlol`,
+      data: `blabla\nbla\nlol\r\nkek`,
       rest: `-----END BITCOIN SIGNATURE-----\n` + "a\r\nb\n",
       headers: {
         Address: "1GgszPQqCFqZrU9C6h7AUBbwrH73XGoDXU",
