@@ -20,6 +20,10 @@ export function readPgpLikePart(input: string) {
     dataString = dataString.slice(2);
   }
 
+  if (dataString.endsWith("\r")) {
+    dataString = dataString.slice(0, -1);
+  }
+
   return {
     header: s.slice(5, headerEndingDashesIndex),
     data: dataString,
