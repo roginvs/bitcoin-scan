@@ -49,14 +49,16 @@ export function pubkeyToWallet(
   },
   walletType: SignatureWalletType
 ) {
+  const compressedPubKeyHex =
+    (parseInt(pubkeyHex.y.slice(-1), 16) % 2 === 0 ? "02" : "03") + pubkeyHex.x;
+
   if (
     walletType === "P2PKH compressed" ||
     walletType === "P2PKH uncompressed"
   ) {
     const pubkey =
       walletType === "P2PKH compressed"
-        ? (parseInt(pubkeyHex.y.slice(-1), 16) % 2 === 0 ? "02" : "03") +
-          pubkeyHex.x
+        ? compressedPubKeyHex
         : "04" + pubkeyHex.x + pubkeyHex.y;
     const pubkeyBuf = hexStrToBuf(pubkey);
     const pubkeyHash = ripemd160(new Uint8Array(sha256(pubkeyBuf)));
