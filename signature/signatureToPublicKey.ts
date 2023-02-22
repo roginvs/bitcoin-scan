@@ -99,5 +99,6 @@ export function signatureToPublicKey(signatureText: string) {
   return {
     pubXHex,
     pubYHex,
+    walletType: headerInfo.walletType,
   };
 }
