@@ -16,6 +16,15 @@ describe("pubkeyToWallet", () => {
       "Segwit P2SH",
       "3Mwz6cg8Fz81B7ukexK8u8EVAW2yymgWNd",
     ],
+    [
+      // https://www.blockchain.com/explorer/transactions/btc/2536df79439801c8daecde247d156f02b78d3a080d85e5e1615260fc4f273f1f
+      {
+        x: "b59eaa6923744ab2357f8b3772187d42bd318d2706a1faabc7b2444e16354871",
+        y: "d79eab3276fb53f3445b7d3fb2bd21f8e53ab7df5e3b165ddbf859f7d0d34c23",
+      },
+      "Segwit Bech32",
+      "bc1q42lja79elem0anu8q8s3h2n687re9jax556pcc",
+    ],
   ] as const;
 
   for (const [pubkeyHex, walletType, wallet] of testData) {

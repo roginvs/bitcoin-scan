@@ -1,6 +1,7 @@
 import { SignatureWalletType } from "../signature/parseSignatureHeader";
 import { ripemd160 } from "@noble/hashes/ripemd160";
 import { sha256 } from "../my-hashes/sha256";
+import { encode } from "../bitcoin/utils/bech32/segwit_addr";
 
 function hexStrToBuf(str: string) {
   if (str.length % 2 !== 0) {
@@ -92,4 +93,14 @@ export function pubkeyToWallet(
     const scriptHash = ripemd160(new Uint8Array(sha256(segwitScript)));
     return base58address(scriptHash, 5);
   }
+
+  if (walletType === "Segwit Bech32") {
+    const pubkeyHash = ripemd160(
+      new Uint8Array(sha256(hexStrToBuf(compressedPubKeyHex)))
+    );
+
+    return encode("bc", 0, [...pubkeyHash]);
+  }
+
+  const n: never = walletType;
 }
