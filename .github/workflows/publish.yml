@@ -31,6 +31,7 @@ jobs:
           ssh-keyscan -t rsa github.com > "${HOME}/.ssh/known_hosts"
           echo "${SSH_DEPLOY_KEY}" > "${HOME}/.ssh/id_ed25519"
           chmod 400 "${HOME}/.ssh/id_ed25519"
+          stat "${HOME}/.ssh/id_ed25519"
           cd user-interface/dist
           export remote_repo="git@github.com:${GITHUB_REPOSITORY}.git"
           git init
