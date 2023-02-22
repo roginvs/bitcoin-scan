@@ -24,6 +24,15 @@ export function readPgpLikePart(input: string) {
     dataString = dataString.slice(0, -1);
   }
 
+  dataString = dataString
+    .split("\n")
+    // Replace all <LF> breaks into <CR><LF>
+    // See rfc2440
+    //  "As with binary signatures on text documents, a cleartext signature is
+    //    calculated on the text using canonical <CR><LF> line endings. "
+    .map((line) => (line.endsWith("\r") ? line.slice(0, -1) : line))
+    .join("\r\n");
+
   return {
     header: s.slice(5, headerEndingDashesIndex),
     data: dataString,
