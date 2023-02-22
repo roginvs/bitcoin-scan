@@ -1,7 +1,7 @@
 import { readPgpLikePart } from "./parse-pgp-like";
 
 describe("Parse PGP-like", () => {
-  describe(`Single line`, () => {
+  describe(`Replace <LF> with <CL RF> (as in RFC)`, () => {
     const data1raw =
       `-----BEGIN BITCOIN SIGNED MESSAGE-----\n` +
       `boooooo\n  kokoko\r\ntreeee\n- ---rrrrraaaaaaabbb\n` +
@@ -14,11 +14,11 @@ describe("Parse PGP-like", () => {
     };
 
     it(`readPgpLikePart with \\n`, () => {
-      expect(readPgpLikePart(data1raw)).toStrictEqual(parsed);
+      expect(readPgpLikePart(data1raw, true)).toStrictEqual(parsed);
     });
 
     it(`readPgpLikePart with spaces in the beginning`, () => {
-      expect(readPgpLikePart("   \n  \r\n   " + data1raw)).toStrictEqual(
+      expect(readPgpLikePart("   \n  \r\n   " + data1raw, true)).toStrictEqual(
         parsed
       );
     });
