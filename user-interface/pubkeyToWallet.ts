@@ -42,6 +42,19 @@ function base58encode(data: ArrayBuffer) {
   return output.split("").reverse().join("");
 }
 
+function base58address(data: ArrayBuffer, networkId: number) {
+  const withNetworkId = new Uint8Array(data.byteLength + 1);
+  withNetworkId[0] = networkId;
+  withNetworkId.set(new Uint8Array(data), 1);
+
+  const addressHash = sha256(sha256(withNetworkId));
+  const base256 = new Uint8Array(withNetworkId.length + 4);
+  base256.set(withNetworkId, 0);
+  base256.set(new Uint8Array(addressHash.slice(0, 4)), withNetworkId.length);
+
+  return base58encode(base256);
+}
+
 export function pubkeyToWallet(
   pubkeyHex: {
     x: string;
@@ -60,18 +73,23 @@ export function pubkeyToWallet(
       walletType === "P2PKH compressed"
         ? compressedPubKeyHex
         : "04" + pubkeyHex.x + pubkeyHex.y;
-    const pubkeyBuf = hexStrToBuf(pubkey);
-    const pubkeyHash = ripemd160(new Uint8Array(sha256(pubkeyBuf)));
 
-    const withNetworkId = new Uint8Array(pubkeyHash.length + 1);
-    withNetworkId[0] = 0;
-    withNetworkId.set(pubkeyHash, 1);
+    const pubkeyHash = ripemd160(new Uint8Array(sha256(hexStrToBuf(pubkey))));
 
-    const addressHash = sha256(sha256(withNetworkId));
-    const base256 = new Uint8Array(withNetworkId.length + 4);
-    base256.set(withNetworkId, 0);
-    base256.set(new Uint8Array(addressHash.slice(0, 4)), withNetworkId.length);
+    return base58address(pubkeyHash, 0);
+  }
 
-    return base58encode(base256);
+  if (walletType === "Segwit P2SH") {
+    const pubkeyHash = ripemd160(
+      new Uint8Array(sha256(hexStrToBuf(compressedPubKeyHex)))
+    );
+
+    const segwitScript = new Uint8Array(pubkeyHash.length + 2);
+    segwitScript[0] = 0x00;
+    segwitScript[1] = 0x14;
+    segwitScript.set(pubkeyHash, 2);
+
+    const scriptHash = ripemd160(new Uint8Array(sha256(segwitScript)));
+    return base58address(scriptHash, 5);
   }
 }
