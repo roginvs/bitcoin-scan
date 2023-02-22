@@ -1,4 +1,8 @@
-import { packVarInt, signatureToPublicKey } from "./signatureToPublicKey";
+import {
+  getBitcoinMessageHash,
+  packVarInt,
+  signatureToPublicKey,
+} from "./signatureToPublicKey";
 
 describe(`signatureToPublicKey`, () => {
   it(`Sig1`, () => {
@@ -47,4 +51,12 @@ describe(`packVarInt`, () => {
       expect(packVarInt(val)).toBe(expected);
     });
   }
+});
+
+describe(`getBitcoinMessageHash`, () => {
+  it(`'lol kek asdasd'`, () => {
+    expect(
+      Buffer.from(getBitcoinMessageHash("lol kek asdasd")).toString("hex")
+    ).toBe("edfe108eb9b0cad858d030b7b4d0f5d45509765b1419095ac53e7d876d7e8d42");
+  });
 });

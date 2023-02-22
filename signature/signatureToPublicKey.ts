@@ -27,22 +27,26 @@ export function packVarInt(value: number) {
   }
 }
 
+export function getBitcoinMessageHash(msg: string) {
+  const MESSAGE_MAGIC = "Bitcoin Signed Message:\n";
+  const messageText =
+    packVarInt(MESSAGE_MAGIC.length) +
+    MESSAGE_MAGIC +
+    packVarInt(msg.length) +
+    msg;
+  const dataBuf = Uint8Array.from(stringToUTF8Array(messageText)).buffer;
+
+  const msgHashBuf = sha256(sha256(dataBuf));
+  return msgHashBuf;
+}
+
 export function signatureToPublicKey(signatureText: string) {
   const data = parsePgpLike(signatureText);
   if (!data) {
     return null;
   }
 
-  const MESSAGE_MAGIC = "Bitcoin Signed Message:\n";
-  const messageText =
-    String.fromCharCode(MESSAGE_MAGIC.length) +
-    MESSAGE_MAGIC +
-    String.fromCharCode(data.message.length) +
-    data.message;
-
-  const dataBuf = Uint8Array.from(stringToUTF8Array(messageText)).buffer;
-
-  const msgHashBuf = sha256(sha256(dataBuf));
+  const msgHashBuf = getBitcoinMessageHash(data.message);
 
   const latinSignature = atob(data.signatureBase64);
   const headerAndSignature = Uint8Array.from(
