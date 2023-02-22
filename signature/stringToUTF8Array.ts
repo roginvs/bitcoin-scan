@@ -10,7 +10,7 @@ export function stringToUTF8Array(str: string) {
 
   for (var i = 0; i < str.length; ++i) {
     var u = str.charCodeAt(i);
-    if (u >= 55296 && u <= 57343) {
+    if (u >= 0xd800 && u <= 0xdfff) {
       var u1 = str.charCodeAt(++i);
       u = (65536 + ((u & 1023) << 10)) | (u1 & 1023);
     }
