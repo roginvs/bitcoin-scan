@@ -97,8 +97,10 @@ export function signatureToPublicKey(signatureText: string) {
   const pubYHex = ("00".repeat(32) + pubPoint[1].toString(16)).slice(32 * 2);
 
   return {
-    pubXHex,
-    pubYHex,
+    pubKeyHex: {
+      x: pubXHex,
+      y: pubYHex,
+    },
     walletType: headerInfo.walletType,
   };
 }

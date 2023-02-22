@@ -16,10 +16,10 @@ ILTEzkSmm6R9ElES2zSbclDyej7J2kc3SQzwMINw4xlMcTIXHUL6d07/Vp3rL83OXTEE4GepulkfdxYC
         
         `)
     ).toStrictEqual({
-      pubXHex:
-        "9b095a4bf6b07821aea4e17faa67d23ab67651b0e560278554ae44f6074eb52c",
-      pubYHex:
-        "1ff0ba6dd6933e9b57da2e2ac154c42db20d103d91c21f6933b5d7cd11c0d334",
+      pubKeyHex: {
+        x: "9b095a4bf6b07821aea4e17faa67d23ab67651b0e560278554ae44f6074eb52c",
+        y: "1ff0ba6dd6933e9b57da2e2ac154c42db20d103d91c21f6933b5d7cd11c0d334",
+      },
       walletType: "P2PKH compressed",
     });
   });
