@@ -5,6 +5,29 @@ import { parsePgpLike } from "./parse-pgp-like";
 import { parseSignatureHeader } from "./parseSignatureHeader";
 import { stringToUTF8Array } from "./stringToUTF8Array";
 
+/** Same as in but using browser api */
+function packVarInt(value: number) {
+  if (value < 0xfd) {
+    return String.fromCharCode(value);
+  } else if (value < 0xffff) {
+    const b = new Uint8Array(3);
+    b[0] = 0xfd;
+    new DataView(b.buffer).setUint16(1, value, true);
+
+    return String.fromCharCode(...b);
+  } else if (value < 0xffffffff) {
+    const b = Buffer.alloc(5);
+    b[0] = 0xfe;
+    b.writeUInt32LE(value, 1);
+    return b;
+  } else {
+    const b = Buffer.alloc(9);
+    b[0] = 0xff;
+    b.writeBigUInt64LE(BigInt(value), 1);
+    return b;
+  }
+}
+
 export function signatureToPublicKey(signatureText: string) {
   const data = parsePgpLike(signatureText);
   if (!data) {
