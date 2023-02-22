@@ -7,6 +7,7 @@ describe("pubkeyToWallet", () => {
   };
   const testData = [
     ["P2PKH compressed", "19aJFYXVr9wjEm3cfQnJDHW2oyNEY2soWR"],
+    ["P2PKH uncompressed", "1MFjZqSy86daBdQhzqNwmJhpcnpZ9CgdGZ"],
   ] as const;
 
   for (const [walletType, wallet] of testData) {
