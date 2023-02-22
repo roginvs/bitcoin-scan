@@ -26,6 +26,7 @@ export function App() {
     if (updateTimer.current !== null) {
       window.clearTimeout(updateTimer.current);
     }
+    setExpectedWallet("");
     updateTimer.current = window.setTimeout(() => {
       try {
         const pubKey = signatureToPublicKey(newSig);
@@ -33,7 +34,7 @@ export function App() {
           setExpectedWallet("");
           return;
         }
-
+        //console.info(pubKey);
         const wallet = pubkeyToWallet(pubKey.pubKeyHex, pubKey.walletType);
         setExpectedWallet(wallet || "");
       } catch (e) {
