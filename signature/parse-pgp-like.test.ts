@@ -29,4 +29,26 @@ describe("Parse PGP-like", () => {
       ).toStrictEqual(parsed);
     });
   });
+
+  it(`Keep <LF> as it is`, () => {
+    const dataRaw =
+      `-----BEGIN BITCOIN SIGNATURE-----\n` +
+      `Version: Bitcoin-qt (1.0)\n` +
+      `Address: 1GgszPQqCFqZrU9C6h7AUBbwrH73XGoDXU\n` +
+      `\n` +
+      `blabla\nbla\nlol\n` +
+      `-----END BITCOIN SIGNATURE-----\n` +
+      "a\r\nb\n";
+    expect(
+      readPgpLikePart(dataRaw, false, ["Address", "Version"])
+    ).toStrictEqual({
+      header: "BEGIN BITCOIN SIGNATURE",
+      data: `blabla\nbla\nlol`,
+      rest: `-----END BITCOIN SIGNATURE-----\n` + "a\r\nb\n",
+      headers: {
+        Address: "1GgszPQqCFqZrU9C6h7AUBbwrH73XGoDXU",
+        Version: "Bitcoin-qt (1.0)",
+      },
+    });
+  });
 });
