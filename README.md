@@ -22,6 +22,10 @@ It is easier to obtain the same result just by patching official Bitcoin client 
 sqlite3 data/scanner.db -quote 'select * from found_keys'
 ```
 
+## Bonus item
+
+There is a Bitcoin signature verification website https://roginvs.github.io/bitcoin-scan/
+
 ## TODO:
 
 - Implement other script types
