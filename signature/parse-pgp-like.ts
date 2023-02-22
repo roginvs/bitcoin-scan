@@ -31,6 +31,10 @@ export function readPgpLikePart(input: string) {
     //  "As with binary signatures on text documents, a cleartext signature is
     //    calculated on the text using canonical <CR><LF> line endings. "
     .map((line) => (line.endsWith("\r") ? line.slice(0, -1) : line))
+    //  Dash escaped cleartext is the ordinary cleartext where every line
+    //    starting with a dash '-' (0x2D) is prefixed by the sequence dash '-'
+    //  (0x2D) and space ' ' (0x20).
+    .map((line) => (line.startsWith("- ") ? line.slice(2) : line))
     .join("\r\n");
 
   return {

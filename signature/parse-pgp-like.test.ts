@@ -4,7 +4,7 @@ describe("Parse PGP-like", () => {
   describe(`Single line`, () => {
     const data1raw =
       `-----BEGIN BITCOIN SIGNED MESSAGE-----\n` +
-      `boooooo\n  kokoko\r\ntreeee\n---rrrrraaaaaaabbb\n` +
+      `boooooo\n  kokoko\r\ntreeee\n- ---rrrrraaaaaaabbb\n` +
       `-----BEGIN BLA BLA-----   \n\n\n aaa`;
 
     const parsed = {
