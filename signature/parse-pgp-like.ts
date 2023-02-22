@@ -79,4 +79,26 @@ export function readPgpLikePart(
   };
 }
 
-export function parsePgpLike(s: string) {}
+export function parsePgpLike(s: string) {
+  const message = readPgpLikePart(s, false, ["Comment"]);
+  if (!message) {
+    return null;
+  }
+  if (message.header !== "BEGIN BITCOIN SIGNED MESSAGE") {
+    return null;
+  }
+  const signature = readPgpLikePart(message.rest, false, [
+    "Version",
+    "Address",
+  ]);
+  if (!signature) {
+    return null;
+  }
+  if (signature.header !== "BEGIN BITCOIN SIGNATURE") {
+    return null;
+  }
+  return {
+    data: message.data,
+    signatureBase64: signature.data,
+  };
+}
