@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  pages:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
+        with:
+          node-version: "18.x"
+      - name: Install npm packages
+        run: npm install
+      - name: Test code
+        run: npm run test
+      - name: Install UI packages
+        run: cd user-interface && npm install
+      - name: Build ui
+        run: cd user-interface && npm run build
+      - name: Deploy to github pages
+        env:
+          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          ls user-interface/dist
+          mkdir -p ${HOME}/.ssh
+          ssh-keyscan -t rsa github.com > "${HOME}/.ssh/known_hosts"
+          echo "${SSH_DEPLOY_KEY}" > "${HOME}/.ssh/id_rsa"
+          chmod 400 "${HOME}/.ssh/id_rsa"
+          cd user-interface/dist
+          export remote_repo="git@github.com:${GITHUB_REPOSITORY}.git"
+          git init
+          git checkout --orphan gh-pages
+          git remote rm origin || true
+          git remote add origin "${remote_repo}"
+          git add --all
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git commit --allow-empty -m'Github pages'
+          git remote -v
+          git push -f --set-upstream origin gh-pages
