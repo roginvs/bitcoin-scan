@@ -98,7 +98,7 @@ export function parsePgpLike(s: string) {
     return null;
   }
   return {
-    data: message.data,
+    message: message.data,
     signatureBase64: signature.data,
   };
 }
