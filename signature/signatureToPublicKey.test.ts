@@ -25,6 +25,31 @@ ILTEzkSmm6R9ElES2zSbclDyej7J2kc3SQzwMINw4xlMcTIXHUL6d07/Vp3rL83OXTEE4GepulkfdxYC
   });
 });
 
+describe(`signatureToPublicKey`, () => {
+  it(`Sig2`, () => {
+    expect(
+      signatureToPublicKey(`
+-----BEGIN BITCOIN SIGNED MESSAGE-----
+Welcome to signature verification!
+This page can verify all types of signatures
+This message was signed by 19aJFYXVr9wjEm3cfQnJD
+-----BEGIN BITCOIN SIGNATURE-----
+Comment: Comments are supportedddd!
+
+H0vYpepfJ9uVdkaRZf5owH3pOxyzDbKqf+WGdBadt35JAy7tCpMKOpWuSZCMvb1a8E+2v4owi872wIi3KSh/vq4=
+-----END BITCOIN SIGNATURE-----        
+          
+          `)
+    ).toStrictEqual({
+      pubKeyHex: {
+        x: "9b095a4bf6b07821aea4e17faa67d23ab67651b0e560278554ae44f6074eb52c",
+        y: "1ff0ba6dd6933e9b57da2e2ac154c42db20d103d91c21f6933b5d7cd11c0d334",
+      },
+      walletType: "P2PKH compressed",
+    });
+  });
+});
+
 describe(`packVarInt`, () => {
   const data = [
     [0, String.fromCharCode(0)],
