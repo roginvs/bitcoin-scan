@@ -104,8 +104,12 @@ Algoritm:
   const beforeBlockSavedListeners: BeforeBlockSavedListener[] = [];
   const afterBlockSavedListeners: AfterBlockSavedListener[] = [];
 
-  const MAX_OUTGOING_PEERS = 10;
-  const MAX_INCOMING_PEERS = 30;
+  const MAX_OUTGOING_PEERS = parseInt(
+    process.env.NODE_MAX_OUTGOING_PEERS || "10"
+  );
+  const MAX_INCOMING_PEERS = parseInt(
+    process.env.NODE_MAX_INCOMING_PEERS || "30"
+  );
   const MAX_DOWNLOADING_PEERS = 5;
   const MAX_BUFFERED_BLOCKS = 15;
 
