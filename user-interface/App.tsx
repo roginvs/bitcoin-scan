@@ -58,7 +58,7 @@ export function App() {
         className="p-5 mb-4 bg-light rounded-3"
         style={{ maxWidth: 800 }}
       >
-        <h1 className="header text-center">Check Bitcoin signature</h1>
+        <h1 className="header text-center">Verify Bitcoin signature</h1>
         <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
           <Form.Label>Signed message:</Form.Label>
           <Form.Control
