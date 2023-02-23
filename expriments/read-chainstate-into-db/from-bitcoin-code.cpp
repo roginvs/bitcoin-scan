@@ -41,7 +41,7 @@ const unsigned char OP_EQUALVERIFY = 0x88;
 const unsigned char OP_CHECKSIG = 0xac;
 const unsigned char OP_EQUAL = 0x87;
 
-void DecompressScript(std::vector<unsigned char> &script, unsigned int nSize, std::span<unsigned char> &in)
+void DecompressScript(std::vector<unsigned char> &script, unsigned int nSize, std::span<const char> &in)
 {
     switch (nSize)
     {

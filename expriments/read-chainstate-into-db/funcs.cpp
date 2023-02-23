@@ -42,3 +42,14 @@ void test_read_var_int()
         exit(1);
     }
 }
+
+std::vector<char> deobfuscate(std::span<const char> data, std::span<const char> mask)
+{
+    std::vector<char> vec(data.size());
+    for (size_t i = 0; i < data.size(); ++i)
+    {
+        vec[i] = data[i] ^ mask[i % mask.size()];
+    }
+
+    return vec;
+};

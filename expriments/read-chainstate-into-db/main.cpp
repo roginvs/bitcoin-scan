@@ -6,6 +6,8 @@
 #include <span>
 
 #include "./funcs.cpp"
+#include "./from-bitcoin-code.cpp"
+
 /*
 
 g++ -std=c++20 main.cpp /usr/lib/x86_64-linux-gnu/libleveldb.so -o main.bin && ./main.bin
@@ -58,7 +60,13 @@ int main()
     char obfuscate_key_key[] = "\x0e\0obfuscate_key";
     ok(db->Get(leveldb::ReadOptions(), leveldb::Slice(obfuscate_key_key, sizeof(obfuscate_key_key) - 1), &obfuscate_key));
 
-    std::cout << "Obfuscate key value = " << obfuscate_key << std::endl;
+    std::cout << "Obfuscate key value = " << obfuscate_key << " len=" << obfuscate_key.size() << std::endl;
+    for (uint i = 0; i < obfuscate_key.size(); ++i)
+    {
+        printf("%02x", (unsigned char)(obfuscate_key[i]));
+    };
+    std::cout << std::endl
+              << std::endl;
 
     auto iter = get_all(*db);
 
@@ -82,31 +90,61 @@ int main()
         auto rest = read_var_int(std::span(keyData + 1 + 32, key.size() - 1 - 32), &vout);
         ok(rest.size() == 0, "Nothing left");
 
+        auto value = deobfuscate(std::span(iter->value().data(), iter->value().size()), std::span(obfuscate_key.data() + 1, obfuscate_key.size() - 1));
+
+        for (uint i = 0; i < txid.size(); ++i)
+        {
+            printf("%02x", (unsigned char)(txid[31 - i]));
+        };
+        std::cout << " vout=" << vout << std::endl;
+
+        uint64_t block_height_and_is_coinbase;
+        rest = read_var_int(std::span(value.data(), value.size()), &block_height_and_is_coinbase);
+        uint64_t block_height = block_height_and_is_coinbase / 2;
+        uint64_t is_coinbase = block_height_and_is_coinbase % 2 == 0;
+        std::cout << "block_height=" << block_height << std::endl;
+
+        uint64_t amount_compressed;
+        rest = read_var_int(rest, &amount_compressed);
+        uint64_t amount = DecompressAmount(amount_compressed);
+        std::cout << "amount=" << amount << std::endl;
+
+        uint64_t script_n_size;
+        rest = read_var_int(rest, &script_n_size);
+        std::vector<unsigned char> script;
+        DecompressScript(script, script_n_size, rest);
+
+        for (uint i = 0; i < script.size(); ++i)
+        {
+            printf("%02x", (unsigned char)(script[i]));
+        };
+        printf("\n\n");
+
         /*
 
-        if (vout_packed.size() != 1)
-        {
-            printf("Tx td: ");
+if (vout_packed.size() != 1)
+{
+    printf("Tx td: ");
 
-            for (uint i = 0; i < txid.size(); ++i)
-            {
-                printf("%02x", (unsigned char)(txid[31 - i]));
-            };
-            std::cout << " size is not ok " << vout_packed.size() << std::endl;
-            printf("\n\n");
-        }
-  std::cout << "notc = " << *keyStart << std::endl;
-            std::cout << key.ToString() << ": " << iter->value().ToString() << std::endl;
+    for (uint i = 0; i < txid.size(); ++i)
+    {
+        printf("%02x", (unsigned char)(txid[31 - i]));
+    };
+    std::cout << " size is not ok " << vout_packed.size() << std::endl;
+    printf("\n\n");
+}
+std::cout << "notc = " << *keyStart << std::endl;
+    std::cout << key.ToString() << ": " << iter->value().ToString() << std::endl;
 
-            std::cout << "Len = " << key.size() << "   data = ";
-            for (uint i = 0; i < key.size(); ++i)
-            {
-                auto x = keyStart[i];
-                printf("%02x", x);
-            };
-            std::cout << std::endl;
-            std::cout << std::endl;
-        */
+    std::cout << "Len = " << key.size() << "   data = ";
+    for (uint i = 0; i < key.size(); ++i)
+    {
+        auto x = keyStart[i];
+        printf("%02x", x);
+    };
+    std::cout << std::endl;
+    std::cout << std::endl;
+*/
 
         // std::cout << iter->key().ToString() << ": " << iter->value().ToString() << std::endl;
     }
