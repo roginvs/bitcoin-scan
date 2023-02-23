@@ -80,10 +80,18 @@ auto initdb_sql = R"blablafoo(
     CREATE UNIQUE INDEX IF NOT EXISTS last_processed_block_hash_idx ON last_processed_block_hash
      (_uniq);
 
+
+
+delete from unspent_transaction_outputs;
+delete from last_processed_block_hash;
+
+PRAGMA journal_mode=WAL;
+
 )blablafoo";
 
 int main()
 {
+    std::cout << "Starting" << std::endl;
 
     sqlite3 *sql;
     if (sqlite3_open("/disk/bitcoin/newfinancial.db", &sql))
@@ -98,8 +106,21 @@ int main()
         fprintf(stderr, "SQL error: %s\n", sql_zErrMsg);
         sqlite3_free(sql_zErrMsg);
         exit(1);
-    }
+    };
 
+    sqlite3_stmt *insert_stmt;
+    auto insert_stmt_sql = "insert into unspent_transaction_outputs (transaction_hash, output_id, pub_script, value) values (?,?,?,?)";
+    if (sqlite3_prepare_v2(
+            sql,                     // the handle to your (opened and ready) database
+            insert_stmt_sql,         // the sql statement, utf-8 encoded
+            strlen(insert_stmt_sql), // max length of sql statement
+            &insert_stmt,            // this is an "out" parameter, the compiled statement goes here
+            nullptr)                 // pointer to the tail end of sql statement (when there are
+        != SQLITE_OK)
+    {
+        printf("Failed to prepare statement: %s\n", sqlite3_errmsg(sql));
+        exit(1);
+    }
     // test_read_var_int();
 
     size_t highest_block_height_seen = 0;
@@ -121,6 +142,8 @@ int main()
     //           << std::endl;
 
     auto iter = get_all(*db);
+
+    std::cout << "Fetching transcations" << std::endl;
 
     for (iter->SeekToFirst(); iter->Valid(); iter->Next())
     {
@@ -173,6 +196,18 @@ int main()
         std::vector<unsigned char> script;
         ok(DecompressScript(script, script_n_size, rest), "Failed to decompress script");
 
+        sqlite3_bind_blob(insert_stmt, 1, txid.data(), txid.size(), NULL);
+        sqlite3_bind_int64(insert_stmt, 2, vout);
+        sqlite3_bind_blob(insert_stmt, 3, script.data(), script.size(), NULL);
+        sqlite3_bind_int64(insert_stmt, 4, amount);
+        if (sqlite3_step(insert_stmt) != SQLITE_DONE)
+        {
+            fprintf(stderr, "insert statement didn't return DONE %s\n", sqlite3_errmsg(sql));
+            exit(2);
+        }
+
+        sqlite3_reset(insert_stmt);
+
         // for (uint i = 0; i < script.size(); ++i)
         // {
         //     printf("%02x", (unsigned char)(script[i]));
@@ -181,6 +216,7 @@ int main()
     }
     assert(iter->status().ok());
 
+    sqlite3_finalize(insert_stmt);
     sqlite3_close(sql);
     std::cout << "Ok" << std::endl;
 }
