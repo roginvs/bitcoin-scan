@@ -31,12 +31,13 @@ export function packVarInt(value: number) {
 
 export function getBitcoinMessageHash(msg: string) {
   const MESSAGE_MAGIC = "Bitcoin Signed Message:\n";
-  const messageText =
-    packVarInt(MESSAGE_MAGIC.length) +
-    MESSAGE_MAGIC +
-    packVarInt(msg.length) +
-    msg;
-  const dataBuf = Uint8Array.from(stringToUTF8Array(messageText)).buffer;
+  const messageTextArray = [
+    ...packVarInt(MESSAGE_MAGIC.length),
+    ...stringToUTF8Array(MESSAGE_MAGIC),
+    ...packVarInt(msg.length),
+    ...stringToUTF8Array(msg),
+  ];
+  const dataBuf = Uint8Array.from(messageTextArray).buffer;
 
   const msgHashBuf = sha256(sha256(dataBuf));
   return msgHashBuf;
