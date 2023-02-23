@@ -83,9 +83,29 @@ describe(`getBitcoinMessageHash`, () => {
       "AaÄäÖöÅå",
       "3f294b8905aa4de056fb445c2a3df32196669f07850bbb870052a691928128fe",
     ],
+    [
+      `Päättyy yö aamu saa uusipäivä kun kirkkaana koittaa.
+Sulle oi kotimaa, sävel kaunehin tuulessa soittaa.
+Rakastan elämää, joka uutena aamussa aukee.
+Rakastan elämää, joka uupuen illassa raukee.
+
+Kirkkahin päivä ei, aina parhainta loistetta suone.
+Unelman usein vei eikä ystävä lohtua tuone.
+Rakastan elämää, joka kyynelten helminä hohtaa
+Rakastan elämää, joka myrskyihin tietäni johtaa.
+
+Jäänyt on päivän työ, ilta varjoja tielleni siirtää.
+Kaupungin sydän lyö valot laineille siltoja piirtää.
+Rakastan elämää, joka nuoruuden haaveita kantaa.
+Rakastan elämää joka muistojen hetkiä antaa.
+
+Rakastan elämää, sille lempeni tahdon mä antaa.
+Rakastan elämää, joka muistojen hetkiä kantaa.`,
+      "a4ae33bc749e7f16a746e3e61819d730c169d5bce352dfca0a8f77c6a4516d5c",
+    ],
   ];
   for (const [input, expected] of testData) {
-    it(`'${input}'`, () => {
+    it(`'${input.slice(0, 30)}'`, () => {
       expect(Buffer.from(getBitcoinMessageHash(input)).toString("hex")).toBe(
         Buffer.from(expected, "hex").reverse().toString("hex")
       );
