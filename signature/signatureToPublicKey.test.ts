@@ -74,9 +74,17 @@ describe(`packVarInt`, () => {
 });
 
 describe(`getBitcoinMessageHash`, () => {
-  it(`'lol kek asdasd'`, () => {
-    expect(
-      Buffer.from(getBitcoinMessageHash("lol kek asdasd")).toString("hex")
-    ).toBe("edfe108eb9b0cad858d030b7b4d0f5d45509765b1419095ac53e7d876d7e8d42");
-  });
+  const testData = [
+    [
+      "lol kek asdasd",
+      "428d7e6d877d3ec55a0919145b760955d4f5d0b4b730d058d8cab0b98e10feed",
+    ],
+  ];
+  for (const [input, expected] of testData) {
+    it(`'${input}'`, () => {
+      expect(Buffer.from(getBitcoinMessageHash(input)).toString("hex")).toBe(
+        Buffer.from(expected, "hex").reverse().toString("hex")
+      );
+    });
+  }
 });
