@@ -92,7 +92,7 @@ void DecompressScript(std::vector<unsigned char> &script, unsigned int nSize, st
     }
 
     script.resize(in.size());
-    printf("RRR %lu script_size=%lu\n", in.size(), script.size());
+    //  printf("RRR %lu script_size=%lu\n", in.size(), script.size());
     memcpy(&script[0], in.data(), in.size());
     return;
 }
