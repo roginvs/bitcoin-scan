@@ -86,11 +86,13 @@ void DecompressScript(std::vector<unsigned char> &script, unsigned int nSize, st
         return true;
         */
         printf("Got script with uncompressed public key, need to decompress\n");
+        exit(1);
         script.resize(0);
         return;
     }
 
     script.resize(in.size());
-    memcpy(&script, in.data(), in.size());
+    printf("RRR %lu script_size=%lu\n", in.size(), script.size());
+    memcpy(&script[0], in.data(), in.size());
     return;
 }
