@@ -96,7 +96,7 @@ int main()
     std::cout << "Starting" << std::endl;
 
     sqlite3 *sql;
-    if (sqlite3_open("/disk/bitcoin/newfinancial.db", &sql))
+    if (sqlite3_open("/data/bitcoin/newfinancial.db", &sql))
     {
         printf("Failed to open sqlite database: %s\n", sqlite3_errmsg(sql));
         exit(1);
@@ -228,4 +228,5 @@ int main()
     std::cout << "Ok, done." << std::endl;
     std::cout << "transactions_count=" << transactions_count << std::endl;
     std::cout << "highest_block_height_seen=" << highest_block_height_seen << std::endl;
+    std::cout << "Now you need to do this in financial.sql: " << std::endl;
 }

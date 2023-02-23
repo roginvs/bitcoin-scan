@@ -234,7 +234,7 @@ function getPublickeyWallets(privKey: Buffer) {
 }
 
 function checkUnspendTxouts() {
-  const sql = new Database("/disk/bitcoin/newfinancial.db");
+  const sql = new Database("/data/bitcoin/newfinancial.db");
   const selectSql = sql.prepare(
     "select * from unspent_transaction_outputs where pub_script = ?"
   );
