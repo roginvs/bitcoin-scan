@@ -82,10 +82,12 @@ auto initdb_sql = R"blablafoo(
 
 
 
+PRAGMA journal_mode=WAL;
+
 delete from unspent_transaction_outputs;
 delete from last_processed_block_hash;
 
-PRAGMA journal_mode=WAL;
+
 
 )blablafoo";
 
@@ -213,10 +215,17 @@ int main()
         //     printf("%02x", (unsigned char)(script[i]));
         // };
         // printf("\n\n");
+
+        if (transactions_count % 1000)
+        {
+            std::cout << "Processed %i transactions" << transactions_count << std::endl;
+        }
     }
     assert(iter->status().ok());
 
     sqlite3_finalize(insert_stmt);
     sqlite3_close(sql);
-    std::cout << "Ok" << std::endl;
+    std::cout << "Ok, done." << std::endl;
+    std::cout << "transactions_count=" << transactions_count << std::endl;
+    std::cout << "highest_block_height_seen=" << highest_block_height_seen << std::endl;
 }
