@@ -216,9 +216,9 @@ int main()
         // };
         // printf("\n\n");
 
-        if (transactions_count % 1000)
+        if (transactions_count % 1000 == 0)
         {
-            std::cout << "Processed %i transactions" << transactions_count << std::endl;
+            std::cout << "Processed " << transactions_count << " transactions" << std::endl;
         }
     }
     assert(iter->status().ok());
