@@ -8,22 +8,24 @@ import { stringToUTF8Array } from "./stringToUTF8Array";
 /** Same as in but using browser api */
 export function packVarInt(value: number) {
   if (value < 0xfd) {
-    return String.fromCharCode(value);
+    const b = new Uint8Array(1);
+    b[0] = value;
+    return b;
   } else if (value < 0xffff) {
     const b = new Uint8Array(3);
     b[0] = 0xfd;
     new DataView(b.buffer).setUint16(1, value, true);
-    return String.fromCharCode(...b);
+    return b;
   } else if (value < 0xffffffff) {
     const b = new Uint8Array(5);
     b[0] = 0xfe;
     new DataView(b.buffer).setUint32(1, value, true);
-    return String.fromCharCode(...b);
+    return b;
   } else {
     const b = new Uint8Array(9);
     b[0] = 0xff;
     new DataView(b.buffer).setBigUint64(1, BigInt(value), true);
-    return String.fromCharCode(...b);
+    return b;
   }
 }
 
