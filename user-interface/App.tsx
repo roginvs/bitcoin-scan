@@ -4,14 +4,13 @@ import Form from "react-bootstrap/Form";
 import { signatureToPublicKey } from "../signature/signatureToPublicKey";
 import { pubkeyToWallet } from "./pubkeyToWallet";
 
-const DEFAULT_SIGNATURE = `-----BEGIN BITCOIN SIGNED MESSAGE-----
-Welcome to signature check!
-Enter a signed message here
------BEGIN BITCOIN SIGNATURE-----
-Address: 19aJFYXVr9wjEm3cfQnJDHW2oyNEY2soWR
+const DEFAULT_SIGNATURE =
+  `-----BEGIN BITCOIN SIGNED MESSAGE-----\n` +
+  "Welcome to signature verification!\nThis page can verify all types of signatures\nThis message was signed by 19aJFYXVr9wjEm3cfQnJDHW2oyNEY2soWR wallet\nEnter a signed message here" +
+  `\n-----BEGIN BITCOIN SIGNATURE-----
+Comment: Comments are supported!
 
-ILZq71rK2AIys9yEzkK1U9vavIFLjgRmRMxtqe4k3yNV
-OVD7WmyS1oYLnxsfk0E/Y1g8mQiWxnBt1U89Zm5E9ks=
+H1l9KUtXQgAMLD6aM9Q9BM/42q+YGfxGK0kK8sui8iIUBbYhrBTqt+s+Yal2CNBLOYsU3Ld+9xfGxUTj8CIueww=
 -----END BITCOIN SIGNATURE-----
 `;
 
@@ -30,14 +29,20 @@ export function App() {
     updateTimer.current = window.setTimeout(() => {
       try {
         const pubKey = signatureToPublicKey(newSig);
+
         if (!pubKey) {
+          console.info(`No public key`);
           setExpectedWallet("");
           return;
         }
-        //console.info(pubKey);
+        console.info(pubKey);
         const wallet = pubkeyToWallet(pubKey.pubKeyHex, pubKey.walletType);
+        if (!wallet) {
+          console.info(`Failed to create wallet`);
+        }
         setExpectedWallet(wallet || "");
       } catch (e) {
+        console.info(e);
         setExpectedWallet("");
       }
     }, 200);
