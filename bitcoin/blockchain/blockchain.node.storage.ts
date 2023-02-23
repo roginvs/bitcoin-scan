@@ -32,7 +32,9 @@ export function createNodeStorage(isMemory = false) {
       transaction_index_in_block INTEGER NOT NULL,
       data BLOB NOT NULL
     );
-    CREATE UNIQUE INDEX IF NOT EXISTS transaction_hash ON block_transactions (txid);
+    -- Kind of no reason to keep it
+    DROP INDEX IF EXISTS transaction_hash;    
+    
     CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_numeric_id);    
     -- CREATE INDEX IF NOT EXISTS transaction_block_id ON block_transactions (block_id, block_index);
 
