@@ -113,7 +113,7 @@ int main()
         rest = read_var_int(rest, &script_n_size);
         std::cout << "script_n_size=" << script_n_size << " rest len = " << rest.size() << std::endl;
         std::vector<unsigned char> script;
-        DecompressScript(script, script_n_size, rest);
+        ok(DecompressScript(script, script_n_size, rest), "Failed to decompress script");
 
         for (uint i = 0; i < script.size(); ++i)
         {

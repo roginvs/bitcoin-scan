@@ -42,11 +42,15 @@ const unsigned char OP_EQUALVERIFY = 0x88;
 const unsigned char OP_CHECKSIG = 0xac;
 const unsigned char OP_EQUAL = 0x87;
 
-void DecompressScript(std::vector<unsigned char> &script, unsigned int nSize, std::span<const char> &in)
+bool DecompressScript(std::vector<unsigned char> &script, unsigned int nSize, std::span<const char> &in)
 {
     switch (nSize)
     {
     case 0x00:
+        if (in.size() != 20)
+        {
+            return false;
+        }
         script.resize(25);
         script[0] = OP_DUP;
         script[1] = OP_HASH160;
@@ -54,33 +58,40 @@ void DecompressScript(std::vector<unsigned char> &script, unsigned int nSize, st
         memcpy(&script[3], in.data(), 20);
         script[23] = OP_EQUALVERIFY;
         script[24] = OP_CHECKSIG;
-        return;
+        return true;
     case 0x01:
+        if (in.size() != 20)
+        {
+            return false;
+        }
         script.resize(23);
         script[0] = OP_HASH160;
         script[1] = 20;
         memcpy(&script[2], in.data(), 20);
         script[22] = OP_EQUAL;
-        return;
+        return true;
     case 0x02:
     case 0x03:
+        if (in.size() != 32)
+        {
+            return false;
+        }
         script.resize(35);
         script[0] = 33;
         script[1] = nSize;
         memcpy(&script[2], in.data(), 32);
         script[34] = OP_CHECKSIG;
-        return;
+        return true;
     case 0x04:
     case 0x05:
+        if (in.size() != 32)
+        {
+            return false;
+        }
 
         unsigned char vch[33] = {};
         vch[0] = nSize - 2;
         memcpy(&vch[1], in.data(), 32);
-
-        // CPubKey pubkey{vch};
-        // if (!pubkey.Decompress())
-        //     return false;
-        // assert(pubkey.size() == 65);
 
         static secp256k1_context *ctx = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
         secp256k1_pubkey pubkey;
@@ -103,11 +114,16 @@ void DecompressScript(std::vector<unsigned char> &script, unsigned int nSize, st
         script[0] = 65;
         memcpy(&script[1], pubkey_uncompressed, 65);
         script[66] = OP_CHECKSIG;
-        return;
+        return true;
+    }
+
+    if (nSize - 6 != in.size())
+    {
+        return false;
     }
 
     script.resize(in.size());
     //  printf("RRR %lu script_size=%lu\n", in.size(), script.size());
     memcpy(&script[0], in.data(), in.size());
-    return;
+    return true;
 }
