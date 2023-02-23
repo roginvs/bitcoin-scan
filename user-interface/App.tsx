@@ -6,11 +6,11 @@ import { pubkeyToWallet } from "./pubkeyToWallet";
 
 const DEFAULT_SIGNATURE =
   `-----BEGIN BITCOIN SIGNED MESSAGE-----\n` +
-  "Welcome to signature verification!\nThis page can verify all types of signatures\nThis message was signed by 19aJFYXVr9wjEm3cfQnJDHW2oyNEY2soWR wallet\nEnter a signed message here" +
+  "Welcome to signature verification!\nThis page can verify all types of signature address from BIP-0137: P2PKH (comp&uncomp), P2SH+P2WPKH, P2WPKH.\nFor example, this message was signed by 19aJFYXVr9wjEm3cfQnJDHW2oyNEY2soWR address." +
   `\n-----BEGIN BITCOIN SIGNATURE-----
 Comment: Comments are supported!
 
-H1l9KUtXQgAMLD6aM9Q9BM/42q+YGfxGK0kK8sui8iIUBbYhrBTqt+s+Yal2CNBLOYsU3Ld+9xfGxUTj8CIueww=
+IMJMaQ94TzNhBEyxAw7yMyXua0pqrWbuJInHyF9YEmhtBGPptwAEovxTef+AXeIiy3ybabxTICtTBJju85mZYlI=
 -----END BITCOIN SIGNATURE-----
 `;
 
