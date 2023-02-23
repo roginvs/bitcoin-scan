@@ -79,6 +79,10 @@ describe(`getBitcoinMessageHash`, () => {
       "lol kek asdasd",
       "428d7e6d877d3ec55a0919145b760955d4f5d0b4b730d058d8cab0b98e10feed",
     ],
+    [
+      "AaÄäÖöÅå",
+      "3f294b8905aa4de056fb445c2a3df32196669f07850bbb870052a691928128fe",
+    ],
   ];
   for (const [input, expected] of testData) {
     it(`'${input}'`, () => {
