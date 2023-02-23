@@ -16,7 +16,10 @@ IMJMaQ94TzNhBEyxAw7yMyXua0pqrWbuJInHyF9YEmhtBGPptwAEovxTef+AXeIiy3ybabxTICtTBJju
 
 export function App() {
   const [sigVal, setSigVal] = React.useState("");
-  const [expectedWallet, setExpectedWallet] = React.useState("");
+
+  const [expectedWallet, setExpectedWallet] = React.useState<null | string[]>(
+    null
+  );
   const [walletText, setWalletText] = React.useState("");
 
   const updateTimer = React.useRef<null | number>(0);
@@ -25,25 +28,40 @@ export function App() {
     if (updateTimer.current !== null) {
       window.clearTimeout(updateTimer.current);
     }
-    setExpectedWallet("");
+    setExpectedWallet(null);
     updateTimer.current = window.setTimeout(() => {
       try {
         const pubKey = signatureToPublicKey(newSig);
 
         if (!pubKey) {
           console.info(`No public key`);
-          setExpectedWallet("");
+          setExpectedWallet(null);
           return;
         }
         console.info(pubKey);
         const wallet = pubkeyToWallet(pubKey.pubKeyHex, pubKey.walletType);
         if (!wallet) {
           console.info(`Failed to create wallet`);
+          setExpectedWallet(null);
+          return;
         }
-        setExpectedWallet(wallet || "");
+        const otherWalletsWithTheSameKey = (
+          [
+            "P2PKH uncompressed",
+            "P2PKH compressed",
+            "Segwit P2SH",
+            "Segwit Bech32",
+          ] as const
+        )
+          .filter((type) => type !== pubKey.walletType)
+          .map((type) => pubkeyToWallet(pubKey.pubKeyHex, type))
+          .filter((x) => x)
+          .map((x) => x!);
+
+        setExpectedWallet([wallet, ...otherWalletsWithTheSameKey]);
       } catch (e) {
         console.info(e);
-        setExpectedWallet("");
+        setExpectedWallet(null);
       }
     }, 200);
   };
@@ -74,7 +92,7 @@ export function App() {
           <Form.Label>Enter wallet:</Form.Label>
           <Form.Control
             as="input"
-            placeholder={expectedWallet}
+            placeholder={expectedWallet ? expectedWallet[0] : ""}
             value={walletText}
             className="font-monospace"
             onChange={(e) => setWalletText(e.target.value)}
@@ -85,7 +103,7 @@ export function App() {
           className={`text-center mt-5 ${
             !walletText || !expectedWallet
               ? "text-muted"
-              : walletText === expectedWallet
+              : walletText === expectedWallet[0]
               ? "text-success"
               : "text-danger"
           }`}
@@ -94,9 +112,24 @@ export function App() {
             ""
           ) : !walletText ? (
             <span>
-              Signature is valid for <b>{expectedWallet}</b>
+              Signature is valid for
+              <br /> <b>{expectedWallet[0]}</b>
+              <br />
+              {expectedWallet.slice(1).length > 0 ? (
+                <span>
+                  <br />
+                  Also the same public key belongs to those wallets:
+                  <br />
+                  {expectedWallet.slice(1).map((wallet) => (
+                    <span key={wallet}>
+                      <b>{wallet}</b>
+                      <br />
+                    </span>
+                  ))}
+                </span>
+              ) : null}
             </span>
-          ) : walletText === expectedWallet ? (
+          ) : walletText === expectedWallet[0] ? (
             "Signature is valid!"
           ) : (
             "Signature is not valid"
