@@ -230,6 +230,8 @@ int main()
     }
     assert(iter->status().ok());
 
+    std::cout << "Ok, committing transcation" << std::endl;
+
     if (sqlite3_exec(sql, "COMMIT", NULL, 0, &sql_zErrMsg) != SQLITE_OK)
     {
         fprintf(stderr, "SQL error: %s\n", sql_zErrMsg);
