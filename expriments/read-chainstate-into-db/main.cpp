@@ -42,24 +42,44 @@ int main()
     auto db = init_db();
 
     std::string obfuscate_key;
-    auto obfuscate_key_key = "\x0e\0obfuscate_key";
-    ok(db->Get(leveldb::ReadOptions(), leveldb::Slice(obfuscate_key_key, 15), &obfuscate_key));
 
-    std::cout << "Value = " << obfuscate_key << std::endl;
+    char obfuscate_key_key[] = "\x0e\0obfuscate_key";
+    ok(db->Get(leveldb::ReadOptions(), leveldb::Slice(obfuscate_key_key, sizeof(obfuscate_key_key) - 1), &obfuscate_key));
 
-    std::cout << "==================" << sizeof(*obfuscate_key_key) << std::endl;
+    std::cout << "Obfuscate key value = " << obfuscate_key << std::endl;
 
     auto iter = get_all(*db);
 
     for (iter->SeekToFirst(); iter->Valid(); iter->Next())
     {
         auto key = iter->key();
-        auto keyStart = key.data();
+        auto keyData = key.data();
 
         // std::vector<char> w_(iter->key().data, iter->key().data + iter->key().length);
-
-        if (*keyStart != 0x43)
+        if (key.size() < 1 + 32 + 1)
         {
+            continue;
+        }
+        if (*keyData != 0x43)
+        {
+            continue;
+        }
+
+        auto txid = leveldb::Slice(keyData + 1, 32);
+        auto vout_packed = leveldb::Slice(keyData + 1 + 32, key.size() - 1 - 32);
+        if (vout_packed.size() != 1)
+        {
+            printf("Tx td: ");
+
+            for (uint i = 0; i < txid.size(); ++i)
+            {
+                printf("%02x", (unsigned char)(txid[31 - i]));
+            };
+            std::cout << " size is not ok " << vout_packed.size() << std::endl;
+            printf("\n\n");
+        }
+
+        /*
             std::cout << "notc = " << *keyStart << std::endl;
             std::cout << key.ToString() << ": " << iter->value().ToString() << std::endl;
 
@@ -71,7 +91,7 @@ int main()
             };
             std::cout << std::endl;
             std::cout << std::endl;
-        };
+        */
 
         // std::cout << iter->key().ToString() << ": " << iter->value().ToString() << std::endl;
     }
