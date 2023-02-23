@@ -10,7 +10,7 @@
 
 /*
 
-g++ -std=c++20 main.cpp /usr/lib/x86_64-linux-gnu/libleveldb.so -o main.bin && ./main.bin
+g++ -std=c++20 main.cpp /usr/lib/x86_64-linux-gnu/libleveldb.so /usr/lib/x86_64-linux-gnu/libsecp256k1.so -o main.bin && ./main.bin
 
 */
 

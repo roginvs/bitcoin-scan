@@ -4,6 +4,7 @@
 #include "memory"
 #include <span>
 #include <string.h>
+#include <secp256k1.h>
 
 uint64_t DecompressAmount(uint64_t x)
 {
@@ -71,23 +72,37 @@ void DecompressScript(std::vector<unsigned char> &script, unsigned int nSize, st
         return;
     case 0x04:
     case 0x05:
-        /*
+
         unsigned char vch[33] = {};
         vch[0] = nSize - 2;
         memcpy(&vch[1], in.data(), 32);
-        CPubKey pubkey{vch};
-        if (!pubkey.Decompress())
-            return false;
-        assert(pubkey.size() == 65);
+
+        // CPubKey pubkey{vch};
+        // if (!pubkey.Decompress())
+        //     return false;
+        // assert(pubkey.size() == 65);
+
+        static secp256k1_context *ctx = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
+        secp256k1_pubkey pubkey;
+
+        if (!secp256k1_ec_pubkey_parse(ctx, &pubkey, vch, sizeof(vch)))
+        {
+            printf("Failed parsing the public key\n");
+            exit(1);
+        };
+
+        unsigned char pubkey_uncompressed[65];
+        size_t pubkey_uncompressed_len = sizeof(pubkey_uncompressed);
+        if (!secp256k1_ec_pubkey_serialize(ctx, pubkey_uncompressed, &pubkey_uncompressed_len, &pubkey, SECP256K1_EC_UNCOMPRESSED))
+        {
+            printf("Failed serializing the public key\n");
+            exit(1);
+        }
+
         script.resize(67);
         script[0] = 65;
-        memcpy(&script[1], pubkey.begin(), 65);
+        memcpy(&script[1], pubkey_uncompressed, 65);
         script[66] = OP_CHECKSIG;
-        return true;
-        */
-        printf("Got script with uncompressed public key, need to decompress\n");
-        exit(1);
-        script.resize(0);
         return;
     }
 
