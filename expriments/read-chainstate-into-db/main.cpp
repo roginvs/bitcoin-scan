@@ -4,9 +4,10 @@
 #include <memory>
 #include <vector>
 
+#include "./funcs.cpp"
 /*
 
-g++ main.cpp /usr/lib/x86_64-linux-gnu/libleveldb.so -o main.bin && ./main.bin
+g++ -std=c++20 main.cpp /usr/lib/x86_64-linux-gnu/libleveldb.so -o main.bin && ./main.bin
 
 */
 
@@ -39,6 +40,8 @@ std::unique_ptr<leveldb::Iterator> get_all(leveldb::DB &db)
 
 int main()
 {
+    test_read_var_int();
+
     auto db = init_db();
 
     std::string obfuscate_key;
