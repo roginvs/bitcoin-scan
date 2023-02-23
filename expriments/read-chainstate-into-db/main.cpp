@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <span>
 
 #include "./funcs.cpp"
 /*
@@ -19,6 +20,14 @@ void ok(leveldb::Status status)
         exit(1);
     }
 }
+void ok(bool condition, const char *message)
+{
+    if (!condition)
+    {
+        std::cerr << message << std::endl;
+        exit(1);
+    }
+};
 
 std::unique_ptr<leveldb::DB> init_db()
 {
@@ -69,7 +78,12 @@ int main()
         }
 
         auto txid = leveldb::Slice(keyData + 1, 32);
-        auto vout_packed = leveldb::Slice(keyData + 1 + 32, key.size() - 1 - 32);
+        uint64_t vout;
+        auto rest = read_var_int(std::span(keyData + 1 + 32, key.size() - 1 - 32), &vout);
+        ok(rest.size() == 0, "Nothing left");
+
+        /*
+
         if (vout_packed.size() != 1)
         {
             printf("Tx td: ");
@@ -81,9 +95,7 @@ int main()
             std::cout << " size is not ok " << vout_packed.size() << std::endl;
             printf("\n\n");
         }
-
-        /*
-            std::cout << "notc = " << *keyStart << std::endl;
+  std::cout << "notc = " << *keyStart << std::endl;
             std::cout << key.ToString() << ": " << iter->value().ToString() << std::endl;
 
             std::cout << "Len = " << key.size() << "   data = ";

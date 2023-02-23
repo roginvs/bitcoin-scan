@@ -1,7 +1,7 @@
 #include <cstdint>
 #include <span>
 
-std::span<unsigned char> read_var_int(std::span<unsigned char> data, uint64_t *out)
+std::span<const char> read_var_int(std::span<const char> data, uint64_t *out)
 {
     *out = 0;
     size_t bytes_readed = 0;
@@ -28,9 +28,9 @@ std::span<unsigned char> read_var_int(std::span<unsigned char> data, uint64_t *o
 void test_read_var_int()
 {
     uint64_t out;
-    std::span<unsigned char> rest;
+    std::span<const char> rest;
 
-    rest = read_var_int(std::span((unsigned char *)"\xc0\x84\x26", 3), &out);
+    rest = read_var_int(std::span("\xc0\x84\x26", 3), &out);
     if (rest.size() != 0)
     {
         printf("Size is wrong %li\n", rest.size());
