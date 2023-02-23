@@ -1,4 +1,6 @@
 import { PkScript } from "../../bitcoin/protocol/messages.types";
+import Database from "better-sqlite3";
+
 import {
   getCompressedPublicKeyFromPrivateKey,
   getUnCompressedPublicKeyFromPrivateKey,
@@ -18,25 +20,44 @@ import {
 import { ripemd160, sha256 } from "../../bitcoin/utils/hashes";
 
 function getSimplePkScripts() {
-  const pkScripts = [
-    // OP_CHECKSIG
-    "AC",
-    // OP_number
+  // OP_CHECKSIG
+  const pkScripts = [Buffer.from([0xac]) as PkScript];
+
+  pkScripts.push(
     ...new Array(16)
       .fill(0)
       .map((_, i) => i + 0x51)
-      .map((x) => x.toString(16)),
-  ];
+      .map(
+        (i) =>
+          Buffer.from([
+            // OP_CHECKSIG
+            0xac,
+            // OP_number
+            i,
+          ]) as PkScript
+      )
+  );
+
   pkScripts.push(
     ...pkScripts.map(
       (s) =>
-        //  OP_NOP
-        "61" + s
+        Buffer.concat([
+          Buffer.from(
+            // OP_NOP
+            [61]
+          ),
+          s,
+        ]) as PkScript
     ),
     ...pkScripts.map(
       (s) =>
-        // OP_FALSE OP_DROP
-        "0075" + s
+        Buffer.concat([
+          Buffer.from(
+            // OP_FALSE OP_DROP
+            [0, 75]
+          ),
+          s,
+        ]) as PkScript
     )
   );
   return pkScripts;
@@ -212,16 +233,30 @@ function getPublickeyWallets(privKey: Buffer) {
   return walletsInfo;
 }
 
-async function getWalletBalance(wallet: string) {
-  // TODO
+function checkUnspendTxouts() {
+  const sql = new Database("/disk/bitcoin/newfinancial.db");
+  const selectSql = sql.prepare(
+    "select * from unspent_transaction_outputs where pub_script = ?"
+  );
+  async function checkPkScript(info: WalletInfo) {
+    const unspent = selectSql.get(info[0]);
+    if (!unspent) {
+      return;
+    }
+    console.info(`WOW!`);
+    console.info(unspent);
+    console.info(info);
+  }
+
+  console.info(`Checking simple pk scripts`);
+  getSimplePkScripts().forEach((pkScript) => {
+    getScriptWallets(pkScript).forEach((info) => checkPkScript(info));
+  });
+
+  console.info(`Checking simple private keys`);
+  getSimplePrivateKeys().forEach((priv) => {
+    getPublickeyWallets(priv).forEach((info) => checkPkScript(info));
+  });
 }
 
-/*
-pkScripts.slice(0, 1).forEach((pkScript) => {
-  addScriptWallets(Buffer.from(pkScript, "hex") as PkScript);
-});
-
-privKeys.slice(0, 1).forEach((privKey) => addPublickeyWallets(privKey));
-
-console.info(walletsInfo);
-*/
+checkUnspendTxouts();
