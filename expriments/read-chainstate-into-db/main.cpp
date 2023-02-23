@@ -51,7 +51,10 @@ std::unique_ptr<leveldb::Iterator> get_all(leveldb::DB &db)
 
 int main()
 {
-    test_read_var_int();
+    // test_read_var_int();
+
+    size_t highest_block_height_seen = 0;
+    size_t transactions_count = 0;
 
     auto db = init_db();
 
@@ -85,6 +88,8 @@ int main()
             continue;
         }
 
+        transactions_count++;
+
         auto txid = leveldb::Slice(keyData + 1, 32);
         uint64_t vout;
         auto rest = read_var_int(std::span(keyData + 1 + 32, key.size() - 1 - 32), &vout);
@@ -102,6 +107,10 @@ int main()
         rest = read_var_int(std::span(value.data(), value.size()), &block_height_and_is_coinbase);
         uint64_t block_height = block_height_and_is_coinbase / 2;
         uint64_t is_coinbase = block_height_and_is_coinbase % 2 == 0;
+        if (block_height > highest_block_height_seen)
+        {
+            highest_block_height_seen = block_height;
+        }
         std::cout << "block_height=" << block_height << std::endl;
 
         uint64_t amount_compressed;
@@ -120,34 +129,6 @@ int main()
             printf("%02x", (unsigned char)(script[i]));
         };
         printf("\n\n");
-
-        /*
-
-if (vout_packed.size() != 1)
-{
-    printf("Tx td: ");
-
-    for (uint i = 0; i < txid.size(); ++i)
-    {
-        printf("%02x", (unsigned char)(txid[31 - i]));
-    };
-    std::cout << " size is not ok " << vout_packed.size() << std::endl;
-    printf("\n\n");
-}
-std::cout << "notc = " << *keyStart << std::endl;
-    std::cout << key.ToString() << ": " << iter->value().ToString() << std::endl;
-
-    std::cout << "Len = " << key.size() << "   data = ";
-    for (uint i = 0; i < key.size(); ++i)
-    {
-        auto x = keyStart[i];
-        printf("%02x", x);
-    };
-    std::cout << std::endl;
-    std::cout << std::endl;
-*/
-
-        // std::cout << iter->key().ToString() << ": " << iter->value().ToString() << std::endl;
     }
     assert(iter->status().ok());
 
