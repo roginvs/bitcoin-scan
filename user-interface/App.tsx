@@ -65,7 +65,7 @@ export function App() {
             as="textarea"
             className="font-monospace"
             placeholder="Enter signature here"
-            style={{ height: 300 }}
+            style={{ height: 400 }}
             value={sigVal}
             onChange={(e) => onSigUpdate(e.target.value)}
           />
