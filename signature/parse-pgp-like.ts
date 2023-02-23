@@ -90,6 +90,7 @@ export function parsePgpLike(s: string) {
   const signature = readPgpLikePart(message.rest, false, [
     "Version",
     "Address",
+    "Comment",
   ]);
   if (!signature) {
     return null;

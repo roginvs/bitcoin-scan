@@ -93,8 +93,8 @@ export function signatureToPublicKey(signatureText: string) {
   if (!pubPoint) {
     return null;
   }
-  const pubXHex = ("00".repeat(32) + pubPoint[0].toString(16)).slice(32 * 2);
-  const pubYHex = ("00".repeat(32) + pubPoint[1].toString(16)).slice(32 * 2);
+  const pubXHex = ("00".repeat(32) + pubPoint[0].toString(16)).slice(-32 * 2);
+  const pubYHex = ("00".repeat(32) + pubPoint[1].toString(16)).slice(-32 * 2);
 
   return {
     pubKeyHex: {
