@@ -110,6 +110,13 @@ int main()
         exit(1);
     };
 
+    if (sqlite3_exec(sql, "BEGIN TRANSACTION", NULL, 0, &sql_zErrMsg) != SQLITE_OK)
+    {
+        fprintf(stderr, "SQL error: %s\n", sql_zErrMsg);
+        sqlite3_free(sql_zErrMsg);
+        exit(1);
+    };
+
     sqlite3_stmt *insert_stmt;
     auto insert_stmt_sql = "insert into unspent_transaction_outputs (transaction_hash, output_id, pub_script, value) values (?,?,?,?)";
     if (sqlite3_prepare_v2(
@@ -222,6 +229,13 @@ int main()
         }
     }
     assert(iter->status().ok());
+
+    if (sqlite3_exec(sql, "COMMIT", NULL, 0, &sql_zErrMsg) != SQLITE_OK)
+    {
+        fprintf(stderr, "SQL error: %s\n", sql_zErrMsg);
+        sqlite3_free(sql_zErrMsg);
+        exit(1);
+    };
 
     sqlite3_finalize(insert_stmt);
     sqlite3_close(sql);
