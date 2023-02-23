@@ -4,13 +4,18 @@
 #include <memory>
 #include <vector>
 #include <span>
+#include <sqlite3.h>
 
 #include "./funcs.cpp"
 #include "./from-bitcoin-code.cpp"
 
 /*
 
-g++ -std=c++20 main.cpp /usr/lib/x86_64-linux-gnu/libleveldb.so /usr/lib/x86_64-linux-gnu/libsecp256k1.so -o main.bin && ./main.bin
+g++ -std=c++20 main.cpp \
+  /usr/lib/x86_64-linux-gnu/libleveldb.so \
+  /usr/lib/x86_64-linux-gnu/libsecp256k1.so \
+  /usr/lib/x86_64-linux-gnu/libsqlite3.so \
+  -o main.bin && ./main.bin
 
 */
 
@@ -49,8 +54,52 @@ std::unique_ptr<leveldb::Iterator> get_all(leveldb::DB &db)
     return std::unique_ptr<leveldb::Iterator>(db.NewIterator(opts));
 }
 
+// Copy-paste from financial.storage.ts
+auto initdb_sql = R"blablafoo(
+    CREATE TABLE IF NOT EXISTS unspent_transaction_outputs  (
+      id INTEGER PRIMARY KEY, 
+      transaction_hash CHARACTER(32) NOT NULL, 
+      output_id INTEGER NOT NULL,
+      pub_script BLOB NOT NULL,
+      value integer
+    );
+
+    CREATE INDEX IF NOT EXISTS unspent_tx_out_idx ON unspent_transaction_outputs
+     (transaction_hash, output_id);
+
+    -- To get value per each wallet
+    CREATE INDEX IF NOT EXISTS unspent_pub_script_idx ON unspent_transaction_outputs
+     (pub_script);
+
+
+    -- Just a way to remember which block we processed last time
+    CREATE TABLE IF NOT EXISTS last_processed_block_hash (
+        _uniq INTEGER NOT NULL CHECK (_uniq = 1),
+        block_hash CHARACTER(32) NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS last_processed_block_hash_idx ON last_processed_block_hash
+     (_uniq);
+
+)blablafoo";
+
 int main()
 {
+
+    sqlite3 *sql;
+    if (sqlite3_open("/disk/bitcoin/newfinancial.db", &sql))
+    {
+        printf("Failed to open sqlite database: %s\n", sqlite3_errmsg(sql));
+        exit(1);
+    };
+
+    char *sql_zErrMsg = 0;
+    if (sqlite3_exec(sql, initdb_sql, NULL, 0, &sql_zErrMsg) != SQLITE_OK)
+    {
+        fprintf(stderr, "SQL error: %s\n", sql_zErrMsg);
+        sqlite3_free(sql_zErrMsg);
+        exit(1);
+    }
+
     // test_read_var_int();
 
     size_t highest_block_height_seen = 0;
@@ -63,13 +112,13 @@ int main()
     char obfuscate_key_key[] = "\x0e\0obfuscate_key";
     ok(db->Get(leveldb::ReadOptions(), leveldb::Slice(obfuscate_key_key, sizeof(obfuscate_key_key) - 1), &obfuscate_key));
 
-    std::cout << "Obfuscate key value = " << obfuscate_key << " len=" << obfuscate_key.size() << std::endl;
-    for (uint i = 0; i < obfuscate_key.size(); ++i)
-    {
-        printf("%02x", (unsigned char)(obfuscate_key[i]));
-    };
-    std::cout << std::endl
-              << std::endl;
+    // std::cout << "Obfuscate key value = " << obfuscate_key << " len=" << obfuscate_key.size() << std::endl;
+    // for (uint i = 0; i < obfuscate_key.size(); ++i)
+    // {
+    //     printf("%02x", (unsigned char)(obfuscate_key[i]));
+    // };
+    // std::cout << std::endl
+    //           << std::endl;
 
     auto iter = get_all(*db);
 
@@ -97,11 +146,11 @@ int main()
 
         auto value = deobfuscate(std::span(iter->value().data(), iter->value().size()), std::span(obfuscate_key.data() + 1, obfuscate_key.size() - 1));
 
-        for (uint i = 0; i < txid.size(); ++i)
-        {
-            printf("%02x", (unsigned char)(txid[31 - i]));
-        };
-        std::cout << " vout=" << vout << std::endl;
+        // for (uint i = 0; i < txid.size(); ++i)
+        // {
+        //     printf("%02x", (unsigned char)(txid[31 - i]));
+        // };
+        // std::cout << " vout=" << vout << std::endl;
 
         uint64_t block_height_and_is_coinbase;
         rest = read_var_int(std::span(value.data(), value.size()), &block_height_and_is_coinbase);
@@ -111,26 +160,27 @@ int main()
         {
             highest_block_height_seen = block_height;
         }
-        std::cout << "block_height=" << block_height << std::endl;
+        // std::cout << "block_height=" << block_height << std::endl;
 
         uint64_t amount_compressed;
         rest = read_var_int(rest, &amount_compressed);
         uint64_t amount = DecompressAmount(amount_compressed);
-        std::cout << "amount=" << amount << std::endl;
+        // std::cout << "amount=" << amount << std::endl;
 
         uint64_t script_n_size;
         rest = read_var_int(rest, &script_n_size);
-        std::cout << "script_n_size=" << script_n_size << " rest len = " << rest.size() << std::endl;
+        // std::cout << "script_n_size=" << script_n_size << " rest len = " << rest.size() << std::endl;
         std::vector<unsigned char> script;
         ok(DecompressScript(script, script_n_size, rest), "Failed to decompress script");
 
-        for (uint i = 0; i < script.size(); ++i)
-        {
-            printf("%02x", (unsigned char)(script[i]));
-        };
-        printf("\n\n");
+        // for (uint i = 0; i < script.size(); ++i)
+        // {
+        //     printf("%02x", (unsigned char)(script[i]));
+        // };
+        // printf("\n\n");
     }
     assert(iter->status().ok());
 
+    sqlite3_close(sql);
     std::cout << "Ok" << std::endl;
 }
